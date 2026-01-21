@@ -77,6 +77,20 @@ Ikuti langkah-langkah berikut untuk menjalankan proyek ini di lingkungan lokal A
 
 Untuk fitur ekspor PDF di macOS/iOS, pastikan konfigurasi di `Info.plist` sudah sesuai untuk izin akses file jika diperlukan (biasanya ditangani oleh `path_provider` dan `printing` package).
 
+### Build APK Release (Lebih Ringan)
+
+Untuk menghasilkan file APK yang lebih kecil (sekitar 15-20 MB) dan siap install:
+
+```bash
+flutter build apk --release --split-per-abi
+```
+
+File APK hasil build akan berada di:
+`build/app/outputs/flutter-apk/`
+
+*   Gunakan `app-arm64-v8a-release.apk` untuk sebagian besar HP Android modern.
+*   Gunakan `app-armeabi-v7a-release.apk` untuk HP Android model lama.
+
 ## 🌍 Lokalisasi
 
 Aplikasi ini menggunakan file JSON untuk menyimpan string terjemahan.
