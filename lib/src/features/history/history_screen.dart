@@ -7,6 +7,9 @@ import '../../core/state/app_state.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/ui/app_gradient_scaffold.dart';
 
+import '../transactions/add_expense/add_expense_screen.dart';
+import '../transactions/add_income/add_income_screen.dart';
+
 class HistoryScreen extends StatefulWidget {
   const HistoryScreen({super.key});
 
@@ -108,73 +111,146 @@ class _HistoryScreenState extends State<HistoryScreen> {
                       ? AppColors.brandBlue
                       : AppColors.negative;
 
-                  return Container(
-                    padding: const EdgeInsets.all(14),
-                    decoration: BoxDecoration(
-                      color: AppColors.card,
-                      borderRadius: BorderRadius.circular(16),
-                      border: Border.all(
-                        color: AppColors.outline.withValues(alpha: 0.5),
+                  return InkWell(
+                    onTap: () {
+                      showModalBottomSheet(
+                        context: context,
+                        backgroundColor: AppColors.card,
+                        shape: const RoundedRectangleBorder(
+                          borderRadius: BorderRadius.vertical(
+                            top: Radius.circular(20),
+                          ),
+                        ),
+                        builder: (context) {
+                          return SafeArea(
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                ListTile(
+                                  leading: const Icon(Icons.edit,
+                                      color: AppColors.brandBlue),
+                                  title: Text(context.t('history.menu.edit')),
+                                  onTap: () {
+                                    Navigator.pop(context);
+                                    Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (context) => isIncome
+                                            ? AddIncomeScreen(transaction: item)
+                                            : AddExpenseScreen(
+                                                transaction: item),
+                                      ),
+                                    );
+                                  },
+                                ),
+                                ListTile(
+                                  leading: const Icon(Icons.delete,
+                                      color: AppColors.negative),
+                                  title: Text(context.t('history.menu.delete')),
+                                  onTap: () {
+                                    Navigator.pop(context);
+                                    showDialog(
+                                      context: context,
+                                      builder: (context) => AlertDialog(
+                                        title: Text(context.t('history.delete.title')),
+                                        content: Text(
+                                            context.t('history.delete.confirmation')),
+                                        actions: [
+                                          TextButton(
+                                            onPressed: () =>
+                                                Navigator.pop(context),
+                                            child: Text(context.t('common.cancel')),
+                                          ),
+                                          TextButton(
+                                            onPressed: () {
+                                              context.appState
+                                                  .deleteTransaction(item.id);
+                                              Navigator.pop(context);
+                                            },
+                                            child: Text(
+                                              context.t('history.menu.delete'),
+                                              style: const TextStyle(
+                                                  color: AppColors.negative),
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    );
+                                  },
+                                ),
+                              ],
+                            ),
+                          );
+                        },
+                      );
+                    },
+                    child: Container(
+                      padding: const EdgeInsets.all(14),
+                      decoration: BoxDecoration(
+                        color: AppColors.card,
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(
+                          color: AppColors.outline.withValues(alpha: 0.5),
+                        ),
                       ),
-                    ),
-                    child: Row(
-                      children: [
-                        Container(
-                          width: 40,
-                          height: 40,
-                          decoration: BoxDecoration(
-                            color:
-                                (isIncome
-                                        ? AppColors.positive
-                                        : AppColors.negative)
-                                    .withValues(alpha: 0.14),
-                            borderRadius: BorderRadius.circular(12),
+                      child: Row(
+                        children: [
+                          Container(
+                            width: 40,
+                            height: 40,
+                            decoration: BoxDecoration(
+                              color: (isIncome
+                                      ? AppColors.positive
+                                      : AppColors.negative)
+                                  .withValues(alpha: 0.14),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            alignment: Alignment.center,
+                            child: Icon(
+                              isIncome ? Icons.trending_up : Icons.trending_down,
+                              color: isIncome
+                                  ? AppColors.positive
+                                  : AppColors.negative,
+                            ),
                           ),
-                          alignment: Alignment.center,
-                          child: Icon(
-                            isIncome ? Icons.trending_up : Icons.trending_down,
-                            color: isIncome
-                                ? AppColors.positive
-                                : AppColors.negative,
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                item.type.name.toUpperCase(),
-                                style: const TextStyle(
-                                  fontWeight: FontWeight.w800,
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  item.type.name.toUpperCase(),
+                                  style: const TextStyle(
+                                    fontWeight: FontWeight.w800,
+                                  ),
+                                  overflow: TextOverflow.ellipsis,
                                 ),
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                              const SizedBox(height: 4),
-                              Text(
-                                noteText,
-                                style: const TextStyle(
-                                  color: AppColors.textSecondary,
+                                const SizedBox(height: 4),
+                                Text(
+                                  noteText,
+                                  style: const TextStyle(
+                                    color: AppColors.textSecondary,
+                                  ),
                                 ),
-                              ),
-                              const SizedBox(height: 4),
-                              Text(
-                                item.effectiveDate.toString().split(' ')[0],
-                                style: const TextStyle(
-                                  color: AppColors.textSecondary,
+                                const SizedBox(height: 4),
+                                Text(
+                                  item.effectiveDate.toString().split(' ')[0],
+                                  style: const TextStyle(
+                                    color: AppColors.textSecondary,
+                                  ),
                                 ),
-                              ),
-                            ],
+                              ],
+                            ),
                           ),
-                        ),
-                        Text(
-                          amountText,
-                          style: TextStyle(
-                            fontWeight: FontWeight.w900,
-                            color: color,
+                          Text(
+                            amountText,
+                            style: TextStyle(
+                              fontWeight: FontWeight.w900,
+                              color: color,
+                            ),
                           ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
                   );
                 },

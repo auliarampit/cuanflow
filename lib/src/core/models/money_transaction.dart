@@ -23,6 +23,26 @@ class MoneyTransaction {
 
   bool get isIncome => type == MoneyTransactionType.income;
 
+  MoneyTransaction copyWith({
+    String? id,
+    MoneyTransactionType? type,
+    int? amount,
+    String? note,
+    String? category,
+    DateTime? effectiveDate,
+    DateTime? createdAt,
+  }) {
+    return MoneyTransaction(
+      id: id ?? this.id,
+      type: type ?? this.type,
+      amount: amount ?? this.amount,
+      note: note ?? this.note,
+      category: category ?? this.category,
+      effectiveDate: effectiveDate ?? this.effectiveDate,
+      createdAt: createdAt ?? this.createdAt,
+    );
+  }
+
   Map<String, dynamic> toJson() {
     return <String, dynamic>{
       'id': id,

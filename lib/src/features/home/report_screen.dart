@@ -71,9 +71,35 @@ class _ReportScreenState extends State<ReportScreen> {
       DateRangeType.month,
       _selectedDate,
     );
+    // Get previous month's summary for comparison
+    final prevDate = DateTime(_selectedDate.year, _selectedDate.month - 1, 15);
+    final prevSummary = context.appState.summaryForDate(
+      DateRangeType.month,
+      prevDate,
+    );
+
     final totalIncome = summary.totalIncome;
     final totalExpense = summary.totalExpense;
     final netProfit = summary.netProfit;
+
+    // Helper to calc percentage
+    String calcPercent(int current, int previous) {
+      if (previous == 0) {
+        if (current == 0) return '0%';
+        // If previous is 0, we can't calculate percentage growth normally.
+        // For expense (passed as negative), if it goes 0 -> -100, it's -100% (bad).
+        // For income, 0 -> 100 is +100% (good).
+        return current > 0 ? '+100%' : '-100%';
+      }
+      final percent = ((current - previous) / previous.abs()) * 100;
+      final prefix = percent >= 0 ? '+' : '';
+      return '$prefix${percent.toStringAsFixed(1)}%';
+    }
+
+    final incomeChange = calcPercent(totalIncome, prevSummary.totalIncome);
+    // Pass expense as negative because increase in expense is "bad" (negative change)
+    final expenseChange = calcPercent(-totalExpense, -prevSummary.totalExpense);
+    final profitChange = calcPercent(netProfit, prevSummary.netProfit);
 
     final history = context.appState.historyForDate(
       DateRangeType.month,
@@ -126,7 +152,7 @@ class _ReportScreenState extends State<ReportScreen> {
                         child: _SummaryCard(
                           title: context.t('report.totalIncomeTitle'),
                           amount: IdrFormatter.format(totalIncome),
-                          changeLabel: context.t('report.incomeChangeLabel'),
+                          changeLabel: incomeChange,
                           accentColor: AppColors.positive,
                         ),
                       ),
@@ -135,7 +161,7 @@ class _ReportScreenState extends State<ReportScreen> {
                         child: _SummaryCard(
                           title: context.t('report.totalExpenseTitle'),
                           amount: IdrFormatter.format(totalExpense),
-                          changeLabel: context.t('report.expenseChangeLabel'),
+                          changeLabel: expenseChange,
                           accentColor: AppColors.negative,
                         ),
                       ),
@@ -145,7 +171,7 @@ class _ReportScreenState extends State<ReportScreen> {
                   _SummaryCard(
                     title: context.t('report.netProfitTitle'),
                     amount: IdrFormatter.format(netProfit),
-                    changeLabel: context.t('report.netProfitChangeLabel'),
+                    changeLabel: profitChange,
                     accentColor: AppColors.positive,
                   ),
                   const SizedBox(height: 20),

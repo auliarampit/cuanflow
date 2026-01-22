@@ -3,12 +3,15 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../../../core/formatters/currency_input_formatter.dart';
 import '../../../core/localization/transalation_extansions.dart';
+import '../../../core/models/money_transaction.dart';
 import '../../../core/state/app_state.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/ui/app_gradient_scaffold.dart';
 
 class AddExpenseScreen extends StatefulWidget {
-  const AddExpenseScreen({super.key});
+  const AddExpenseScreen({super.key, this.transaction});
+
+  final MoneyTransaction? transaction;
 
   @override
   State<AddExpenseScreen> createState() => _AddExpenseScreenState();
@@ -19,6 +22,18 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
   final _amountController = TextEditingController();
   String? _selectedQuickCategoryKey;
   DateTime _selectedDate = DateTime.now();
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.transaction != null) {
+      final tx = widget.transaction!;
+      _amountController.text = CurrencyInputFormatter.formatVal(tx.amount);
+      _noteController.text = tx.note ?? '';
+      _selectedQuickCategoryKey = tx.category;
+      _selectedDate = tx.effectiveDate;
+    }
+  }
 
   @override
   void dispose() {
@@ -57,7 +72,9 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
         backgroundColor: Colors.transparent,
         elevation: 0,
         title: Text(
-          context.t('expense.add.title'),
+          widget.transaction != null
+              ? context.t('expense.edit.title')
+              : context.t('expense.add.title'),
           style: const TextStyle(
             color: AppColors.negative,
             fontWeight: FontWeight.w800,
@@ -232,7 +249,7 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
                     spacing: 10,
                     runSpacing: 10,
                     children: categories.map((e) {
-                      final isSelected = _selectedQuickCategoryKey == e.key;
+                      final isSelected = _selectedQuickCategoryKey == e.label;
                       return ChoiceChip(
                         label: Text(e.label),
                         selected: isSelected,
@@ -284,12 +301,40 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
     final rawAmount = _amountController.text.replaceAll('.', '');
     final amount = int.tryParse(rawAmount) ?? 0;
     if (amount > 0) {
-      context.appState.addExpense(
-        amount: amount,
-        note: _noteController.text,
-        category: _selectedQuickCategoryKey,
-        effectiveDate: _selectedDate,
+      if (_noteController.text.isEmpty || _selectedQuickCategoryKey == null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(context.t('common.validation.mandatory')),
+            backgroundColor: AppColors.negative,
+          ),
+        );
+        return;
+      }
+
+      if (widget.transaction != null) {
+        final updatedTx = widget.transaction!.copyWith(
+          amount: amount,
+          note: _noteController.text,
+          category: _selectedQuickCategoryKey,
+          effectiveDate: _selectedDate,
+        );
+        context.appState.updateTransaction(updatedTx);
+      } else {
+        context.appState.addExpense(
+          amount: amount,
+          note: _noteController.text,
+          category: _selectedQuickCategoryKey,
+          effectiveDate: _selectedDate,
+        );
+      }
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(context.t('common.validation.success')),
+          backgroundColor: AppColors.positive,
+        ),
       );
+
       Navigator.of(context).pop();
     }
   }

@@ -10,7 +10,7 @@ class CurrencyInputFormatter extends TextInputFormatter {
 
     final cleanText = newValue.text.replaceAll(RegExp(r'[^0-9]'), '');
     final intValue = int.tryParse(cleanText) ?? 0;
-    final newText = _format(intValue);
+    final newText = formatVal(intValue);
 
     return newValue.copyWith(
       text: newText,
@@ -18,7 +18,7 @@ class CurrencyInputFormatter extends TextInputFormatter {
     );
   }
 
-  String _format(int amount) {
+  static String formatVal(int amount) {
     final digits = amount.toString();
     final buffer = StringBuffer();
     for (var i = 0; i < digits.length; i++) {

@@ -132,6 +132,21 @@ class AppState extends ChangeNotifier {
     notifyListeners();
   }
 
+  Future<void> deleteTransaction(String id) async {
+    _transactions = _transactions.where((tx) => tx.id != id).toList();
+    await _persist();
+    notifyListeners();
+  }
+
+  Future<void> updateTransaction(MoneyTransaction updatedTx) async {
+    final index = _transactions.indexWhere((tx) => tx.id == updatedTx.id);
+    if (index != -1) {
+      _transactions[index] = updatedTx;
+      await _persist();
+      notifyListeners();
+    }
+  }
+
   Future<void> updateSettings(AppSettings newSettings) async {
     _settings = newSettings;
     await _persist();

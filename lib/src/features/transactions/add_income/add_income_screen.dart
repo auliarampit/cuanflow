@@ -4,11 +4,14 @@ import 'package:flutter/services.dart';
 
 import '../../../core/formatters/currency_input_formatter.dart';
 import '../../../core/localization/transalation_extansions.dart';
+import '../../../core/models/money_transaction.dart';
 import '../../../core/state/app_state.dart';
 import '../../../core/theme/app_colors.dart';
 
 class AddIncomeScreen extends StatefulWidget {
-  const AddIncomeScreen({super.key});
+  const AddIncomeScreen({super.key, this.transaction});
+
+  final MoneyTransaction? transaction;
 
   @override
   State<AddIncomeScreen> createState() => _AddIncomeScreenState();
@@ -18,6 +21,19 @@ class _AddIncomeScreenState extends State<AddIncomeScreen> {
   final _noteController = TextEditingController();
   final _amountController = TextEditingController();
   DateTime _selectedDate = DateTime.now();
+  String? _selectedCategoryKey;
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.transaction != null) {
+      final tx = widget.transaction!;
+      _amountController.text = CurrencyInputFormatter.formatVal(tx.amount);
+      _noteController.text = tx.note ?? '';
+      _selectedDate = tx.effectiveDate;
+      _selectedCategoryKey = tx.category;
+    }
+  }
 
   @override
   void dispose() {
@@ -26,13 +42,35 @@ class _AddIncomeScreenState extends State<AddIncomeScreen> {
     super.dispose();
   }
 
+  List<_QuickCategory> _categories(BuildContext context) {
+    return [
+      _QuickCategory(
+        key: 'income.quick.sales',
+        label: context.t('income.quick.sales'),
+      ),
+      _QuickCategory(
+        key: 'income.quick.service',
+        label: context.t('income.quick.service'),
+      ),
+      _QuickCategory(
+        key: 'income.quick.other',
+        label: context.t('income.quick.other'),
+      ),
+    ];
+  }
+
   @override
   Widget build(BuildContext context) {
+    final categories = _categories(context);
     return AppGradientScaffold(
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
-        title: Text(context.t('income.add.title')),
+        title: Text(
+          widget.transaction != null
+              ? context.t('income.edit.title')
+              : context.t('income.add.title'),
+        ),
         leading: IconButton(
           onPressed: () => Navigator.of(context).pop(),
           icon: const Icon(Icons.arrow_back),
@@ -95,6 +133,45 @@ class _AddIncomeScreenState extends State<AddIncomeScreen> {
                       hintText: context.t('income.add.noteHint'),
                     ),
                   ),
+                  const SizedBox(height: 18),
+                  Text(
+                    context.t('income.quick.title'),
+                    style: const TextStyle(
+                      letterSpacing: 2,
+                      fontWeight: FontWeight.w700,
+                      color: AppColors.textSecondary,
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                  Wrap(
+                    spacing: 10,
+                    runSpacing: 10,
+                    children: categories.map((e) {
+                      final isSelected = _selectedCategoryKey == e.label;
+                      return ChoiceChip(
+                        label: Text(e.label),
+                        selected: isSelected,
+                        onSelected: (_) =>
+                            setState(() => _selectedCategoryKey = e.label),
+                        selectedColor: AppColors.positive.withValues(
+                          alpha: 0.18,
+                        ),
+                        backgroundColor: AppColors.cardSoft,
+                        labelStyle: TextStyle(
+                          color: isSelected
+                              ? AppColors.positive
+                              : AppColors.textPrimary,
+                          fontWeight: FontWeight.w700,
+                        ),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          side: BorderSide(
+                            color: AppColors.outline.withValues(alpha: 0.7),
+                          ),
+                        ),
+                      );
+                    }).toList(),
+                  ),
                   const SizedBox(height: 16),
                   Text(
                     context.t('common.date'),
@@ -154,11 +231,43 @@ class _AddIncomeScreenState extends State<AddIncomeScreen> {
                         );
                         final amount = int.tryParse(rawAmount) ?? 0;
                         if (amount > 0) {
-                          context.appState.addIncome(
-                            amount: amount,
-                            note: _noteController.text,
-                            effectiveDate: _selectedDate,
+                          if (_noteController.text.isEmpty ||
+                              _selectedCategoryKey == null) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text(
+                                    context.t('common.validation.mandatory')),
+                                backgroundColor: AppColors.negative,
+                              ),
+                            );
+                            return;
+                          }
+
+                          if (widget.transaction != null) {
+                            final updatedTx = widget.transaction!.copyWith(
+                              amount: amount,
+                              note: _noteController.text,
+                              category: _selectedCategoryKey,
+                              effectiveDate: _selectedDate,
+                            );
+                            context.appState.updateTransaction(updatedTx);
+                          } else {
+                            context.appState.addIncome(
+                              amount: amount,
+                              note: _noteController.text,
+                              category: _selectedCategoryKey,
+                              effectiveDate: _selectedDate,
+                            );
+                          }
+
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content:
+                                  Text(context.t('common.validation.success')),
+                              backgroundColor: AppColors.positive,
+                            ),
                           );
+
                           Navigator.of(context).pop();
                         }
                       },
@@ -178,4 +287,11 @@ class _AddIncomeScreenState extends State<AddIncomeScreen> {
       ),
     );
   }
+}
+
+class _QuickCategory {
+  const _QuickCategory({required this.key, required this.label});
+
+  final String key;
+  final String label;
 }
