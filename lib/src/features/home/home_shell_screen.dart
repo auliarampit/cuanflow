@@ -1,8 +1,10 @@
 import 'package:cari_untung/src/core/localization/transalation_extansions.dart';
 import 'package:cari_untung/src/core/ui/app_gradient_scaffold.dart';
 import 'package:cari_untung/src/features/home/home_screen.dart';
+import 'package:cari_untung/src/shared/widgets/loading_dialog.dart';
 import 'package:flutter/material.dart';
 
+import '../../core/state/app_state.dart';
 import '../profile/profile_screen.dart';
 import 'report_screen.dart';
 
@@ -15,6 +17,19 @@ class HomeShellScreen extends StatefulWidget {
 
 class _HomeShellScreenState extends State<HomeShellScreen> {
   int _index = 0;
+  
+  @override
+  void initState() {
+    super.initState();
+    
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      LoadingDialog.show(context);
+      await context.appState.syncTransactions();
+      if (mounted) {
+        LoadingDialog.hide(context);
+      }
+    });
+  }
 
   void _onTap(int index) {
     setState(() => _index = index);

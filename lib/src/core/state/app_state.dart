@@ -1,21 +1,15 @@
 import 'package:flutter/material.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../models/app_settings.dart';
 import '../models/money_transaction.dart';
 import '../models/user_profile.dart';
 import '../storage/local_database.dart';
 
-enum DateRangeType {
-  day,
-  week,
-  month,
-}
+enum DateRangeType { day, week, month }
 
 class Summary {
-  Summary({
-    required this.totalIncome,
-    required this.totalExpense,
-  });
+  Summary({required this.totalIncome, required this.totalExpense});
 
   final int totalIncome;
   final int totalExpense;
@@ -24,8 +18,7 @@ class Summary {
 }
 
 class AppState extends ChangeNotifier {
-  AppState({LocalDatabase? database})
-      : _database = database ?? LocalDatabase();
+  AppState({LocalDatabase? database}) : _database = database ?? LocalDatabase();
 
   final LocalDatabase _database;
 
@@ -33,6 +26,9 @@ class AppState extends ChangeNotifier {
   List<MoneyTransaction> _transactions = <MoneyTransaction>[];
   UserProfile _profile = UserProfile.empty();
   AppSettings _settings = AppSettings.defaults();
+
+  SupabaseClient get supabase => Supabase.instance.client;
+  User? get currentUser => supabase.auth.currentUser;
 
   List<MoneyTransaction> get transactions => _transactions;
   UserProfile get profile => _profile;
@@ -64,6 +60,34 @@ class AppState extends ChangeNotifier {
 
     _initialized = true;
     notifyListeners();
+
+    // Attempt to sync if logged in
+    if (currentUser != null) {
+      syncTransactions();
+    }
+  }
+
+  Future<void> syncTransactions() async {
+    try {
+      // Get ALL transactions without limit
+      final response = await supabase
+          .from('transactions')
+          .select()
+          .order('effective_date', ascending: false);
+
+      debugPrint('[API] Sync transactions count: ${(response as List).length}');
+
+      final remoteTxs = (response as List)
+          .map((e) => MoneyTransaction.fromJson(e as Map<String, dynamic>))
+          .toList();
+
+      // Replace local with remote
+      _transactions = remoteTxs;
+      await _persist();
+      notifyListeners();
+    } catch (e) {
+      debugPrint('[API] Sync failed: $e');
+    }
   }
 
   Future<void> _persist() async {
@@ -113,8 +137,39 @@ class AppState extends ChangeNotifier {
     DateTime? effectiveDate,
   }) async {
     final now = DateTime.now();
-    final dateOnly =
-        effectiveDate != null ? _stripTime(effectiveDate) : _stripTime(now);
+    final dateOnly = effectiveDate != null
+        ? _stripTime(effectiveDate)
+        : _stripTime(now);
+
+    // Try Supabase first
+    if (currentUser != null) {
+      try {
+        debugPrint('[API] Adding transaction...');
+        final response = await supabase
+            .from('transactions')
+            .insert({
+              'user_id': currentUser!.id,
+              'type': type.name,
+              'amount': amount,
+              'category': category,
+              'note': note,
+              'effective_date': dateOnly.toIso8601String(),
+            })
+            .select()
+            .single();
+
+        final newTx = MoneyTransaction.fromJson(response);
+        _transactions.insert(0, newTx);
+        await _persist();
+        notifyListeners();
+        debugPrint('[API] Transaction added successfully');
+        return;
+      } catch (e) {
+        debugPrint('[API] Supabase insert failed: $e');
+        // Fallback to local if needed, currently we just log error
+      }
+    }
+
     final id = 'tx_${now.microsecondsSinceEpoch}';
 
     final tx = MoneyTransaction(
@@ -133,17 +188,35 @@ class AppState extends ChangeNotifier {
   }
 
   Future<void> deleteTransaction(String id) async {
+    // TODO: Add API call to delete from server
     _transactions = _transactions.where((tx) => tx.id != id).toList();
     await _persist();
     notifyListeners();
   }
 
   Future<void> updateTransaction(MoneyTransaction updatedTx) async {
+    // TODO: Add API call to update server
     final index = _transactions.indexWhere((tx) => tx.id == updatedTx.id);
     if (index != -1) {
       _transactions[index] = updatedTx;
       await _persist();
       notifyListeners();
+    }
+  }
+
+  Future<void> logout() async {
+    try {
+      debugPrint('[API] Logging out...');
+      await supabase.auth.signOut();
+
+      _transactions.clear();
+      _profile = UserProfile.empty();
+
+      await _persist();
+      notifyListeners();
+      debugPrint('[API] Logout successful');
+    } catch (e) {
+      debugPrint('[API] Logout failed: $e');
     }
   }
 
@@ -175,14 +248,15 @@ class AppState extends ChangeNotifier {
   }
 
   Summary _summaryForDate(DateRangeType rangeType, DateTime refDate) {
-    final range = _rangeFor(rangeType, refDate);
+    final specificRange = _rangeFor(rangeType, refDate);
     var income = 0;
     var expense = 0;
 
     for (final tx in _transactions) {
       final date = _stripTime(tx.effectiveDate);
       final inRange =
-          !date.isBefore(range.start) && date.isBefore(range.end);
+          !date.isBefore(specificRange.start) &&
+          date.isBefore(specificRange.end);
       if (!inRange) continue;
 
       if (tx.isIncome) {
@@ -195,7 +269,10 @@ class AppState extends ChangeNotifier {
     return Summary(totalIncome: income, totalExpense: expense);
   }
 
-  List<MoneyTransaction> historyForDate(DateRangeType rangeType, DateTime date) {
+  List<MoneyTransaction> historyForDate(
+    DateRangeType rangeType,
+    DateTime date,
+  ) {
     final range = _rangeFor(rangeType, date);
     final list = _transactions.where((tx) {
       final tDate = _stripTime(tx.effectiveDate);
@@ -236,8 +313,7 @@ class AppState extends ChangeNotifier {
     }
 
     final startMonth = DateTime(today.year, today.month, 1);
-    final nextMonth =
-        DateTime(today.year, today.month + 1, 1);
+    final nextMonth = DateTime(today.year, today.month + 1, 1);
     return DateTimeRange(start: startMonth, end: nextMonth);
   }
 
@@ -254,8 +330,7 @@ class AppStateScope extends InheritedNotifier<AppState> {
   }) : super(notifier: state);
 
   static AppState of(BuildContext context) {
-    final scope =
-        context.dependOnInheritedWidgetOfExactType<AppStateScope>();
+    final scope = context.dependOnInheritedWidgetOfExactType<AppStateScope>();
     if (scope == null) {
       throw FlutterError('AppStateScope.of() called with no AppStateScope');
     }

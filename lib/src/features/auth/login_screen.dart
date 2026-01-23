@@ -3,7 +3,9 @@ import 'package:cari_untung/src/core/localization/transalation_extansions.dart';
 import 'package:cari_untung/src/core/theme/app_colors.dart';
 import 'package:cari_untung/src/core/ui/app_gradient_scaffold.dart';
 import 'package:cari_untung/src/features/auth/pin_input.dart';
+import 'package:cari_untung/src/shared/widgets/loading_dialog.dart';
 import 'package:flutter/material.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -16,6 +18,8 @@ class _LoginScreenState extends State<LoginScreen> {
   final _phoneOrEmailController = TextEditingController();
   String _pinValue = '';
 
+  bool _isLoading = false;
+
   @override
   void dispose() {
     _phoneOrEmailController.dispose();
@@ -24,12 +28,83 @@ class _LoginScreenState extends State<LoginScreen> {
 
   bool get _canSubmit {
     return _phoneOrEmailController.text.trim().isNotEmpty &&
-        _pinValue.length == 6;
+        _pinValue.length == 6 &&
+        !_isLoading;
   }
 
-  void _onLogin() {
+  Future<void> _onLogin() async {
     if (!_canSubmit) return;
-    Navigator.of(context).pushReplacementNamed(AppRoutes.home);
+
+    // Show Loading
+    LoadingDialog.show(context);
+
+    try {
+      final email = _phoneOrEmailController.text.trim();
+      // Use PIN as password for simplicity in this PIN-based UI
+      final password = _pinValue; 
+
+      await Supabase.instance.client.auth.signInWithPassword(
+        email: email,
+        password: password,
+      );
+
+      if (mounted) {
+        LoadingDialog.hide(context);
+        Navigator.of(context).pushReplacementNamed(AppRoutes.home);
+      }
+    } on AuthException catch (e) {
+      if (mounted) {
+        LoadingDialog.hide(context);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(e.message), backgroundColor: AppColors.negative),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        LoadingDialog.hide(context);
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Login failed'), backgroundColor: AppColors.negative),
+        );
+      }
+    }
+  }
+
+  Future<void> _onRegister() async {
+    if (_phoneOrEmailController.text.trim().isEmpty || _pinValue.length != 6) {
+       ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Please fill email and 6-digit PIN')),
+        );
+      return;
+    }
+
+    setState(() => _isLoading = true);
+    try {
+      final email = _phoneOrEmailController.text.trim();
+      final password = _pinValue;
+
+      await Supabase.instance.client.auth.signUp(
+        email: email,
+        password: password,
+      );
+      
+      if (mounted) {
+         ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Registration successful! Please login.')),
+        );
+        // Auto login usually happens on signUp if email confirm is off, but just in case
+        _onLogin(); 
+      }
+    } on AuthException catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(e.message), backgroundColor: AppColors.negative),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
+    }
   }
 
   @override
@@ -134,7 +209,9 @@ class _LoginScreenState extends State<LoginScreen> {
                         ),
                         foregroundColor: Colors.white,
                       ),
-                      child: Text(context.t('auth.login.submit')),
+                      child: _isLoading 
+                        ? const CircularProgressIndicator(color: Colors.white)
+                        : Text(context.t('auth.login.submit')),
                     ),
                   ),
                   const SizedBox(height: 18),
@@ -146,7 +223,7 @@ class _LoginScreenState extends State<LoginScreen> {
                         style: const TextStyle(color: AppColors.textSecondary),
                       ),
                       TextButton(
-                        onPressed: () {},
+                        onPressed: _isLoading ? null : _onRegister,
                         child: Text(context.t('auth.login.register')),
                       ),
                     ],

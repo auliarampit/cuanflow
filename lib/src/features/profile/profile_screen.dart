@@ -1,7 +1,9 @@
 import 'package:cari_untung/src/app/routes.dart';
+import 'package:cari_untung/src/shared/widgets/loading_dialog.dart';
 import 'package:flutter/material.dart';
 
 import '../../core/localization/transalation_extansions.dart';
+import '../../core/state/app_state.dart';
 import '../../core/theme/app_colors.dart';
 
 class ProfileScreen extends StatelessWidget {
@@ -11,32 +13,34 @@ class ProfileScreen extends StatelessWidget {
     Navigator.of(context).pushNamed(AppRoutes.accountSettings);
   }
 
+  void _onLogout(BuildContext context) async {
+    LoadingDialog.show(context);
+    await context.appState.logout();
+    if (context.mounted) {
+      LoadingDialog.hide(context);
+      Navigator.of(
+        context,
+      ).pushReplacementNamed(AppRoutes.login);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return SafeArea(
-      child: Padding
-        (
+      child: Padding(
         padding: const EdgeInsets.fromLTRB(18, 24, 18, 16),
         child: Column(
           children: [
-            const CircleAvatar(
-              radius: 40,
-              backgroundColor: AppColors.chipBg,
-            ),
+            const CircleAvatar(radius: 40, backgroundColor: AppColors.chipBg),
             const SizedBox(height: 16),
             Text(
               context.t('profile.ownerName'),
-              style: const TextStyle(
-                fontSize: 22,
-                fontWeight: FontWeight.w800,
-              ),
+              style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w800),
             ),
             const SizedBox(height: 4),
             Text(
               context.t('profile.businessName'),
-              style: const TextStyle(
-                color: AppColors.textSecondary,
-              ),
+              style: const TextStyle(color: AppColors.textSecondary),
             ),
             const SizedBox(height: 24),
             Align(
@@ -77,7 +81,7 @@ class ProfileScreen extends StatelessWidget {
             SizedBox(
               width: double.infinity,
               child: ElevatedButton(
-                onPressed: () {},
+                onPressed: () => _onLogout(context),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.negative,
                   foregroundColor: Colors.white,
@@ -143,9 +147,7 @@ class _ProfileMenuItem extends StatelessWidget {
                 children: [
                   Text(
                     title,
-                    style: const TextStyle(
-                      fontWeight: FontWeight.w700,
-                    ),
+                    style: const TextStyle(fontWeight: FontWeight.w700),
                   ),
                   const SizedBox(height: 4),
                   Text(

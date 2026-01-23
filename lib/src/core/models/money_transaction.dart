@@ -62,16 +62,20 @@ class MoneyTransaction {
         : MoneyTransactionType.income;
 
     return MoneyTransaction(
-      id: jsonMap['id'] as String? ?? '',
+      id: (jsonMap['id'] ?? '') as String,
       type: parsedType,
-      amount: jsonMap['amount'] as int? ?? 0,
+      amount: (jsonMap['amount'] as num?)?.toInt() ?? 0,
       note: jsonMap['note'] as String?,
       category: jsonMap['category'] as String?,
       effectiveDate: DateTime.parse(
-        jsonMap['effectiveDate'] as String? ?? DateTime.now().toIso8601String(),
+        jsonMap['effectiveDate'] as String? ?? 
+        jsonMap['effective_date'] as String? ?? 
+        DateTime.now().toIso8601String(),
       ),
       createdAt: DateTime.parse(
-        jsonMap['createdAt'] as String? ?? DateTime.now().toIso8601String(),
+        jsonMap['createdAt'] as String? ?? 
+        jsonMap['created_at'] as String? ?? 
+        DateTime.now().toIso8601String(),
       ),
     );
   }

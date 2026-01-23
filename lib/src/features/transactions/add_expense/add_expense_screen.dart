@@ -1,3 +1,4 @@
+import 'package:cari_untung/src/shared/widgets/loading_dialog.dart';
 import 'package:flutter/material.dart';
 
 import 'package:flutter/services.dart';
@@ -297,7 +298,7 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
     );
   }
 
-  void _saveExpense(BuildContext context) {
+  void _saveExpense(BuildContext context) async {
     final rawAmount = _amountController.text.replaceAll('.', '');
     final amount = int.tryParse(rawAmount) ?? 0;
     if (amount > 0) {
@@ -311,6 +312,8 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
         return;
       }
 
+      LoadingDialog.show(context);
+
       if (widget.transaction != null) {
         final updatedTx = widget.transaction!.copyWith(
           amount: amount,
@@ -318,9 +321,9 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
           category: _selectedQuickCategoryKey,
           effectiveDate: _selectedDate,
         );
-        context.appState.updateTransaction(updatedTx);
+        await context.appState.updateTransaction(updatedTx);
       } else {
-        context.appState.addExpense(
+        await context.appState.addExpense(
           amount: amount,
           note: _noteController.text,
           category: _selectedQuickCategoryKey,
@@ -328,14 +331,17 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
         );
       }
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(context.t('common.validation.success')),
-          backgroundColor: AppColors.positive,
-        ),
-      );
+      if (context.mounted) {
+        LoadingDialog.hide(context);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(context.t('common.validation.success')),
+            backgroundColor: AppColors.positive,
+          ),
+        );
 
-      Navigator.of(context).pop();
+        Navigator.of(context).pop();
+      }
     }
   }
 }

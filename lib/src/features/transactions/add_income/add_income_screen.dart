@@ -1,4 +1,5 @@
 import 'package:cari_untung/src/core/ui/app_gradient_scaffold.dart';
+import 'package:cari_untung/src/shared/widgets/loading_dialog.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
@@ -224,7 +225,7 @@ class _AddIncomeScreenState extends State<AddIncomeScreen> {
                   SizedBox(
                     width: double.infinity,
                     child: ElevatedButton(
-                      onPressed: () {
+                      onPressed: () async {
                         final rawAmount = _amountController.text.replaceAll(
                           '.',
                           '',
@@ -243,6 +244,8 @@ class _AddIncomeScreenState extends State<AddIncomeScreen> {
                             return;
                           }
 
+                          LoadingDialog.show(context);
+
                           if (widget.transaction != null) {
                             final updatedTx = widget.transaction!.copyWith(
                               amount: amount,
@@ -250,9 +253,9 @@ class _AddIncomeScreenState extends State<AddIncomeScreen> {
                               category: _selectedCategoryKey,
                               effectiveDate: _selectedDate,
                             );
-                            context.appState.updateTransaction(updatedTx);
+                            await context.appState.updateTransaction(updatedTx);
                           } else {
-                            context.appState.addIncome(
+                            await context.appState.addIncome(
                               amount: amount,
                               note: _noteController.text,
                               category: _selectedCategoryKey,
@@ -260,15 +263,18 @@ class _AddIncomeScreenState extends State<AddIncomeScreen> {
                             );
                           }
 
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content:
-                                  Text(context.t('common.validation.success')),
-                              backgroundColor: AppColors.positive,
-                            ),
-                          );
+                          if (context.mounted) {
+                            LoadingDialog.hide(context);
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content:
+                                    Text(context.t('common.validation.success')),
+                                backgroundColor: AppColors.positive,
+                              ),
+                            );
 
-                          Navigator.of(context).pop();
+                            Navigator.of(context).pop();
+                          }
                         }
                       },
                       style: ElevatedButton.styleFrom(

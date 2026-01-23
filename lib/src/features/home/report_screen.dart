@@ -1,3 +1,4 @@
+import 'package:cari_untung/src/shared/widgets/loading_dialog.dart';
 import 'package:flutter/material.dart';
 
 import '../../core/formatters/idr_formatter.dart';
@@ -46,6 +47,7 @@ class _ReportScreenState extends State<ReportScreen> {
   }
 
   void _exportPdf() async {
+    LoadingDialog.show(context);
     final summary = context.appState.summaryForDate(
       DateRangeType.month,
       _selectedDate,
@@ -63,6 +65,7 @@ class _ReportScreenState extends State<ReportScreen> {
       history,
       profile,
     );
+    if (mounted) LoadingDialog.hide(context);
   }
 
   @override
