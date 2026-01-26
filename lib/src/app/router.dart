@@ -9,6 +9,7 @@ import '../features/transactions/add_expense/add_expense_screen.dart';
 import '../features/transactions/add_income/add_income_screen.dart';
 import '../features/home/home_shell_screen.dart';
 import '../features/auth/login_screen.dart';
+import '../features/auth/register_screen.dart';
 import '../features/splash/splash_screen.dart';
 
 
@@ -22,6 +23,8 @@ final class AppRouter {
         return MaterialPageRoute(builder: (_) => const SplashScreen());
       case AppRoutes.login:
         return MaterialPageRoute(builder: (_) => const LoginScreen());
+      case AppRoutes.register:
+        return MaterialPageRoute(builder: (_) => const RegisterScreen());
       case AppRoutes.home:
         return MaterialPageRoute(builder: (_) => const HomeShellScreen());
       case AppRoutes.addIncome:

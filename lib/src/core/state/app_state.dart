@@ -64,6 +64,50 @@ class AppState extends ChangeNotifier {
     // Attempt to sync if logged in
     if (currentUser != null) {
       syncTransactions();
+      fetchProfile();
+    }
+  }
+
+  Future<void> fetchProfile() async {
+    try {
+      final user = currentUser;
+      if (user == null) return;
+
+      final response = await supabase
+          .from('profiles')
+          .select()
+          .eq('id', user.id)
+          .maybeSingle();
+
+      if (response != null) {
+        _profile = UserProfile.fromJson(response);
+        await _persist();
+        notifyListeners();
+        debugPrint('[API] Profile fetched: ${_profile.fullName}');
+      }
+    } catch (e) {
+      debugPrint('[API] Fetch profile failed: $e');
+    }
+  }
+
+  Future<void> saveProfile(UserProfile newProfile) async {
+    try {
+      final user = currentUser;
+      if (user == null) return;
+
+      final data = newProfile.toJson();
+      data['id'] = user.id;
+      data['updated_at'] = DateTime.now().toIso8601String();
+
+      await supabase.from('profiles').upsert(data);
+
+      _profile = newProfile;
+      await _persist();
+      notifyListeners();
+      debugPrint('[API] Profile saved');
+    } catch (e) {
+      debugPrint('[API] Save profile failed: $e');
+      rethrow;
     }
   }
 
@@ -188,14 +232,41 @@ class AppState extends ChangeNotifier {
   }
 
   Future<void> deleteTransaction(String id) async {
-    // TODO: Add API call to delete from server
+    try {
+      if (currentUser != null) {
+        debugPrint('[API] Deleting transaction $id...');
+        await supabase.from('transactions').delete().eq('id', id);
+        debugPrint('[API] Transaction deleted successfully');
+      }
+    } catch (e) {
+      debugPrint('[API] Delete transaction failed: $e');
+    }
+
     _transactions = _transactions.where((tx) => tx.id != id).toList();
     await _persist();
     notifyListeners();
   }
 
   Future<void> updateTransaction(MoneyTransaction updatedTx) async {
-    // TODO: Add API call to update server
+    try {
+      if (currentUser != null) {
+        debugPrint('[API] Updating transaction ${updatedTx.id}...');
+        await supabase
+            .from('transactions')
+            .update({
+              'amount': updatedTx.amount,
+              'category': updatedTx.category,
+              'note': updatedTx.note,
+              'effective_date': updatedTx.effectiveDate.toIso8601String(),
+              'type': updatedTx.type.name,
+            })
+            .eq('id', updatedTx.id);
+        debugPrint('[API] Transaction updated successfully');
+      }
+    } catch (e) {
+      debugPrint('[API] Update transaction failed: $e');
+    }
+
     final index = _transactions.indexWhere((tx) => tx.id == updatedTx.id);
     if (index != -1) {
       _transactions[index] = updatedTx;

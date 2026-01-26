@@ -4,14 +4,14 @@ class UserProfile {
     required this.businessName,
     required this.whatsapp,
     required this.email,
-    required this.photoPath,
+    // required this.photoPath,
   });
 
   final String fullName;
   final String businessName;
   final String whatsapp;
   final String email;
-  final String? photoPath;
+  // final String? photoPath;
 
   factory UserProfile.empty() {
     return UserProfile(
@@ -19,7 +19,7 @@ class UserProfile {
       businessName: '',
       whatsapp: '',
       email: '',
-      photoPath: null,
+      // photoPath: null,
     );
   }
 
@@ -28,34 +28,37 @@ class UserProfile {
     String? businessName,
     String? whatsapp,
     String? email,
-    String? photoPath,
+    // String? photoPath,
   }) {
     return UserProfile(
       fullName: fullName ?? this.fullName,
       businessName: businessName ?? this.businessName,
       whatsapp: whatsapp ?? this.whatsapp,
       email: email ?? this.email,
-      photoPath: photoPath ?? this.photoPath,
+      // photoPath: photoPath ?? this.photoPath,
     );
   }
 
   Map<String, dynamic> toJson() {
     return {
-      'fullName': fullName,
-      'businessName': businessName,
+      'full_name': fullName,
+      'business_name': businessName,
       'whatsapp': whatsapp,
       'email': email,
-      'photoPath': photoPath,
+      // 'photo_path': photoPath,
     };
   }
 
   factory UserProfile.fromJson(Map<String, dynamic> json) {
     return UserProfile(
-      fullName: json['fullName'] as String? ?? '',
-      businessName: json['businessName'] as String? ?? '',
+      fullName:
+          json['full_name'] as String? ?? json['fullName'] as String? ?? '',
+      businessName: json['business_name'] as String? ??
+          json['businessName'] as String? ??
+          '',
       whatsapp: json['whatsapp'] as String? ?? '',
       email: json['email'] as String? ?? '',
-      photoPath: json['photoPath'] as String?,
+      // photoPath: json['photo_path'] as String? ?? json['photoPath'] as String?,
     );
   }
 }

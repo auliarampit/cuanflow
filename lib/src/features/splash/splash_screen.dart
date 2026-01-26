@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:cari_untung/src/core/state/app_state.dart';
 import 'package:flutter/material.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 
@@ -34,7 +35,11 @@ class _SplashScreenState extends State<SplashScreen> {
   void _navigateNext() {
     Future.delayed(const Duration(milliseconds: 1500), () {
       if (!mounted) return;
-      Navigator.of(context).pushReplacementNamed(AppRoutes.login);
+      if (context.appState.currentUser != null) {
+        Navigator.of(context).pushReplacementNamed(AppRoutes.home);
+      } else {
+        Navigator.of(context).pushReplacementNamed(AppRoutes.login);
+      }
     });
   }
 
@@ -48,9 +53,7 @@ class _SplashScreenState extends State<SplashScreen> {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Image.asset(
-                  'assets/images/logo.png',
-                ),
+                Image.asset('assets/images/logo.png'),
                 const SizedBox(height: 14),
                 Text(
                   context.t('splash.title'),

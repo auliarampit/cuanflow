@@ -6,6 +6,7 @@ import '../../core/localization/transalation_extansions.dart';
 import '../../core/state/app_state.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/ui/app_gradient_scaffold.dart';
+import '../../shared/widgets/loading_dialog.dart';
 
 import '../transactions/add_expense/add_expense_screen.dart';
 import '../transactions/add_income/add_income_screen.dart';
@@ -162,10 +163,14 @@ class _HistoryScreenState extends State<HistoryScreen> {
                                             child: Text(context.t('common.cancel')),
                                           ),
                                           TextButton(
-                                            onPressed: () {
-                                              context.appState
-                                                  .deleteTransaction(item.id);
+                                            onPressed: () async {
                                               Navigator.pop(context);
+                                              LoadingDialog.show(context);
+                                              await context.appState
+                                                  .deleteTransaction(item.id);
+                                              if (context.mounted) {
+                                                LoadingDialog.hide(context);
+                                              }
                                             },
                                             child: Text(
                                               context.t('history.menu.delete'),

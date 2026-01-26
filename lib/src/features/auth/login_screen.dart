@@ -4,6 +4,7 @@ import 'package:cari_untung/src/core/theme/app_colors.dart';
 import 'package:cari_untung/src/core/ui/app_gradient_scaffold.dart';
 import 'package:cari_untung/src/features/auth/pin_input.dart';
 import 'package:cari_untung/src/shared/widgets/loading_dialog.dart';
+import 'package:cari_untung/src/core/state/app_state.dart';
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -47,6 +48,11 @@ class _LoginScreenState extends State<LoginScreen> {
         email: email,
         password: password,
       );
+      
+      // Refresh profile data immediately after login
+      if (mounted) {
+        await context.appState.fetchProfile();
+      }
 
       if (mounted) {
         LoadingDialog.hide(context);
@@ -69,43 +75,7 @@ class _LoginScreenState extends State<LoginScreen> {
     }
   }
 
-  Future<void> _onRegister() async {
-    if (_phoneOrEmailController.text.trim().isEmpty || _pinValue.length != 6) {
-       ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Please fill email and 6-digit PIN')),
-        );
-      return;
-    }
 
-    setState(() => _isLoading = true);
-    try {
-      final email = _phoneOrEmailController.text.trim();
-      final password = _pinValue;
-
-      await Supabase.instance.client.auth.signUp(
-        email: email,
-        password: password,
-      );
-      
-      if (mounted) {
-         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Registration successful! Please login.')),
-        );
-        // Auto login usually happens on signUp if email confirm is off, but just in case
-        _onLogin(); 
-      }
-    } on AuthException catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(e.message), backgroundColor: AppColors.negative),
-        );
-      }
-    } finally {
-      if (mounted) {
-        setState(() => _isLoading = false);
-      }
-    }
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -223,7 +193,10 @@ class _LoginScreenState extends State<LoginScreen> {
                         style: const TextStyle(color: AppColors.textSecondary),
                       ),
                       TextButton(
-                        onPressed: _isLoading ? null : _onRegister,
+                        onPressed: _isLoading
+                            ? null
+                            : () => Navigator.of(context)
+                                .pushReplacementNamed(AppRoutes.register),
                         child: Text(context.t('auth.login.register')),
                       ),
                     ],

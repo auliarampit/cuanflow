@@ -34,12 +34,12 @@ class ProfileScreen extends StatelessWidget {
             const CircleAvatar(radius: 40, backgroundColor: AppColors.chipBg),
             const SizedBox(height: 16),
             Text(
-              context.t('profile.ownerName'),
+              context.appState.profile.fullName,
               style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w800),
             ),
             const SizedBox(height: 4),
             Text(
-              context.t('profile.businessName'),
+              context.appState.profile.businessName,
               style: const TextStyle(color: AppColors.textSecondary),
             ),
             const SizedBox(height: 24),

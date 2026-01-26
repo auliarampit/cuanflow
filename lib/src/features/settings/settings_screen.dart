@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 
+import '../../app/routes.dart';
 import '../../core/localization/transalation_extansions.dart';
 import '../../core/state/app_state.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/ui/app_gradient_scaffold.dart';
+import '../../shared/widgets/loading_dialog.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -82,6 +84,60 @@ class _SettingsScreenState extends State<SettingsScreen> {
             title: Text(context.t('settings.aboutApp')),
             trailing: const Icon(Icons.chevron_right, color: AppColors.textSecondary),
             onTap: () {},
+          ),
+          const SizedBox(height: 24),
+          ListTile(
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+              side: const BorderSide(color: AppColors.outline),
+            ),
+            tileColor: AppColors.card,
+            title: Text(
+              context.t('profile.menu.logout'),
+              style: const TextStyle(
+                color: AppColors.negative,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            leading: const Icon(Icons.logout, color: AppColors.negative),
+            onTap: () => _showLogoutConfirmation(context),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showLogoutConfirmation(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(context.t('settings.logout.title')),
+        content: Text(context.t('settings.logout.confirmation')),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text(context.t('settings.logout.cancel')),
+          ),
+          TextButton(
+            onPressed: () async {
+              Navigator.pop(context); // Close dialog
+              LoadingDialog.show(context);
+              
+              await context.appState.logout();
+              
+              if (mounted) {
+                 LoadingDialog.hide(context);
+                 Navigator.of(context).pushNamedAndRemoveUntil(
+                   AppRoutes.login, 
+                   (route) => false
+                 );
+              }
+            },
+            child: Text(
+              context.t('settings.logout.confirm'), 
+              style: const TextStyle(color: AppColors.negative)
+            ),
           ),
         ],
       ),
