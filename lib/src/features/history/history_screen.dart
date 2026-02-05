@@ -22,7 +22,7 @@ class HistoryScreen extends StatefulWidget {
 }
 
 class _HistoryScreenState extends State<HistoryScreen> {
-  HistoryFilter _selectedFilter = HistoryFilter.thisWeek;
+  HistoryFilter _selectedFilter = HistoryFilter.today;
   DateTimeRange? _customRange;
 
   void _showFilterSheet() {
