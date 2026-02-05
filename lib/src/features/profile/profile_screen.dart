@@ -1,11 +1,34 @@
 import 'package:cari_untung/src/app/routes.dart';
 import 'package:flutter/material.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 
 import '../../core/localization/transalation_extansions.dart';
 import '../../core/theme/app_colors.dart';
 
-class ProfileScreen extends StatelessWidget {
+class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
+
+  @override
+  State<ProfileScreen> createState() => _ProfileScreenState();
+}
+
+class _ProfileScreenState extends State<ProfileScreen> {
+  String _version = '';
+
+  @override
+  void initState() {
+    super.initState();
+    _loadVersion();
+  }
+
+  Future<void> _loadVersion() async {
+    final info = await PackageInfo.fromPlatform();
+    if (mounted) {
+      setState(() {
+        _version = '${info.version}+${info.buildNumber}';
+      });
+    }
+  }
 
   void _openAccountSettings(BuildContext context) {
     Navigator.of(context).pushNamed(AppRoutes.accountSettings);
@@ -87,7 +110,7 @@ class ProfileScreen extends StatelessWidget {
             ),
             const SizedBox(height: 12),
             Text(
-              context.t('profile.versionLabel'),
+              context.t('profile.versionLabel', {'version': _version}),
               style: const TextStyle(
                 color: AppColors.textSecondary,
                 fontSize: 12,

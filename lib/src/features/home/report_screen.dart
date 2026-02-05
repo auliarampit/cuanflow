@@ -1,3 +1,4 @@
+import 'package:cari_untung/src/shared/widgets/loading_dialog.dart';
 import 'package:flutter/material.dart';
 
 import '../../core/formatters/idr_formatter.dart';
@@ -46,6 +47,34 @@ class _ReportScreenState extends State<ReportScreen> {
   }
 
   void _exportPdf() async {
+    // 1. Ask for language preference
+    final locale = await showDialog<String>(
+      context: context,
+      builder: (context) => SimpleDialog(
+        title: Text(context.t('history.exportPdf')),
+        children: [
+          SimpleDialogOption(
+            onPressed: () => Navigator.pop(context, 'id'),
+            child: const Padding(
+              padding: EdgeInsets.symmetric(vertical: 8),
+              child: Text('Bahasa Indonesia'),
+            ),
+          ),
+          SimpleDialogOption(
+            onPressed: () => Navigator.pop(context, 'en'),
+            child: const Padding(
+              padding: EdgeInsets.symmetric(vertical: 8),
+              child: Text('English'),
+            ),
+          ),
+        ],
+      ),
+    );
+
+    if (locale == null) return; // User cancelled
+
+    // 2. Generate PDF
+    LoadingDialog.show(context);
     final summary = context.appState.summaryForDate(
       DateRangeType.month,
       _selectedDate,
@@ -57,12 +86,16 @@ class _ReportScreenState extends State<ReportScreen> {
     final profile = context.appState.profile;
 
     final monthName = _formatMonth(_selectedDate);
+    
     await ReportPdfService().generateAndShowPdf(
       monthName,
       summary,
       history,
       profile,
+      locale: locale,
     );
+    
+    if (mounted) LoadingDialog.hide(context);
   }
 
   @override
@@ -86,9 +119,6 @@ class _ReportScreenState extends State<ReportScreen> {
     String calcPercent(int current, int previous) {
       if (previous == 0) {
         if (current == 0) return '0%';
-        // If previous is 0, we can't calculate percentage growth normally.
-        // For expense (passed as negative), if it goes 0 -> -100, it's -100% (bad).
-        // For income, 0 -> 100 is +100% (good).
         return current > 0 ? '+100%' : '-100%';
       }
       final percent = ((current - previous) / previous.abs()) * 100;
@@ -244,7 +274,9 @@ class _SummaryCard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(title, style: const TextStyle(color: AppColors.textSecondary)),
+            Text(
+              context.t(title), 
+              style: const TextStyle(color: AppColors.textSecondary)),
             const SizedBox(height: 10),
             Text(
               amount,
@@ -281,7 +313,7 @@ class _ReportRow extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  title,
+                  context.t(title),
                   style: const TextStyle(fontWeight: FontWeight.w700),
                 ),
                 const SizedBox(height: 2),

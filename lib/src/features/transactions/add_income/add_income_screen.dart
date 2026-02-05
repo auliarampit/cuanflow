@@ -147,12 +147,12 @@ class _AddIncomeScreenState extends State<AddIncomeScreen> {
                     spacing: 10,
                     runSpacing: 10,
                     children: categories.map((e) {
-                      final isSelected = _selectedCategoryKey == e.label;
+                      final isSelected = _selectedCategoryKey == e.key;
                       return ChoiceChip(
                         label: Text(e.label),
                         selected: isSelected,
                         onSelected: (_) =>
-                            setState(() => _selectedCategoryKey = e.label),
+                            setState(() => _selectedCategoryKey = e.key),
                         selectedColor: AppColors.positive.withValues(
                           alpha: 0.18,
                         ),

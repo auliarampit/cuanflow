@@ -56,10 +56,6 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
         key: 'expense.quick.operational',
         label: context.t('expense.quick.operational'),
       ),
-      _QuickCategory(
-        key: 'expense.quick.salary',
-        label: context.t('expense.quick.salary'),
-      ),
     ];
   }
 
@@ -249,12 +245,12 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
                     spacing: 10,
                     runSpacing: 10,
                     children: categories.map((e) {
-                      final isSelected = _selectedQuickCategoryKey == e.label;
+                      final isSelected = _selectedQuickCategoryKey == e.key;
                       return ChoiceChip(
                         label: Text(e.label),
                         selected: isSelected,
                         onSelected: (_) =>
-                            setState(() => _selectedQuickCategoryKey = e.label),
+                            setState(() => _selectedQuickCategoryKey = e.key),
                         selectedColor: AppColors.negative.withValues(
                           alpha: 0.18,
                         ),

@@ -30,7 +30,7 @@ class _CariUntungAppState extends State<CariUntungApp> {
         animation: _state,
         builder: (context, child) {
           return MaterialApp(
-            title: 'CuanFlow',
+            title: 'Cuan Flow',
             debugShowCheckedModeBanner: false,
             theme: AppTheme.dark,
             locale: Locale(_state.settings.localeCode),
