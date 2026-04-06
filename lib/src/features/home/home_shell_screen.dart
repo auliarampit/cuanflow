@@ -1,6 +1,7 @@
 import 'package:cari_untung/src/core/localization/transalation_extansions.dart';
 import 'package:cari_untung/src/core/ui/app_gradient_scaffold.dart';
 import 'package:cari_untung/src/features/home/home_screen.dart';
+import 'package:cari_untung/src/features/product/product_list_screen.dart';
 import 'package:flutter/material.dart';
 
 import '../profile/profile_screen.dart';
@@ -24,6 +25,7 @@ class _HomeShellScreenState extends State<HomeShellScreen> {
   Widget build(BuildContext context) {
     final pages = const [
       HomeScreen(),
+      ProductListScreen(),
       ReportScreen(),
       ProfileScreen()
     ];
@@ -32,11 +34,17 @@ class _HomeShellScreenState extends State<HomeShellScreen> {
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _index,
         onTap: _onTap,
+        type: BottomNavigationBarType.fixed, // Ensure all items are shown
         items: [
           BottomNavigationBarItem(
             icon: const Icon(Icons.home_outlined),
             activeIcon: const Icon(Icons.home),
             label: context.t('nav.home'),
+          ),
+          BottomNavigationBarItem(
+            icon: const Icon(Icons.inventory_2_outlined),
+            activeIcon: const Icon(Icons.inventory_2),
+            label: context.t('nav.product'),
           ),
           BottomNavigationBarItem(
             icon: const Icon(Icons.bar_chart_outlined),

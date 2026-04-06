@@ -2,6 +2,7 @@ final class AppRoutes {
   static const splash = '/';
   static const login = '/login';
   static const home = '/home';
+  static const productList = '/product/list';
   static const addIncome = '/income/add';
   static const addExpense = '/expense/add';
   static const history = '/history';

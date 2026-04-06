@@ -1,4 +1,6 @@
 import 'package:cari_untung/src/app/routes.dart';
+import 'package:cari_untung/src/core/state/app_state.dart';
+import 'package:cari_untung/src/shared/widgets/loading_dialog.dart';
 import 'package:flutter/material.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 
@@ -32,6 +34,29 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   void _openAccountSettings(BuildContext context) {
     Navigator.of(context).pushNamed(AppRoutes.accountSettings);
+  }
+
+  Future<void> _onLogout() async {
+    final appState = context.appState;
+    final messenger = ScaffoldMessenger.of(context);
+    final navigator = Navigator.of(context);
+
+    LoadingDialog.show(context);
+    try {
+      await appState.logout();
+      if (!mounted) return;
+      LoadingDialog.hide(context);
+      navigator.pushNamedAndRemoveUntil(AppRoutes.login, (route) => false);
+    } catch (_) {
+      if (!mounted) return;
+      LoadingDialog.hide(context);
+      messenger.showSnackBar(
+        SnackBar(
+          content: Text(context.t('profile.logoutError')),
+          backgroundColor: AppColors.negative,
+        ),
+      );
+    }
   }
 
   @override
@@ -100,7 +125,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             SizedBox(
               width: double.infinity,
               child: ElevatedButton(
-                onPressed: () {},
+                onPressed: _onLogout,
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.negative,
                   foregroundColor: Colors.white,

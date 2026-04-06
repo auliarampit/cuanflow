@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:package_info_plus/package_info_plus.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../app/routes.dart';
 import '../../core/localization/transalation_extansions.dart';
@@ -34,7 +35,10 @@ class _SplashScreenState extends State<SplashScreen> {
   void _navigateNext() {
     Future.delayed(const Duration(milliseconds: 1500), () {
       if (!mounted) return;
-      Navigator.of(context).pushReplacementNamed(AppRoutes.home);
+      final hasSession = Supabase.instance.client.auth.currentSession != null;
+      Navigator.of(context).pushReplacementNamed(
+        hasSession ? AppRoutes.home : AppRoutes.login,
+      );
     });
   }
 
