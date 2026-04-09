@@ -13,6 +13,7 @@ final class AppColors {
   static const outline = Color(0xFF2A3A4A);
 
   static const brandBlue = Color(0xFF2D8CFF);
+  static const brandGreen = Color(0xFF3EE07A);
   static const positive = Color(0xFF3EE07A);
   static const negative = Color(0xFFFF3B3B);
 

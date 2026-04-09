@@ -8,6 +8,7 @@
 *   **Kategori Transaksi**: Kelompokkan transaksi berdasarkan kategori untuk analisis yang lebih baik.
 *   **Riwayat Transaksi**: Lihat riwayat transaksi lengkap dengan filter per bulan.
 *   **Laporan Keuangan**: Ringkasan total pemasukan, pengeluaran, dan keuntungan bersih.
+*   **Sinkronisasi Cloud**: Simpan data transaksi dan profil secara aman di cloud (Supabase) agar dapat diakses dari berbagai perangkat.
 *   **Ekspor PDF**: Unduh laporan keuangan bulanan dalam format PDF siap cetak.
 *   **Keamanan**: Fitur PIN untuk melindungi data keuangan Anda.
 *   **Multi-bahasa**: Mendukung Bahasa Indonesia (ID) dan Bahasa Inggris (EN).
@@ -17,10 +18,22 @@
 
 *   **Framework**: [Flutter](https://flutter.dev/) (SDK ^3.10.3)
 *   **Bahasa**: Dart
+*   **Backend & Auth**: [Supabase](https://supabase.com/) (PostgreSQL + Auth)
 *   **State Management**: `ChangeNotifier` / `Provider` (Custom AppState)
 *   **Penyimpanan Lokal**: `shared_preferences` / JSON file-based storage (via `LocalDatabase`)
 *   **PDF Generation**: `pdf` & `printing` packages
 *   **Localization**: `flutter_localizations`, `intl`
+
+## ☁️ Konfigurasi Backend
+
+Proyek ini menggunakan **Supabase** sebagai backend service untuk Authentication dan Database.
+
+Konfigurasi kredensial Supabase (URL & Anon Key) tersimpan di file:
+`lib/src/core/constants/supabase_constants.dart`
+
+Tabel yang digunakan:
+1.  `profiles`: Menyimpan data profil pengguna (terhubung dengan `auth.users`).
+2.  `transactions`: Menyimpan data transaksi pemasukan/pengeluaran.
 
 ## 📂 Struktur Proyek
 

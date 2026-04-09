@@ -12,8 +12,10 @@ class ReportPdfService {
     String monthName,
     Summary summary,
     List<MoneyTransaction> transactions,
-    UserProfile profile,
-  ) async {
+    UserProfile profile, {
+    String locale = 'id', // 'id' or 'en'
+  }) async {
+    final isId = locale == 'id';
     final font = await PdfGoogleFonts.openSansRegular();
     final fontBold = await PdfGoogleFonts.openSansBold();
 
@@ -23,33 +25,49 @@ class ReportPdfService {
         bold: fontBold,
       ),
     );
-    
+
     // Define formatters
     final currencyFormat = NumberFormat.currency(
-      locale: 'id_ID',
-      symbol: 'Rp ',
+      locale: isId ? 'id_ID' : 'en_US',
+      symbol: isId ? 'Rp ' : '\$ ',
       decimalDigits: 0,
     );
-    final dateFormat = DateFormat('dd MMM yyyy', 'id_ID');
+    final dateFormat = DateFormat('dd MMM yyyy', isId ? 'id_ID' : 'en_US');
+
+    // Labels
+    final labels = {
+      'title': isId ? 'LAPORAN KEUANGAN' : 'FINANCIAL REPORT',
+      'owner': isId ? 'Pemilik' : 'Owner',
+      'contact': isId ? 'Telp/WA' : 'Phone/WA',
+      'income': isId ? 'Total Pemasukan' : 'Total Income',
+      'expense': isId ? 'Total Pengeluaran' : 'Total Expense',
+      'net': isId ? 'Keuntungan Bersih' : 'Net Profit',
+      'detail': isId ? 'Detail Transaksi' : 'Transaction Details',
+      'col_date': isId ? 'Tanggal' : 'Date',
+      'col_cat': isId ? 'Kategori' : 'Category',
+      'col_note': isId ? 'Catatan' : 'Note',
+      'col_amount': isId ? 'Jumlah' : 'Amount',
+    };
 
     pdf.addPage(
       pw.MultiPage(
         pageFormat: PdfPageFormat.a4,
         build: (pw.Context context) {
           return [
-            _buildHeader(monthName, profile),
+            _buildHeader(monthName, profile, labels),
             pw.SizedBox(height: 20),
-            _buildSummarySection(summary, currencyFormat),
+            _buildSummarySection(summary, currencyFormat, labels),
             pw.SizedBox(height: 20),
             pw.Text(
-              'Detail Transaksi',
+              labels['detail']!,
               style: pw.TextStyle(
                 fontSize: 18,
                 fontWeight: pw.FontWeight.bold,
               ),
             ),
             pw.SizedBox(height: 10),
-            _buildTransactionTable(transactions, dateFormat, currencyFormat),
+            _buildTransactionTable(
+                transactions, dateFormat, currencyFormat, labels, isId),
           ];
         },
       ),
@@ -57,11 +75,14 @@ class ReportPdfService {
 
     await Printing.layoutPdf(
       onLayout: (PdfPageFormat format) async => pdf.save(),
-      name: 'Laporan_Keuangan_$monthName',
+      name: isId
+          ? 'Laporan_Keuangan_$monthName'
+          : 'Financial_Report_$monthName',
     );
   }
 
-  pw.Widget _buildHeader(String monthName, UserProfile profile) {
+  pw.Widget _buildHeader(
+      String monthName, UserProfile profile, Map<String, String> labels) {
     return pw.Column(
       crossAxisAlignment: pw.CrossAxisAlignment.start,
       children: [
@@ -85,7 +106,7 @@ class ReportPdfService {
                 if (profile.fullName.isNotEmpty) ...[
                   pw.SizedBox(height: 4),
                   pw.Text(
-                    'Pemilik: ${profile.fullName}',
+                    '${labels['owner']}: ${profile.fullName}',
                     style: const pw.TextStyle(
                       fontSize: 10,
                       color: PdfColors.grey700,
@@ -95,7 +116,7 @@ class ReportPdfService {
                 if (profile.whatsapp.isNotEmpty) ...[
                   pw.SizedBox(height: 2),
                   pw.Text(
-                    'Telp/WA: ${profile.whatsapp}',
+                    '${labels['contact']}: ${profile.whatsapp}',
                     style: const pw.TextStyle(
                       fontSize: 10,
                       color: PdfColors.grey700,
@@ -108,7 +129,7 @@ class ReportPdfService {
               crossAxisAlignment: pw.CrossAxisAlignment.end,
               children: [
                 pw.Text(
-                  'LAPORAN KEUANGAN',
+                  labels['title']!,
                   style: pw.TextStyle(
                     fontSize: 14,
                     fontWeight: pw.FontWeight.bold,
@@ -134,8 +155,8 @@ class ReportPdfService {
     );
   }
 
-  pw.Widget _buildSummarySection(
-      Summary summary, NumberFormat currencyFormat) {
+  pw.Widget _buildSummarySection(Summary summary, NumberFormat currencyFormat,
+      Map<String, String> labels) {
     return pw.Container(
       padding: const pw.EdgeInsets.all(10),
       decoration: pw.BoxDecoration(
@@ -145,21 +166,21 @@ class ReportPdfService {
       child: pw.Column(
         children: [
           _buildSummaryRow(
-            'Total Pemasukan',
+            labels['income']!,
             summary.totalIncome,
             PdfColors.green,
             currencyFormat,
           ),
           pw.SizedBox(height: 5),
           _buildSummaryRow(
-            'Total Pengeluaran',
+            labels['expense']!,
             summary.totalExpense,
             PdfColors.red,
             currencyFormat,
           ),
           pw.Divider(),
           _buildSummaryRow(
-            'Keuntungan Bersih',
+            labels['net']!,
             summary.netProfit,
             summary.netProfit >= 0 ? PdfColors.green : PdfColors.red,
             currencyFormat,
@@ -201,19 +222,42 @@ class ReportPdfService {
     List<MoneyTransaction> transactions,
     DateFormat dateFormat,
     NumberFormat currencyFormat,
+    Map<String, String> labels,
+    bool isId,
   ) {
+    // Static translation map for categories since we don't have BuildContext
+    final categoryMap = {
+      // Keys
+      'expense.quick.material': isId ? 'Bahan Baku' : 'Raw Material',
+      'expense.quick.transport': isId ? 'Transportasi' : 'Transport',
+      'expense.quick.operational': isId ? 'Operasional' : 'Operational',
+      'income.quick.sales': isId ? 'Penjualan' : 'Sales',
+      'income.quick.service': isId ? 'Jasa' : 'Service',
+      'income.quick.other': isId ? 'Lainnya' : 'Other',
+    };
+
+    String translateCategory(String? cat) {
+      if (cat == null) return '-';
+      return categoryMap[cat] ?? cat;
+    }
+
     return pw.TableHelper.fromTextArray(
-      headers: ['Tanggal', 'Kategori', 'Catatan', 'Jumlah'],
+      headers: [
+        labels['col_date'],
+        labels['col_cat'],
+        labels['col_note'],
+        labels['col_amount']
+      ],
       data: transactions.map((tx) {
         final date = dateFormat.format(tx.effectiveDate);
         final amount = currencyFormat.format(tx.amount);
         final amountText = tx.isIncome ? amount : '-$amount';
-        
+
         return [
           date,
-          tx.category ?? '-',
+          translateCategory(tx.category),
           tx.note ?? '-',
-          amountText, // Note: PdfTable doesn't support styled text easily in helper, but basic text is fine.
+          amountText,
         ];
       }).toList(),
       headerStyle: pw.TextStyle(

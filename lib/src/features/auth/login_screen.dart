@@ -1,9 +1,12 @@
 import 'package:cari_untung/src/app/routes.dart';
 import 'package:cari_untung/src/core/localization/transalation_extansions.dart';
+import 'package:cari_untung/src/core/state/app_state.dart';
 import 'package:cari_untung/src/core/theme/app_colors.dart';
 import 'package:cari_untung/src/core/ui/app_gradient_scaffold.dart';
 import 'package:cari_untung/src/features/auth/pin_input.dart';
+import 'package:cari_untung/src/shared/widgets/loading_dialog.dart';
 import 'package:flutter/material.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -15,6 +18,7 @@ class LoginScreen extends StatefulWidget {
 class _LoginScreenState extends State<LoginScreen> {
   final _phoneOrEmailController = TextEditingController();
   String _pinValue = '';
+  bool _isLoading = false;
 
   @override
   void dispose() {
@@ -24,12 +28,60 @@ class _LoginScreenState extends State<LoginScreen> {
 
   bool get _canSubmit {
     return _phoneOrEmailController.text.trim().isNotEmpty &&
-        _pinValue.length == 6;
+        _pinValue.length == 6 &&
+        !_isLoading;
   }
 
-  void _onLogin() {
+  Future<void> _onLogin() async {
     if (!_canSubmit) return;
-    Navigator.of(context).pushReplacementNamed(AppRoutes.home);
+
+    final appState = context.appState;
+
+    setState(() => _isLoading = true);
+    LoadingDialog.show(context);
+
+    try {
+      final email = _phoneOrEmailController.text.trim();
+      final password = _pinValue;
+
+      await Supabase.instance.client.auth.signInWithPassword(
+        email: email,
+        password: password,
+      );
+
+      if (!mounted) return;
+      await appState.fetchProfile();
+      await appState.syncTransactions();
+
+      if (mounted) {
+        LoadingDialog.hide(context);
+        Navigator.of(context).pushReplacementNamed(AppRoutes.home);
+      }
+    } on AuthException catch (e) {
+      if (mounted) {
+        LoadingDialog.hide(context);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(e.message),
+            backgroundColor: AppColors.negative,
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        LoadingDialog.hide(context);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(context.t('auth.login.errorGeneric')),
+            backgroundColor: AppColors.negative,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
+    }
   }
 
   @override
