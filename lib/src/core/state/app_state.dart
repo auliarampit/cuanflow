@@ -34,6 +34,8 @@ class AppState extends ChangeNotifier {
   final LocalDatabase _database;
 
   bool _initialized = false;
+  bool _isSyncing = false;
+  Timer? _retryTimer;
   List<MoneyTransaction> _transactions = <MoneyTransaction>[];
   List<ProductModel> _products = <ProductModel>[];
   UserProfile _profile = UserProfile.empty();
@@ -47,6 +49,9 @@ class AppState extends ChangeNotifier {
   UserProfile get profile => _profile;
   AppSettings get settings => _settings;
   bool get initialized => _initialized;
+  bool get isSyncing => _isSyncing;
+  int get pendingCount =>
+      _transactions.where((t) => t.id.startsWith('tx_')).length;
 
   Future<void> init() async {
     if (_initialized) return;
@@ -79,12 +84,37 @@ class AppState extends ChangeNotifier {
       _settings = AppSettings.fromJson(settingsMap);
     }
 
+    await _migrateOldLocalTransactions();
+
     _initialized = true;
     notifyListeners();
 
     if (currentUser != null) {
       unawaited(syncTransactions());
       unawaited(fetchProfile());
+    }
+  }
+
+  /// One-time migration: transaksi lama yang ID-nya bukan UUID Supabase dan
+  /// belum punya prefix `tx_` ditandai ulang agar ikut di-push ke server.
+  Future<void> _migrateOldLocalTransactions() async {
+    // Supabase selalu menghasilkan UUID v4: 8-4-4-4-12 hex digits dengan dash
+    final supabaseUuid = RegExp(
+      r'^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$',
+    );
+
+    var migrated = false;
+    _transactions = _transactions.map((tx) {
+      if (tx.id.startsWith('tx_')) return tx;        // sudah pending, skip
+      if (supabaseUuid.hasMatch(tx.id)) return tx;   // dari server, skip
+      // ID lama yang tidak dikenal → tandai sebagai pending
+      migrated = true;
+      return tx.copyWith(id: 'tx_${tx.id}');
+    }).toList();
+
+    if (migrated) {
+      await _persist();
+      debugPrint('[Migration] Transaksi lama ditandai sebagai pending sync');
     }
   }
 
@@ -133,16 +163,41 @@ class AppState extends ChangeNotifier {
 
   /// Sinkron: dorong dulu transaksi lokal yang belum ada di server (`tx_*`),
   /// lalu tarik dari server dan gabungkan — tidak menimpa seluruh data lokal.
+  /// Jika masih ada pending setelah sync, jadwalkan retry otomatis setiap 30 detik.
   Future<void> syncTransactions() async {
+    if (_isSyncing) return;
     final user = currentUser;
     if (user == null) return;
+
+    _isSyncing = true;
+    _retryTimer?.cancel();
+    _retryTimer = null;
+    notifyListeners();
 
     try {
       await _pushPendingLocalTransactions();
       await _pullAndMergeRemoteTransactions();
     } catch (e) {
       debugPrint('[Sync] syncTransactions failed: $e');
+    } finally {
+      _isSyncing = false;
+      notifyListeners();
+      _scheduleRetryIfNeeded();
     }
+  }
+
+  /// Jadwalkan retry jika masih ada transaksi lokal yang belum berhasil di-sync.
+  void _scheduleRetryIfNeeded() {
+    final hasPending = _transactions.any((t) => t.id.startsWith('tx_'));
+    if (!hasPending || currentUser == null) return;
+    debugPrint('[Sync] Masih ada pending transactions, retry dalam 30 detik...');
+    _retryTimer = Timer(const Duration(seconds: 30), syncTransactions);
+  }
+
+  @override
+  void dispose() {
+    _retryTimer?.cancel();
+    super.dispose();
   }
 
   Future<void> _pushPendingLocalTransactions() async {
@@ -322,6 +377,9 @@ class AppState extends ChangeNotifier {
     _transactions = <MoneyTransaction>[tx, ..._transactions];
     await _persist();
     notifyListeners();
+
+    // Jadwalkan retry sync agar transaksi ini dikirim ke server saat koneksi kembali
+    _scheduleRetryIfNeeded();
   }
 
   Future<void> deleteTransaction(String id) async {
