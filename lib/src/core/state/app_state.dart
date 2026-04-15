@@ -5,27 +5,17 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../models/app_settings.dart';
 import '../models/money_transaction.dart';
+import '../models/outlet_model.dart';
 import '../models/product_model.dart';
+import '../models/summary.dart';
 import '../models/user_profile.dart';
+import '../services/outlet_service.dart';
+import '../services/profile_service.dart';
+import '../services/transaction_sync_service.dart';
 import '../storage/local_database.dart';
 
-enum DateRangeType {
-  day,
-  week,
-  month,
-}
-
-class Summary {
-  Summary({
-    required this.totalIncome,
-    required this.totalExpense,
-  });
-
-  final int totalIncome;
-  final int totalExpense;
-
-  int get netProfit => totalIncome - totalExpense;
-}
+export '../models/summary.dart';
+export 'app_state_scope.dart';
 
 class AppState extends ChangeNotifier {
   AppState({LocalDatabase? database})
@@ -33,58 +23,68 @@ class AppState extends ChangeNotifier {
 
   final LocalDatabase _database;
 
+  late final _syncService = TransactionSyncService(supabase);
+  late final _outletService = OutletService(supabase);
+  late final _profileService = ProfileService(supabase);
+
   bool _initialized = false;
   bool _isSyncing = false;
   Timer? _retryTimer;
-  List<MoneyTransaction> _transactions = <MoneyTransaction>[];
-  List<ProductModel> _products = <ProductModel>[];
+  List<MoneyTransaction> _transactions = [];
+  List<ProductModel> _products = [];
+  List<OutletModel> _outlets = [];
+  String? _selectedOutletId;
   UserProfile _profile = UserProfile.empty();
   AppSettings _settings = AppSettings.defaults();
+  String? _lastSyncError;
+  int _syncFailCount = 0;
 
   SupabaseClient get supabase => Supabase.instance.client;
   User? get currentUser => supabase.auth.currentUser;
 
-  List<MoneyTransaction> get transactions => _transactions;
+  List<MoneyTransaction> get transactions => _filteredTransactions;
+  List<MoneyTransaction> get allTransactions => _transactions;
   List<ProductModel> get products => _products;
+  List<OutletModel> get outlets => _outlets;
+  String? get selectedOutletId => _selectedOutletId;
+  OutletModel? get selectedOutlet =>
+      _outlets.where((o) => o.id == _selectedOutletId).firstOrNull;
   UserProfile get profile => _profile;
   AppSettings get settings => _settings;
   bool get initialized => _initialized;
   bool get isSyncing => _isSyncing;
+  String? get lastSyncError => _lastSyncError;
+  bool get hasSyncError => _syncFailCount > 0 && !_isSyncing;
   int get pendingCount =>
       _transactions.where((t) => t.id.startsWith('tx_')).length;
+
+  List<MoneyTransaction> get _filteredTransactions {
+    if (_selectedOutletId == null) return _transactions;
+    return _transactions
+        .where((t) => t.outletId == _selectedOutletId)
+        .toList();
+  }
+
+  // ─── Lifecycle ───────────────────────────────────────────────────────────────
 
   Future<void> init() async {
     if (_initialized) return;
 
     final raw = await _database.read();
-    final txList = raw['transactions'];
-    final productList = raw['products'];
+    _transactions = _parseList(raw['transactions'], MoneyTransaction.fromJson);
+    _products = _parseList(raw['products'], ProductModel.fromJson);
+    _outlets = _parseList(raw['outlets'], OutletModel.fromJson);
+
     final profileMap = raw['profile'];
-    final settingsMap = raw['settings'];
-
-    if (txList is List) {
-      _transactions = txList
-          .whereType<Map<String, dynamic>>()
-          .map(MoneyTransaction.fromJson)
-          .toList();
-    }
-
-    if (productList is List) {
-      _products = productList
-          .whereType<Map<String, dynamic>>()
-          .map(ProductModel.fromJson)
-          .toList();
-    }
-
     if (profileMap is Map<String, dynamic>) {
       _profile = UserProfile.fromJson(profileMap);
     }
-
+    final settingsMap = raw['settings'];
     if (settingsMap is Map<String, dynamic>) {
       _settings = AppSettings.fromJson(settingsMap);
     }
 
-    await _migrateOldLocalTransactions();
+    _transactions = _syncService.migrateOldIds(_transactions);
 
     _initialized = true;
     notifyListeners();
@@ -95,63 +95,109 @@ class AppState extends ChangeNotifier {
     }
   }
 
-  /// One-time migration: transaksi lama yang ID-nya bukan UUID Supabase dan
-  /// belum punya prefix `tx_` ditandai ulang agar ikut di-push ke server.
-  Future<void> _migrateOldLocalTransactions() async {
-    // Supabase selalu menghasilkan UUID v4: 8-4-4-4-12 hex digits dengan dash
-    final supabaseUuid = RegExp(
-      r'^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$',
-    );
-
-    var migrated = false;
-    _transactions = _transactions.map((tx) {
-      if (tx.id.startsWith('tx_')) return tx;        // sudah pending, skip
-      if (supabaseUuid.hasMatch(tx.id)) return tx;   // dari server, skip
-      // ID lama yang tidak dikenal → tandai sebagai pending
-      migrated = true;
-      return tx.copyWith(id: 'tx_${tx.id}');
-    }).toList();
-
-    if (migrated) {
-      await _persist();
-      debugPrint('[Migration] Transaksi lama ditandai sebagai pending sync');
-    }
-  }
-
-  /// Dipanggil saat app kembali aktif (mis. setelah Supabase unpause) untuk
-  /// mendorong transaksi lokal `tx_*` dan menggabungkan data remote.
   Future<void> onAppResumed() async {
-    if (currentUser != null) {
-      await syncTransactions();
-    }
+    if (currentUser != null) await syncTransactions();
   }
 
-  Future<void> fetchProfile() async {
+  @override
+  void dispose() {
+    _retryTimer?.cancel();
+    super.dispose();
+  }
+
+  // ─── Sync ────────────────────────────────────────────────────────────────────
+
+  Future<void> syncTransactions() async {
+    if (_isSyncing) return;
+    final user = currentUser;
+    if (user == null) return;
+
+    _isSyncing = true;
+    _lastSyncError = null;
+    _retryTimer?.cancel();
+    _retryTimer = null;
+    notifyListeners();
+
     try {
-      final user = currentUser;
-      if (user == null) return;
+      await _syncOutlets(user.id);
 
-      final response = await supabase
-          .from('profiles')
-          .select()
-          .eq('id', user.id)
-          .maybeSingle();
+      await _syncService.pushPending(
+        transactions: _transactions,
+        userId: user.id,
+        onSuccess: (local, confirmed) async {
+          _transactions = _transactions
+              .map((t) => t.id == local.id ? confirmed : t)
+              .toList();
+          _syncFailCount = 0;
+          _lastSyncError = null;
+          await _persist();
+          notifyListeners();
+        },
+        onError: (error) {
+          _syncFailCount++;
+          _lastSyncError = error;
+          notifyListeners();
+        },
+      );
 
-      if (response != null) {
-        _profile = UserProfile.fromJson(
-          Map<String, dynamic>.from(response as Map),
-        );
-        await _persist();
-        notifyListeners();
+      _transactions = await _syncService.pullAndMerge(
+        local: _transactions,
+        userId: user.id,
+      );
+      await _persist();
+      notifyListeners();
+
+      if (pendingCount == 0) {
+        _syncFailCount = 0;
+        _lastSyncError = null;
       }
     } catch (e) {
-      debugPrint('[API] Fetch profile failed: $e');
+      _lastSyncError = e.toString();
+      debugPrint('[Sync] syncTransactions failed: $e');
+    } finally {
+      _isSyncing = false;
+      notifyListeners();
+      _scheduleRetryIfNeeded();
+    }
+  }
+
+  Future<void> _syncOutlets(String userId) async {
+    final result = await _outletService.syncOutlets(
+      outlets: _outlets,
+      transactions: _transactions,
+      userId: userId,
+      selectedOutletId: _selectedOutletId,
+    );
+    _outlets = result.outlets;
+    _transactions = result.transactions;
+    _selectedOutletId = result.selectedOutletId;
+    await _persist();
+    notifyListeners();
+  }
+
+  void _scheduleRetryIfNeeded() {
+    if (!_transactions.any((t) => t.id.startsWith('tx_'))) return;
+    if (currentUser == null) return;
+    debugPrint('[Sync] Masih ada pending, retry dalam 30 detik...');
+    _retryTimer = Timer(const Duration(seconds: 30), syncTransactions);
+  }
+
+  // ─── Profile & Auth ──────────────────────────────────────────────────────────
+
+  Future<void> fetchProfile() async {
+    final user = currentUser;
+    if (user == null) return;
+    final fetched = await _profileService.fetchProfile(user.id);
+    if (fetched != null) {
+      _profile = fetched;
+      await _persist();
+      notifyListeners();
     }
   }
 
   Future<void> logout() async {
     try {
-      await supabase.auth.signOut();
+      await _profileService.signOut();
     } catch (e) {
       debugPrint('[Auth] signOut failed: $e');
       rethrow;
@@ -161,126 +207,84 @@ class AppState extends ChangeNotifier {
     notifyListeners();
   }
 
-  /// Sinkron: dorong dulu transaksi lokal yang belum ada di server (`tx_*`),
-  /// lalu tarik dari server dan gabungkan — tidak menimpa seluruh data lokal.
-  /// Jika masih ada pending setelah sync, jadwalkan retry otomatis setiap 30 detik.
-  Future<void> syncTransactions() async {
-    if (_isSyncing) return;
-    final user = currentUser;
-    if (user == null) return;
+  // ─── Outlet CRUD ─────────────────────────────────────────────────────────────
 
-    _isSyncing = true;
-    _retryTimer?.cancel();
-    _retryTimer = null;
+  void selectOutlet(String? outletId) {
+    _selectedOutletId = outletId;
     notifyListeners();
-
-    try {
-      await _pushPendingLocalTransactions();
-      await _pullAndMergeRemoteTransactions();
-    } catch (e) {
-      debugPrint('[Sync] syncTransactions failed: $e');
-    } finally {
-      _isSyncing = false;
-      notifyListeners();
-      _scheduleRetryIfNeeded();
-    }
   }
 
-  /// Jadwalkan retry jika masih ada transaksi lokal yang belum berhasil di-sync.
-  void _scheduleRetryIfNeeded() {
-    final hasPending = _transactions.any((t) => t.id.startsWith('tx_'));
-    if (!hasPending || currentUser == null) return;
-    debugPrint('[Sync] Masih ada pending transactions, retry dalam 30 detik...');
-    _retryTimer = Timer(const Duration(seconds: 30), syncTransactions);
-  }
-
-  @override
-  void dispose() {
-    _retryTimer?.cancel();
-    super.dispose();
-  }
-
-  Future<void> _pushPendingLocalTransactions() async {
+  Future<void> addOutlet({required String name, String? address}) async {
     final user = currentUser;
-    if (user == null) return;
+    final isFirst = _outlets.isEmpty;
 
-    var changed = false;
-    final next = <MoneyTransaction>[];
-
-    for (final tx in _transactions) {
-      if (!tx.id.startsWith('tx_')) {
-        next.add(tx);
-        continue;
-      }
+    if (user != null) {
       try {
-        final response = await supabase.from('transactions').insert({
-          'user_id': user.id,
-          'type': tx.type.name,
-          'amount': tx.amount,
-          'category': tx.category,
-          'note': tx.note,
-          'effective_date': tx.effectiveDate.toIso8601String(),
-        }).select().single();
-
-        next.add(MoneyTransaction.fromJson(response));
-        changed = true;
+        final outlet = await _outletService.addOnServer(
+          name: name,
+          address: address,
+          isDefault: isFirst,
+          userId: user.id,
+        );
+        if (outlet != null) {
+          _outlets = [..._outlets, outlet];
+          await _persist();
+          notifyListeners();
+          return;
+        }
       } catch (e) {
-        debugPrint('[Sync] Push pending failed for ${tx.id}: $e');
-        next.add(tx);
+        debugPrint('[API] Add outlet failed: $e');
       }
     }
 
-    if (changed) {
-      _transactions = next;
+    // Offline fallback: simpan lokal, akan di-sync saat online
+    _outlets = [
+      ..._outlets,
+      OutletModel(
+        id: 'outlet_${DateTime.now().microsecondsSinceEpoch}',
+        name: name,
+        address: address,
+        isDefault: isFirst,
+      ),
+    ];
+    await _persist();
+    notifyListeners();
+  }
+
+  Future<void> updateOutlet(OutletModel outlet) async {
+    if (currentUser != null && !outlet.id.startsWith('outlet_')) {
+      try {
+        await _outletService.updateOnServer(outlet);
+      } catch (e) {
+        debugPrint('[API] Update outlet failed: $e');
+      }
+    }
+    final index = _outlets.indexWhere((o) => o.id == outlet.id);
+    if (index != -1) {
+      _outlets[index] = outlet;
       await _persist();
       notifyListeners();
     }
   }
 
-  Future<void> _pullAndMergeRemoteTransactions() async {
-    final user = currentUser;
-    if (user == null) return;
-
-    try {
-      final response = await supabase
-          .from('transactions')
-          .select()
-          .eq('user_id', user.id)
-          .order('effective_date', ascending: false);
-
-      final remote = (response as List)
-          .map(
-            (e) => MoneyTransaction.fromJson(
-              Map<String, dynamic>.from(e as Map),
-            ),
-          )
-          .toList();
-
-      final pending =
-          _transactions.where((t) => t.id.startsWith('tx_')).toList();
-      final merged = <MoneyTransaction>[...remote, ...pending];
-      merged.sort((a, b) => b.createdAt.compareTo(a.createdAt));
-
-      _transactions = merged;
-      await _persist();
-      notifyListeners();
-    } catch (e) {
-      debugPrint('[Sync] Pull/merge failed: $e');
+  Future<void> deleteOutlet(String outletId) async {
+    if (currentUser != null && !outletId.startsWith('outlet_')) {
+      try {
+        await _outletService.deleteFromServer(outletId);
+      } catch (e) {
+        debugPrint('[API] Delete outlet failed: $e');
+      }
     }
+    _outlets = _outlets.where((o) => o.id != outletId).toList();
+    if (_selectedOutletId == outletId) _selectedOutletId = null;
+    await _persist();
+    notifyListeners();
   }
 
-  Future<void> _persist() async {
-    final data = <String, dynamic>{
-      'transactions': _transactions.map((e) => e.toJson()).toList(),
-      'products': _products.map((e) => e.toJson()).toList(),
-      'profile': _profile.toJson(),
-      'settings': _settings.toJson(),
-    };
-    await _database.write(data);
-  }
+  // ─── Product CRUD ─────────────────────────────────────────────────────────────
 
   Future<void> addProduct(ProductModel product) async {
-    _products = <ProductModel>[product, ..._products];
+    _products = [product, ..._products];
     await _persist();
     notifyListeners();
   }
@@ -300,89 +304,80 @@ class AppState extends ChangeNotifier {
     notifyListeners();
   }
 
+  // ─── Transaction CRUD ────────────────────────────────────────────────────────
+
   Future<void> addIncome({
     required int amount,
     String? note,
     String? category,
+    String? outletId,
     DateTime? effectiveDate,
-  }) async {
-    await _addTransaction(
-      type: MoneyTransactionType.income,
-      amount: amount,
-      note: note,
-      category: category,
-      effectiveDate: effectiveDate,
-    );
-  }
+  }) =>
+      _addTransaction(
+        type: MoneyTransactionType.income,
+        amount: amount,
+        note: note,
+        category: category,
+        outletId: outletId,
+        effectiveDate: effectiveDate,
+      );
 
   Future<void> addExpense({
     required int amount,
     String? note,
     String? category,
+    String? outletId,
     DateTime? effectiveDate,
-  }) async {
-    await _addTransaction(
-      type: MoneyTransactionType.expense,
-      amount: amount,
-      note: note,
-      category: category,
-      effectiveDate: effectiveDate,
-    );
-  }
+  }) =>
+      _addTransaction(
+        type: MoneyTransactionType.expense,
+        amount: amount,
+        note: note,
+        category: category,
+        outletId: outletId,
+        effectiveDate: effectiveDate,
+      );
 
   Future<void> _addTransaction({
     required MoneyTransactionType type,
     required int amount,
     String? note,
     String? category,
+    String? outletId,
     DateTime? effectiveDate,
   }) async {
     final now = DateTime.now();
-    final dateOnly =
-        effectiveDate != null ? _stripTime(effectiveDate) : _stripTime(now);
-
-    final user = currentUser;
-    if (user != null) {
-      try {
-        final response = await supabase.from('transactions').insert({
-          'user_id': user.id,
-          'type': type.name,
-          'amount': amount,
-          'category': category,
-          'note': note,
-          'effective_date': dateOnly.toIso8601String(),
-        }).select().single();
-
-        final tx = MoneyTransaction.fromJson(response);
-        _transactions = <MoneyTransaction>[tx, ..._transactions];
-        await _persist();
-        notifyListeners();
-        return;
-      } catch (e) {
-        debugPrint('[API] Supabase insert failed, menyimpan lokal: $e');
-      }
-    }
-
-    final id = 'tx_${now.microsecondsSinceEpoch}';
     final tx = MoneyTransaction(
-      id: id,
+      id: 'tx_${now.microsecondsSinceEpoch}',
       type: type,
       amount: amount,
       note: note,
       category: category,
-      effectiveDate: dateOnly,
+      outletId: outletId,
+      effectiveDate: effectiveDate != null ? _stripTime(effectiveDate) : _stripTime(now),
       createdAt: now,
     );
-
-    _transactions = <MoneyTransaction>[tx, ..._transactions];
+    _transactions = [tx, ..._transactions];
     await _persist();
     notifyListeners();
-
-    // Jadwalkan retry sync agar transaksi ini dikirim ke server saat koneksi kembali
-    _scheduleRetryIfNeeded();
+    unawaited(syncTransactions());
   }
 
   Future<void> deleteTransaction(String id) async {
+    if (!id.startsWith('tx_')) {
+      final user = currentUser;
+      if (user != null) {
+        try {
+          await _syncService.deleteFromServer(id, user.id);
+          debugPrint('[Sync] Delete OK: $id');
+        } catch (e) {
+          _syncFailCount++;
+          _lastSyncError = _syncService.extractErrorMessage(e);
+          debugPrint('[Sync] Delete GAGAL: $e');
+          notifyListeners();
+        }
+      }
+    }
     _transactions = _transactions.where((tx) => tx.id != id).toList();
     await _persist();
     notifyListeners();
@@ -390,10 +385,24 @@ class AppState extends ChangeNotifier {
 
   Future<void> updateTransaction(MoneyTransaction updatedTx) async {
     final index = _transactions.indexWhere((tx) => tx.id == updatedTx.id);
-    if (index != -1) {
-      _transactions[index] = updatedTx;
-      await _persist();
-      notifyListeners();
+    if (index == -1) return;
+    _transactions[index] = updatedTx;
+    await _persist();
+    notifyListeners();
+
+    if (!updatedTx.id.startsWith('tx_')) {
+      final user = currentUser;
+      if (user != null) {
+        try {
+          await _syncService.updateOnServer(updatedTx, user.id);
+          debugPrint('[Sync] Update OK: ${updatedTx.id}');
+        } catch (e) {
+          _syncFailCount++;
+          _lastSyncError = _syncService.extractErrorMessage(e);
+          debugPrint('[Sync] Update GAGAL: $e');
+          notifyListeners();
+        }
+      }
     }
   }
 
@@ -403,125 +412,89 @@ class AppState extends ChangeNotifier {
     notifyListeners();
   }
 
-  Summary summaryForDate(DateRangeType rangeType, DateTime date) {
-    return _summaryForDate(rangeType, date);
-  }
+  // ─── Summary & History ────────────────────────────────────────────────────────
 
-  Summary summaryFor(DateRangeType rangeType) {
-    return _summaryForDate(rangeType, DateTime.now());
-  }
+  Summary summaryForDate(DateRangeType rangeType, DateTime date) =>
+      _summaryForDate(rangeType, date);
+
+  Summary summaryFor(DateRangeType rangeType) =>
+      _summaryForDate(rangeType, DateTime.now());
 
   Summary previousSummaryFor(DateRangeType rangeType) {
     final now = DateTime.now();
-    DateTime date;
-    if (rangeType == DateRangeType.day) {
-      date = now.subtract(const Duration(days: 1));
-    } else if (rangeType == DateRangeType.week) {
-      date = now.subtract(const Duration(days: 7));
-    } else {
-      date = DateTime(now.year, now.month - 1, 15);
-    }
+    final date = switch (rangeType) {
+      DateRangeType.day   => now.subtract(const Duration(days: 1)),
+      DateRangeType.week  => now.subtract(const Duration(days: 7)),
+      DateRangeType.month => DateTime(now.year, now.month - 1, 15),
+    };
     return _summaryForDate(rangeType, date);
   }
+
+  List<MoneyTransaction> historyForDate(DateRangeType rangeType, DateTime date) {
+    final range = _rangeFor(rangeType, date);
+    return _filteredTransactions.where((tx) {
+      final d = _stripTime(tx.effectiveDate);
+      return !d.isBefore(range.start) && d.isBefore(range.end);
+    }).toList()
+      ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
+  }
+
+  List<MoneyTransaction> historyFor(DateRangeType rangeType) =>
+      historyForDate(rangeType, DateTime.now());
 
   Summary _summaryForDate(DateRangeType rangeType, DateTime refDate) {
     final range = _rangeFor(rangeType, refDate);
     var income = 0;
     var expense = 0;
-
-    for (final tx in _transactions) {
-      final date = _stripTime(tx.effectiveDate);
-      final inRange =
-          !date.isBefore(range.start) && date.isBefore(range.end);
-      if (!inRange) continue;
-
+    for (final tx in _filteredTransactions) {
+      final d = _stripTime(tx.effectiveDate);
+      if (d.isBefore(range.start) || !d.isBefore(range.end)) continue;
       if (tx.isIncome) {
         income += tx.amount;
       } else {
         expense += tx.amount.abs();
       }
     }
-
     return Summary(totalIncome: income, totalExpense: expense);
-  }
-
-  List<MoneyTransaction> historyForDate(DateRangeType rangeType, DateTime date) {
-    final range = _rangeFor(rangeType, date);
-    final list = _transactions.where((tx) {
-      final tDate = _stripTime(tx.effectiveDate);
-      return !tDate.isBefore(range.start) && tDate.isBefore(range.end);
-    }).toList();
-    list.sort((a, b) => b.createdAt.compareTo(a.createdAt));
-    return list;
-  }
-
-  List<MoneyTransaction> historyFor(DateRangeType rangeType) {
-    final now = DateTime.now();
-    final range = _rangeFor(rangeType, now);
-
-    final list = _transactions.where((tx) {
-      final date = _stripTime(tx.effectiveDate);
-      return !date.isBefore(range.start) && date.isBefore(range.end);
-    }).toList();
-
-    list.sort((a, b) => b.createdAt.compareTo(a.createdAt));
-    return list;
   }
 
   DateTimeRange _rangeFor(DateRangeType type, DateTime now) {
     final today = _stripTime(now);
-
     if (type == DateRangeType.day) {
       return DateTimeRange(
         start: today,
         end: today.add(const Duration(days: 1)),
       );
     }
-
     if (type == DateRangeType.week) {
-      final weekday = today.weekday;
-      final start = today.subtract(Duration(days: weekday - 1));
-      final end = start.add(const Duration(days: 7));
-      return DateTimeRange(start: start, end: end);
+      final start = today.subtract(Duration(days: today.weekday - 1));
+      return DateTimeRange(start: start, end: start.add(const Duration(days: 7)));
     }
-
-    final startMonth = DateTime(today.year, today.month, 1);
-    final nextMonth =
-        DateTime(today.year, today.month + 1, 1);
-    return DateTimeRange(start: startMonth, end: nextMonth);
+    return DateTimeRange(
+      start: DateTime(today.year, today.month),
+      end: DateTime(today.year, today.month + 1),
+    );
   }
 
-  DateTime _stripTime(DateTime input) {
-    return DateTime(input.year, input.month, input.day);
+  // ─── Persistence & Utilities ─────────────────────────────────────────────────
+
+  Future<void> _persist() => _database.write({
+        'transactions': _transactions.map((e) => e.toJson()).toList(),
+        'products': _products.map((e) => e.toJson()).toList(),
+        'outlets': _outlets.map((e) => e.toJson()).toList(),
+        'profile': _profile.toJson(),
+        'settings': _settings.toJson(),
+      });
+
+  static List<T> _parseList<T>(
+    dynamic raw,
+    T Function(Map<String, dynamic>) fromJson,
+  ) {
+    if (raw is! List) return [];
+    return raw.whereType<Map<String, dynamic>>().map(fromJson).toList();
   }
+
+  DateTime _stripTime(DateTime input) =>
+      DateTime(input.year, input.month, input.day);
 }
 
-class AppStateScope extends InheritedNotifier<AppState> {
-  const AppStateScope({
-    super.key,
-    required AppState state,
-    required super.child,
-  }) : super(notifier: state);
-
-  static AppState of(BuildContext context) {
-    final scope =
-        context.dependOnInheritedWidgetOfExactType<AppStateScope>();
-    if (scope == null) {
-      throw FlutterError('AppStateScope.of() called with no AppStateScope');
-    }
-    final state = scope.notifier;
-    if (state == null) {
-      throw FlutterError('AppStateScope has no notifier');
-    }
-    return state;
-  }
-
-  @override
-  bool updateShouldNotify(covariant AppStateScope oldWidget) {
-    return oldWidget.notifier != notifier;
-  }
-}
-
-extension AppStateContextExtension on BuildContext {
-  AppState get appState => AppStateScope.of(this);
-}

@@ -80,6 +80,7 @@
   "income.quick.sales": "Penjualan",
   "income.quick.service": "Jasa",
   "income.quick.other": "Lainnya",
+  "income.validation.categoryRequired": "Pilih kategori terlebih dahulu!",
 
   "expense.add.title": "Tambah Pengeluaran",
   "expense.edit.title": "Edit Pengeluaran",
@@ -173,5 +174,8 @@
   "settings.appTheme": "Tema Aplikasi",
   "settings.pinSecurity": "Keamanan PIN",
   "settings.aboutApp": "Tentang Aplikasi",
-  "settings.language": "Bahasa"
+  "settings.language": "Bahasa",
+
+  "outlet.allOutlets": "Semua Outlet",
+  "outlet.selectOutlet": "Pilih Outlet"
 }

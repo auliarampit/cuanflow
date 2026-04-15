@@ -11,6 +11,7 @@ class MoneyTransaction {
     required this.createdAt,
     this.note,
     this.category,
+    this.outletId,
   });
 
   final String id;
@@ -18,6 +19,7 @@ class MoneyTransaction {
   final int amount;
   final String? note;
   final String? category;
+  final String? outletId;
   final DateTime effectiveDate;
   final DateTime createdAt;
 
@@ -29,6 +31,7 @@ class MoneyTransaction {
     int? amount,
     String? note,
     String? category,
+    String? outletId,
     DateTime? effectiveDate,
     DateTime? createdAt,
   }) {
@@ -38,6 +41,7 @@ class MoneyTransaction {
       amount: amount ?? this.amount,
       note: note ?? this.note,
       category: category ?? this.category,
+      outletId: outletId ?? this.outletId,
       effectiveDate: effectiveDate ?? this.effectiveDate,
       createdAt: createdAt ?? this.createdAt,
     );
@@ -50,6 +54,7 @@ class MoneyTransaction {
       'amount': amount,
       'note': note,
       'category': category,
+      'outletId': outletId,
       'effectiveDate': effectiveDate.toIso8601String(),
       'createdAt': createdAt.toIso8601String(),
     };
@@ -67,6 +72,7 @@ class MoneyTransaction {
       amount: (jsonMap['amount'] as num?)?.toInt() ?? 0,
       note: jsonMap['note'] as String?,
       category: jsonMap['category'] as String?,
+      outletId: jsonMap['outletId'] as String? ?? jsonMap['outlet_id'] as String?,
       effectiveDate: DateTime.parse(
         jsonMap['effectiveDate'] as String? ??
             jsonMap['effective_date'] as String? ??

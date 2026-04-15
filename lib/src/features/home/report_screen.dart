@@ -100,13 +100,16 @@ class _ReportScreenState extends State<ReportScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final summary = context.appState.summaryForDate(
+    final appState = context.appState;
+    final selectedOutlet = appState.selectedOutlet;
+
+    final summary = appState.summaryForDate(
       DateRangeType.month,
       _selectedDate,
     );
     // Get previous month's summary for comparison
     final prevDate = DateTime(_selectedDate.year, _selectedDate.month - 1, 15);
-    final prevSummary = context.appState.summaryForDate(
+    final prevSummary = appState.summaryForDate(
       DateRangeType.month,
       prevDate,
     );
@@ -131,7 +134,7 @@ class _ReportScreenState extends State<ReportScreen> {
     final expenseChange = calcPercent(-totalExpense, -prevSummary.totalExpense);
     final profitChange = calcPercent(netProfit, prevSummary.netProfit);
 
-    final history = context.appState.historyForDate(
+    final history = appState.historyForDate(
       DateRangeType.month,
       _selectedDate,
     );
@@ -154,6 +157,35 @@ class _ReportScreenState extends State<ReportScreen> {
                       ),
                     ),
                   ),
+                  if (selectedOutlet != null) ...[
+                    const SizedBox(height: 6),
+                    Center(
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 12, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: AppColors.chipBg,
+                          borderRadius: BorderRadius.circular(999),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Icon(Icons.storefront_outlined,
+                                size: 14, color: AppColors.brandBlue),
+                            const SizedBox(width: 6),
+                            Text(
+                              selectedOutlet.name,
+                              style: const TextStyle(
+                                fontSize: 12,
+                                color: AppColors.brandBlue,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
                   const SizedBox(height: 18),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,

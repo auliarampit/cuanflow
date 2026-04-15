@@ -69,7 +69,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
   }
 
   List<MoneyTransaction> _getFilteredTransactions() {
-    final allTxs = context.appState.transactions;
+    final allTxs = context.appState.transactions; // sudah difilter per outlet
     final now = DateTime.now();
     final today = DateTime(now.year, now.month, now.day);
 
@@ -119,26 +119,28 @@ class _HistoryScreenState extends State<HistoryScreen> {
 
   void _showActionModal(MoneyTransaction item) {
     final isIncome = item.isIncome;
+    // Simpan context screen sebelum di-shadow oleh builder-builder di bawah
+    final screenContext = context;
     showModalBottomSheet(
-      context: context,
+      context: screenContext,
       backgroundColor: AppColors.card,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
-      builder: (context) {
+      builder: (sheetContext) {
         return SafeArea(
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
               ListTile(
                 leading: const Icon(Icons.edit, color: AppColors.brandBlue),
-                title: Text(context.t('history.menu.edit')),
+                title: Text(sheetContext.t('history.menu.edit')),
                 onTap: () {
-                  Navigator.pop(context);
+                  Navigator.pop(sheetContext);
                   Navigator.push(
-                    context,
+                    screenContext,
                     MaterialPageRoute(
-                      builder: (context) => isIncome
+                      builder: (_) => isIncome
                           ? AddIncomeScreen(transaction: item)
                           : AddExpenseScreen(transaction: item),
                     ),
@@ -147,30 +149,31 @@ class _HistoryScreenState extends State<HistoryScreen> {
               ),
               ListTile(
                 leading: const Icon(Icons.delete, color: AppColors.negative),
-                title: Text(context.t('history.menu.delete')),
+                title: Text(sheetContext.t('history.menu.delete')),
                 onTap: () {
-                  Navigator.pop(context);
+                  Navigator.pop(sheetContext);
                   showDialog(
-                    context: context,
-                    builder: (context) => AlertDialog(
-                      title: Text(context.t('history.delete.title')),
-                      content: Text(context.t('history.delete.confirmation')),
+                    context: screenContext,
+                    builder: (dialogContext) => AlertDialog(
+                      title: Text(dialogContext.t('history.delete.title')),
+                      content: Text(dialogContext.t('history.delete.confirmation')),
                       actions: [
                         TextButton(
-                          onPressed: () => Navigator.pop(context),
-                          child: Text(context.t('common.cancel')),
+                          onPressed: () => Navigator.pop(dialogContext),
+                          child: Text(dialogContext.t('common.cancel')),
                         ),
                         TextButton(
                           onPressed: () async {
-                            Navigator.pop(context);
-                            LoadingDialog.show(context);
-                            await context.appState.deleteTransaction(item.id);
-                            if (context.mounted) {
-                              LoadingDialog.hide(context);
+                            Navigator.pop(dialogContext);
+                            if (!screenContext.mounted) return;
+                            LoadingDialog.show(screenContext);
+                            await screenContext.appState.deleteTransaction(item.id);
+                            if (screenContext.mounted) {
+                              LoadingDialog.hide(screenContext);
                             }
                           },
                           child: Text(
-                            context.t('history.menu.delete'),
+                            dialogContext.t('history.menu.delete'),
                             style: const TextStyle(color: AppColors.negative),
                           ),
                         ),
@@ -225,9 +228,22 @@ class _HistoryScreenState extends State<HistoryScreen> {
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
-        title: Text(
-          context.t('history.title'),
-          style: const TextStyle(fontWeight: FontWeight.bold),
+        title: Column(
+          children: [
+            Text(
+              context.t('history.title'),
+              style: const TextStyle(fontWeight: FontWeight.bold),
+            ),
+            if (context.appState.selectedOutlet != null)
+              Text(
+                context.appState.selectedOutlet!.name,
+                style: const TextStyle(
+                  fontSize: 12,
+                  color: AppColors.brandBlue,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+          ],
         ),
         centerTitle: true,
         leading: IconButton(

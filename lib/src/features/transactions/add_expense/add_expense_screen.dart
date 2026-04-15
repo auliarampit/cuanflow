@@ -1,5 +1,5 @@
+import 'package:collection/collection.dart';
 import 'package:flutter/material.dart';
-
 import 'package:flutter/services.dart';
 import '../../../core/formatters/currency_input_formatter.dart';
 import '../../../core/localization/transalation_extansions.dart';
@@ -20,8 +20,10 @@ class AddExpenseScreen extends StatefulWidget {
 class _AddExpenseScreenState extends State<AddExpenseScreen> {
   final _noteController = TextEditingController();
   final _amountController = TextEditingController();
-  String? _selectedQuickCategoryKey;
+  _QuickCategory? _selectedCategory;
+  String? _selectedOutletId;
   DateTime _selectedDate = DateTime.now();
+  bool _didInit = false;
 
   @override
   void initState() {
@@ -30,8 +32,29 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
       final tx = widget.transaction!;
       _amountController.text = CurrencyInputFormatter.formatVal(tx.amount);
       _noteController.text = tx.note ?? '';
-      _selectedQuickCategoryKey = tx.category;
+      _selectedOutletId = tx.outletId;
       _selectedDate = tx.effectiveDate;
+    }
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (_didInit) return;
+    _didInit = true;
+
+    if (_selectedOutletId == null && widget.transaction == null) {
+      _selectedOutletId = context.appState.selectedOutletId;
+    }
+
+    // Match kategori dari transaksi yang diedit —
+    // support data lama (key: 'expense.quick.material') dan baru (label: 'Bahan Baku')
+    if (widget.transaction?.category != null) {
+      final cats = _buildCategories(context);
+      final stored = widget.transaction!.category!;
+      _selectedCategory = cats.firstWhereOrNull(
+        (c) => c.key == stored || c.label == stored,
+      );
     }
   }
 
@@ -42,7 +65,7 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
     super.dispose();
   }
 
-  List<_QuickCategory> _categories(BuildContext context) {
+  List<_QuickCategory> _buildCategories(BuildContext context) {
     return [
       _QuickCategory(
         key: 'expense.quick.material',
@@ -61,7 +84,7 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final categories = _categories(context);
+    final categories = _buildCategories(context);
 
     return AppGradientScaffold(
       appBar: AppBar(
@@ -232,6 +255,11 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
                     ),
                   ),
                   const SizedBox(height: 18),
+                  _OutletSelector(
+                    selectedOutletId: _selectedOutletId,
+                    onChanged: (id) => setState(() => _selectedOutletId = id),
+                  ),
+                  const SizedBox(height: 18),
                   Text(
                     context.t('expense.quick.title'),
                     style: const TextStyle(
@@ -245,12 +273,12 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
                     spacing: 10,
                     runSpacing: 10,
                     children: categories.map((e) {
-                      final isSelected = _selectedQuickCategoryKey == e.key;
+                      final isSelected = _selectedCategory?.key == e.key;
                       return ChoiceChip(
                         label: Text(e.label),
                         selected: isSelected,
                         onSelected: (_) =>
-                            setState(() => _selectedQuickCategoryKey = e.key),
+                            setState(() => _selectedCategory = e),
                         selectedColor: AppColors.negative.withValues(
                           alpha: 0.18,
                         ),
@@ -297,7 +325,7 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
     final rawAmount = _amountController.text.replaceAll('.', '');
     final amount = int.tryParse(rawAmount) ?? 0;
     if (amount > 0) {
-      if (_noteController.text.isEmpty || _selectedQuickCategoryKey == null) {
+      if (_selectedCategory == null) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(context.t('common.validation.mandatory')),
@@ -310,16 +338,19 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
       if (widget.transaction != null) {
         final updatedTx = widget.transaction!.copyWith(
           amount: amount,
-          note: _noteController.text,
-          category: _selectedQuickCategoryKey,
+          note: _noteController.text.isEmpty ? null : _noteController.text,
+          // kirim label (Bahan Baku), bukan key (expense.quick.material)
+          category: _selectedCategory!.label,
+          outletId: _selectedOutletId,
           effectiveDate: _selectedDate,
         );
         context.appState.updateTransaction(updatedTx);
       } else {
         context.appState.addExpense(
           amount: amount,
-          note: _noteController.text,
-          category: _selectedQuickCategoryKey,
+          note: _noteController.text.isEmpty ? null : _noteController.text,
+          category: _selectedCategory!.label,
+          outletId: _selectedOutletId,
           effectiveDate: _selectedDate,
         );
       }
@@ -341,4 +372,128 @@ class _QuickCategory {
 
   final String key;
   final String label;
+}
+
+class _OutletSelector extends StatelessWidget {
+  const _OutletSelector({
+    required this.selectedOutletId,
+    required this.onChanged,
+  });
+
+  final String? selectedOutletId;
+  final ValueChanged<String?> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    final outlets = context.appState.outlets;
+    if (outlets.isEmpty) return const SizedBox.shrink();
+
+    final selectedName = selectedOutletId == null
+        ? 'Semua / Tidak ditentukan'
+        : outlets
+                .where((o) => o.id == selectedOutletId)
+                .firstOrNull
+                ?.name ??
+            'Pilih Outlet';
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          'Outlet',
+          style: TextStyle(
+            letterSpacing: 2,
+            fontWeight: FontWeight.w700,
+            color: AppColors.textSecondary,
+          ),
+        ),
+        const SizedBox(height: 10),
+        InkWell(
+          onTap: () async {
+            await showModalBottomSheet<void>(
+              context: context,
+              backgroundColor: AppColors.card,
+              shape: const RoundedRectangleBorder(
+                borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+              ),
+              builder: (ctx) {
+                return SafeArea(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Padding(
+                        padding: EdgeInsets.fromLTRB(20, 20, 20, 8),
+                        child: Align(
+                          alignment: Alignment.centerLeft,
+                          child: Text(
+                            'Pilih Outlet',
+                            style: TextStyle(
+                              fontWeight: FontWeight.w800,
+                              fontSize: 16,
+                            ),
+                          ),
+                        ),
+                      ),
+                      ListTile(
+                        leading: const Icon(Icons.store_outlined),
+                        title: const Text('Tidak ditentukan'),
+                        trailing: selectedOutletId == null
+                            ? const Icon(Icons.check,
+                                color: AppColors.brandBlue)
+                            : null,
+                        onTap: () {
+                          onChanged(null);
+                          Navigator.pop(ctx);
+                        },
+                      ),
+                      const Divider(height: 1),
+                      ...outlets.map((o) => ListTile(
+                            leading: const Icon(Icons.storefront_outlined),
+                            title: Text(o.name),
+                            subtitle: o.address != null
+                                ? Text(o.address!,
+                                    style: const TextStyle(fontSize: 12))
+                                : null,
+                            trailing: selectedOutletId == o.id
+                                ? const Icon(Icons.check,
+                                    color: AppColors.brandBlue)
+                                : null,
+                            onTap: () {
+                              onChanged(o.id);
+                              Navigator.pop(ctx);
+                            },
+                          )),
+                      const SizedBox(height: 8),
+                    ],
+                  ),
+                );
+              },
+            );
+          },
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+            decoration: BoxDecoration(
+              color: AppColors.cardSoft,
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(
+                color: AppColors.negative.withValues(alpha: 0.5),
+                width: 2,
+              ),
+            ),
+            child: Row(
+              children: [
+                const Icon(
+                  Icons.storefront_outlined,
+                  color: AppColors.negative,
+                ),
+                const SizedBox(width: 10),
+                Expanded(child: Text(selectedName)),
+                const Icon(Icons.expand_more, color: AppColors.textSecondary),
+              ],
+            ),
+          ),
+        ),
+      ],
+    );
+  }
 }

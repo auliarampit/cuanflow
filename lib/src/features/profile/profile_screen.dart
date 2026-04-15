@@ -1,5 +1,6 @@
 import 'package:cari_untung/src/app/routes.dart';
 import 'package:cari_untung/src/core/state/app_state.dart';
+import 'package:cari_untung/src/features/outlets/manage_outlets_screen.dart';
 import 'package:cari_untung/src/shared/widgets/loading_dialog.dart';
 import 'package:flutter/material.dart';
 import 'package:package_info_plus/package_info_plus.dart';
@@ -104,6 +105,19 @@ class _ProfileScreenState extends State<ProfileScreen> {
               title: context.t('profile.menu.accountSettings'),
               subtitle: context.t('profile.menu.accountSettingsSubtitle'),
               onTap: () => _openAccountSettings(context),
+            ),
+            const SizedBox(height: 10),
+            _ProfileMenuItem(
+              icon: Icons.store_outlined,
+              title: 'Kelola Outlet',
+              subtitle: '${context.appState.outlets.length} outlet terdaftar',
+              onTap: () {
+                Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (_) => const ManageOutletsScreen(),
+                  ),
+                );
+              },
             ),
             const SizedBox(height: 10),
             // _ProfileMenuItem(
