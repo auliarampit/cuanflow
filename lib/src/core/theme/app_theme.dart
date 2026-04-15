@@ -30,7 +30,7 @@ final class AppTheme {
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(14),
-          borderSide: BorderSide(color: AppColors.outline),
+          borderSide: BorderSide(color: AppColors.brandBlue),
         ),
       ),
       chipTheme: ChipThemeData(
@@ -53,6 +53,60 @@ final class AppTheme {
         unselectedItemColor: AppColors.textSecondary,
         type: BottomNavigationBarType.fixed,
         showUnselectedLabels: true,
+      ),
+    );
+  }
+
+  static ThemeData get light {
+    final base = ThemeData.light(useMaterial3: true);
+    const primary = AppColors.brandBlue;
+
+    return base.copyWith(
+      scaffoldBackgroundColor: Colors.transparent,
+      colorScheme: base.colorScheme.copyWith(
+        primary: primary,
+        secondary: primary,
+        surface: const Color(0xFFFFFFFF),
+      ),
+      inputDecorationTheme: InputDecorationTheme(
+        filled: true,
+        fillColor: const Color(0xFFF1F5F9),
+        hintStyle: const TextStyle(color: Color(0xFF94A3B8)),
+        prefixIconColor: const Color(0xFF64748B),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(14),
+          borderSide: const BorderSide(color: Color(0xFFCBD5E1)),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(14),
+          borderSide: const BorderSide(color: Color(0xFFCBD5E1)),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(14),
+          borderSide: const BorderSide(color: primary),
+        ),
+      ),
+      chipTheme: ChipThemeData(
+        backgroundColor: const Color(0xFFF1F5F9),
+        elevation: 0,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+      ),
+      elevatedButtonTheme: ElevatedButtonThemeData(
+        style: ElevatedButton.styleFrom(
+          minimumSize: const Size.fromHeight(56),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+          textStyle: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
+        ),
+      ),
+      bottomNavigationBarTheme: const BottomNavigationBarThemeData(
+        backgroundColor: Color(0xFFF8FAFF),
+        selectedItemColor: primary,
+        unselectedItemColor: Color(0xFF94A3B8),
+        type: BottomNavigationBarType.fixed,
+        showUnselectedLabels: true,
+        elevation: 8,
       ),
     );
   }

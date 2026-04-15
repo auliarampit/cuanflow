@@ -195,6 +195,22 @@ class AppState extends ChangeNotifier {
     }
   }
 
+  Future<void> updateProfile(UserProfile updatedProfile) async {
+    _profile = updatedProfile;
+    await _persist();
+    notifyListeners();
+
+    final user = currentUser;
+    if (user != null) {
+      try {
+        await _profileService.updateProfile(user.id, updatedProfile);
+      } catch (e) {
+        debugPrint('[API] Update profile failed: $e');
+        rethrow;
+      }
+    }
+  }
+
   Future<void> logout() async {
     try {
       await _profileService.signOut();

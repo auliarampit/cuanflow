@@ -37,6 +37,14 @@ class _CariUntungAppState extends State<CariUntungApp>
     }
   }
 
+  ThemeMode _resolveThemeMode(String themeMode) {
+    return switch (themeMode) {
+      'light' => ThemeMode.light,
+      'dark' => ThemeMode.dark,
+      _ => ThemeMode.system,
+    };
+  }
+
   @override
   Widget build(BuildContext context) {
     return AppStateScope(
@@ -47,7 +55,9 @@ class _CariUntungAppState extends State<CariUntungApp>
           return MaterialApp(
             title: 'Cuan Flow',
             debugShowCheckedModeBanner: false,
-            theme: AppTheme.dark,
+            theme: AppTheme.light,
+            darkTheme: AppTheme.dark,
+            themeMode: _resolveThemeMode(_state.settings.themeMode),
             locale: Locale(_state.settings.localeCode),
             supportedLocales: AppLocalizations.supportedLocales,
             localizationsDelegates: AppLocalizations.localizationsDelegates,

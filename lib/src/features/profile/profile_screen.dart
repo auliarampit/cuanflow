@@ -7,6 +7,7 @@ import 'package:package_info_plus/package_info_plus.dart';
 
 import '../../core/localization/transalation_extansions.dart';
 import '../../core/theme/app_colors.dart';
+import '../../core/theme/app_dynamic_colors.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -63,14 +64,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
   @override
   Widget build(BuildContext context) {
     return SafeArea(
-      child: Padding
-        (
+      child: Padding(
         padding: const EdgeInsets.fromLTRB(18, 24, 18, 16),
         child: Column(
           children: [
-            const CircleAvatar(
+            CircleAvatar(
               radius: 40,
-              backgroundColor: AppColors.chipBg,
+              backgroundColor: context.appColors.chipBg,
             ),
             const SizedBox(height: 16),
             Text(
@@ -83,8 +83,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
             const SizedBox(height: 4),
             Text(
               context.t('profile.businessName'),
-              style: const TextStyle(
-                color: AppColors.textSecondary,
+              style: TextStyle(
+                color: context.appColors.textSecondary,
               ),
             ),
             const SizedBox(height: 24),
@@ -92,10 +92,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
               alignment: Alignment.centerLeft,
               child: Text(
                 context.t('profile.settingsSectionTitle'),
-                style: const TextStyle(
+                style: TextStyle(
                   fontWeight: FontWeight.w700,
                   letterSpacing: 1.4,
-                  color: AppColors.textSecondary,
+                  color: context.appColors.textSecondary,
                 ),
               ),
             ),
@@ -150,8 +150,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
             const SizedBox(height: 12),
             Text(
               context.t('profile.versionLabel', {'version': _version}),
-              style: const TextStyle(
-                color: AppColors.textSecondary,
+              style: TextStyle(
+                color: context.appColors.textSecondary,
                 fontSize: 12,
               ),
             ),
@@ -183,9 +183,9 @@ class _ProfileMenuItem extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: AppColors.card,
+          color: context.appColors.card,
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: AppColors.outline),
+          border: Border.all(color: context.appColors.outline),
         ),
         child: Row(
           children: [
@@ -193,7 +193,7 @@ class _ProfileMenuItem extends StatelessWidget {
               width: 40,
               height: 40,
               decoration: BoxDecoration(
-                color: AppColors.cardSoft,
+                color: context.appColors.cardSoft,
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Icon(icon, color: AppColors.brandBlue),
@@ -212,15 +212,15 @@ class _ProfileMenuItem extends StatelessWidget {
                   const SizedBox(height: 4),
                   Text(
                     subtitle,
-                    style: const TextStyle(
-                      color: AppColors.textSecondary,
+                    style: TextStyle(
+                      color: context.appColors.textSecondary,
                       fontSize: 13,
                     ),
                   ),
                 ],
               ),
             ),
-            const Icon(Icons.chevron_right, color: AppColors.textSecondary),
+            Icon(Icons.chevron_right, color: context.appColors.textSecondary),
           ],
         ),
       ),

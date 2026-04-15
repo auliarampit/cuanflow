@@ -1,4 +1,5 @@
 import 'package:cari_untung/src/core/theme/app_colors.dart';
+import 'package:cari_untung/src/core/theme/app_dynamic_colors.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
@@ -68,10 +69,10 @@ class _PinInputState extends State<PinInput> {
               textAlign: TextAlign.center,
               obscureText: true,
               obscuringCharacter: '•',
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 24,
                 fontWeight: FontWeight.w700,
-                color: AppColors.textPrimary,
+                color: context.appColors.textPrimary,
               ),
               inputFormatters: [
                 FilteringTextInputFormatter.digitsOnly,
@@ -80,19 +81,19 @@ class _PinInputState extends State<PinInput> {
               decoration: InputDecoration(
                 contentPadding: const EdgeInsets.symmetric(vertical: 10),
                 filled: true,
-                fillColor: AppColors.cardSoft,
+                fillColor: context.appColors.cardSoft,
                 enabledBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(14),
-                  borderSide: const BorderSide(color: AppColors.outline)
+                  borderSide: BorderSide(color: context.appColors.outline),
                 ),
                 focusedBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(14),
-                  borderSide: const BorderSide(color: AppColors.brandBlue)
+                  borderSide: const BorderSide(color: AppColors.brandBlue),
                 ),
               ),
               onChanged: (value) => _onChanged(index, value),
-            )
             ),
+          ),
         );
       }),
     );

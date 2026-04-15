@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../../core/localization/transalation_extansions.dart';
 import '../../../core/theme/app_colors.dart';
+import '../../../core/theme/app_dynamic_colors.dart';
 
 enum HistoryFilter {
   today,
@@ -67,9 +68,9 @@ class HistoryFilterSheet extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.all(24),
-      decoration: const BoxDecoration(
-        color: AppColors.card,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      decoration: BoxDecoration(
+        color: context.appColors.card,
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -78,23 +79,23 @@ class HistoryFilterSheet extends StatelessWidget {
             width: 40,
             height: 4,
             decoration: BoxDecoration(
-              color: AppColors.outline,
+              color: context.appColors.outline,
               borderRadius: BorderRadius.circular(2),
             ),
           ),
           const SizedBox(height: 24),
           Text(
             context.t('history.filter.selectPeriod'),
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.bold,
-              color: Colors.white,
+              color: context.appColors.textPrimary,
             ),
           ),
           const SizedBox(height: 24),
           ...HistoryFilter.values.map((filter) {
             final isSelected = filter == selectedFilter;
-            
+
             if (filter == HistoryFilter.custom) {
                return Padding(
                  padding: const EdgeInsets.only(top: 12),
@@ -103,11 +104,11 @@ class HistoryFilterSheet extends StatelessWidget {
                    child: ElevatedButton.icon(
                      onPressed: () => onSelect(filter),
                      style: ElevatedButton.styleFrom(
-                       backgroundColor: AppColors.cardSoft,
+                       backgroundColor: context.appColors.cardSoft,
                        padding: const EdgeInsets.symmetric(vertical: 16),
                        shape: RoundedRectangleBorder(
                          borderRadius: BorderRadius.circular(12),
-                         side: const BorderSide(color: AppColors.outline),
+                         side: BorderSide(color: context.appColors.outline),
                        ),
                        elevation: 0,
                      ),
@@ -139,7 +140,7 @@ class HistoryFilterSheet extends StatelessWidget {
                   children: [
                     Icon(
                       filter.icon,
-                      color: isSelected ? AppColors.brandBlue : AppColors.textSecondary,
+                      color: isSelected ? AppColors.brandBlue : context.appColors.textSecondary,
                       size: 20,
                     ),
                     const SizedBox(width: 12),
@@ -147,7 +148,7 @@ class HistoryFilterSheet extends StatelessWidget {
                       child: Text(
                         context.t(filter.labelKey),
                         style: TextStyle(
-                          color: isSelected ? Colors.white : AppColors.textSecondary,
+                          color: isSelected ? context.appColors.textPrimary : context.appColors.textSecondary,
                           fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
                           fontSize: 16,
                         ),
@@ -160,9 +161,9 @@ class HistoryFilterSheet extends StatelessWidget {
                         size: 20,
                       )
                     else
-                      const Icon(
+                      Icon(
                         Icons.circle_outlined,
-                        color: AppColors.textSecondary,
+                        color: context.appColors.textSecondary,
                         size: 20,
                       ),
                   ],

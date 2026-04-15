@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../../core/formatters/idr_formatter.dart';
 import '../../../core/localization/transalation_extansions.dart';
 import '../../../core/theme/app_colors.dart';
+import '../../../core/theme/app_dynamic_colors.dart';
 
 class HistorySummaryCard extends StatelessWidget {
   const HistorySummaryCard({
@@ -19,9 +20,9 @@ class HistorySummaryCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: AppColors.cardSoft,
+        color: context.appColors.cardSoft,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.outline),
+        border: Border.all(color: context.appColors.outline),
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -31,8 +32,8 @@ class HistorySummaryCard extends StatelessWidget {
             children: [
               Text(
                 context.t('history.summary.totalProfit'),
-                style: const TextStyle(
-                  color: AppColors.textSecondary,
+                style: TextStyle(
+                  color: context.appColors.textSecondary,
                   fontSize: 12,
                   fontWeight: FontWeight.bold,
                   letterSpacing: 1.0,
@@ -41,10 +42,10 @@ class HistorySummaryCard extends StatelessWidget {
               const SizedBox(height: 8),
               Text(
                 IdrFormatter.format(totalProfit),
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 24,
                   fontWeight: FontWeight.bold,
-                  color: Colors.white,
+                  color: context.appColors.textPrimary,
                 ),
               ),
             ],

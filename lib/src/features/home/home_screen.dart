@@ -1,10 +1,12 @@
 import 'package:cari_untung/src/app/routes.dart';
 import 'package:cari_untung/src/core/formatters/idr_formatter.dart';
 import 'package:cari_untung/src/core/localization/transalation_extansions.dart';
+import 'package:cari_untung/src/core/ui/responsive_utils.dart';
 import 'package:flutter/material.dart';
 
 import '../../core/state/app_state.dart';
 import '../../core/theme/app_colors.dart';
+import '../../core/theme/app_dynamic_colors.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -105,7 +107,7 @@ class _HomeScreenState extends State<HomeScreen> {
               children: [
                 Text(
                   title,
-                  style: const TextStyle(color: AppColors.textSecondary),
+                  style: TextStyle(color: context.appColors.textSecondary),
                 ),
                 const Spacer(),
                 Container(
@@ -153,6 +155,26 @@ class _HomeScreenState extends State<HomeScreen> {
     final income = dailySummary.totalIncome;
     final expense = dailySummary.totalExpense;
 
+    final isTablet = context.isTablet;
+
+    final dailyCard = _buildProfitCard(
+      title: dailySummary.netProfit < 0
+          ? context.t('home.todayLoss')
+          : context.t('home.todayProfit'),
+      currentProfit: dailySummary.netProfit,
+      prevProfit: prevDailySummary.netProfit,
+      comparisonLabel: 'vs ${context.t('home.yesterday')}',
+    );
+
+    final weeklyCard = _buildProfitCard(
+      title: weeklySummary.netProfit < 0
+          ? context.t('home.weeklyLoss')
+          : context.t('home.weeklyProfit'),
+      currentProfit: weeklySummary.netProfit,
+      prevProfit: prevWeeklySummary.netProfit,
+      comparisonLabel: 'vs ${context.t('home.lastWeek')}',
+    );
+
     return SingleChildScrollView(
       padding: const EdgeInsets.fromLTRB(18, 18, 18, 24),
       child: Column(
@@ -160,7 +182,7 @@ class _HomeScreenState extends State<HomeScreen> {
         children: [
           Row(
             children: [
-              const CircleAvatar(radius: 18, backgroundColor: AppColors.chipBg),
+              CircleAvatar(radius: 18, backgroundColor: context.appColors.chipBg),
               const SizedBox(width: 12),
               Expanded(
                 child: Column(
@@ -176,7 +198,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     const SizedBox(height: 4),
                     Text(
                       dateLabel,
-                      style: const TextStyle(color: AppColors.textSecondary),
+                      style: TextStyle(color: context.appColors.textSecondary),
                     ),
                   ],
                 ),
@@ -190,52 +212,41 @@ class _HomeScreenState extends State<HomeScreen> {
             ],
           ),
           const SizedBox(height: 18),
-          SizedBox(
-            height: 190,
-            child: PageView(
-              controller: _pageController,
-              onPageChanged: (index) {
-                setState(() {
-                  _currentPage = index;
-                });
-              },
+          if (isTablet)
+            Row(
               children: [
-                _buildProfitCard(
-                  title: dailySummary.netProfit < 0
-                      ? context.t('home.todayLoss')
-                      : context.t('home.todayProfit'),
-                  currentProfit: dailySummary.netProfit,
-                  prevProfit: prevDailySummary.netProfit,
-                  comparisonLabel: 'vs ${context.t('home.yesterday')}',
-                ),
-                _buildProfitCard(
-                  title: weeklySummary.netProfit < 0
-                      ? context.t('home.weeklyLoss')
-                      : context.t('home.weeklyProfit'),
-                  currentProfit: weeklySummary.netProfit,
-                  prevProfit: prevWeeklySummary.netProfit,
-                  comparisonLabel: 'vs ${context.t('home.lastWeek')}',
-                ),
+                Expanded(child: dailyCard),
+                const SizedBox(width: 12),
+                Expanded(child: weeklyCard),
               ],
+            )
+          else ...[
+            SizedBox(
+              height: 190,
+              child: PageView(
+                controller: _pageController,
+                onPageChanged: (index) => setState(() => _currentPage = index),
+                children: [dailyCard, weeklyCard],
+              ),
             ),
-          ),
-          const SizedBox(height: 8),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: List.generate(2, (index) {
-              return Container(
-                margin: const EdgeInsets.symmetric(horizontal: 4),
-                width: 8,
-                height: 8,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: _currentPage == index
-                      ? AppColors.positive
-                      : AppColors.textSecondary.withValues(alpha: 0.3),
-                ),
-              );
-            }),
-          ),
+            const SizedBox(height: 8),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: List.generate(2, (index) {
+                return Container(
+                  margin: const EdgeInsets.symmetric(horizontal: 4),
+                  width: 8,
+                  height: 8,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: _currentPage == index
+                        ? AppColors.positive
+                        : context.appColors.textSecondary.withValues(alpha: 0.3),
+                  ),
+                );
+              }),
+            ),
+          ],
           const SizedBox(height: 14),
           Row(
             children: [
@@ -267,8 +278,8 @@ class _HomeScreenState extends State<HomeScreen> {
                               const SizedBox(width: 10),
                               Text(
                                 context.t('home.income'),
-                                style: const TextStyle(
-                                  color: AppColors.textSecondary,
+                                style: TextStyle(
+                                  color: context.appColors.textSecondary,
                                   fontSize: 12,
                                 ),
                               ),
@@ -317,8 +328,8 @@ class _HomeScreenState extends State<HomeScreen> {
                               const SizedBox(width: 10),
                               Text(
                                 context.t('home.expense'),
-                                style: const TextStyle(
-                                  color: AppColors.textSecondary,
+                                style: TextStyle(
+                                  color: context.appColors.textSecondary,
                                   fontSize: 12,
                                 ),
                               ),

@@ -5,6 +5,7 @@ import '../features/profile/profile_screen.dart';
 import '../features/home/report_screen.dart';
 import '../features/profile/account_settings_screen.dart';
 import '../features/settings/settings_screen.dart';
+import '../features/settings/about_app_screen.dart';
 import '../features/transactions/add_expense/add_expense_screen.dart';
 import '../features/transactions/add_income/add_income_screen.dart';
 import '../features/home/home_shell_screen.dart';
@@ -38,6 +39,8 @@ final class AppRouter {
         return MaterialPageRoute(builder: (_) => const AccountSettingsScreen());
       case AppRoutes.settings:
         return MaterialPageRoute(builder: (_) => const SettingsScreen());
+      case AppRoutes.aboutApp:
+        return MaterialPageRoute(builder: (_) => const AboutAppScreen());
       default:
         return MaterialPageRoute(builder: (_) => const LoginScreen());
     }

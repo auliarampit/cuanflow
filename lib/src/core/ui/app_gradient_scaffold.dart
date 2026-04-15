@@ -19,14 +19,22 @@ class AppGradientScaffold extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    final gradient = isDark
+        ? const LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [AppColors.backgroundTop, AppColors.backgroundBottom],
+          )
+        : const LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [Color(0xFFF5F7FB), Color(0xFFEAEFF8)],
+          );
+
     return DecoratedBox(
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-          colors: [AppColors.backgroundTop, AppColors.backgroundBottom],
-        ),
-      ),
+      decoration: BoxDecoration(gradient: gradient),
       child: Scaffold(
         appBar: appBar,
         backgroundColor: Colors.transparent,

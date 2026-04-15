@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
 import '../../../core/models/money_transaction.dart';
-import '../../../core/theme/app_colors.dart';
+import '../../../core/theme/app_dynamic_colors.dart';
 import 'history_transaction_item.dart';
 
 class HistoryTransactionGroup extends StatelessWidget {
@@ -28,8 +28,8 @@ class HistoryTransactionGroup extends StatelessWidget {
           padding: const EdgeInsets.symmetric(vertical: 12),
           child: Text(
             dateString,
-            style: const TextStyle(
-              color: AppColors.textSecondary,
+            style: TextStyle(
+              color: context.appColors.textSecondary,
               fontSize: 12,
               fontWeight: FontWeight.bold,
               letterSpacing: 1.0,

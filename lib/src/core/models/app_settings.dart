@@ -2,20 +2,22 @@ class AppSettings {
   AppSettings({
     required this.localeCode,
     required this.dailyNotification,
-    required this.darkTheme,
+    required this.themeMode,
     required this.pinSecurity,
   });
 
   final String localeCode;
   final bool dailyNotification;
-  final bool darkTheme;
+
+  /// 'system' | 'light' | 'dark'
+  final String themeMode;
   final bool pinSecurity;
 
   factory AppSettings.defaults() {
     return AppSettings(
       localeCode: 'id',
       dailyNotification: false,
-      darkTheme: true,
+      themeMode: 'dark',
       pinSecurity: true,
     );
   }
@@ -23,13 +25,13 @@ class AppSettings {
   AppSettings copyWith({
     String? localeCode,
     bool? dailyNotification,
-    bool? darkTheme,
+    String? themeMode,
     bool? pinSecurity,
   }) {
     return AppSettings(
       localeCode: localeCode ?? this.localeCode,
       dailyNotification: dailyNotification ?? this.dailyNotification,
-      darkTheme: darkTheme ?? this.darkTheme,
+      themeMode: themeMode ?? this.themeMode,
       pinSecurity: pinSecurity ?? this.pinSecurity,
     );
   }
@@ -38,16 +40,25 @@ class AppSettings {
     return <String, dynamic>{
       'localeCode': localeCode,
       'dailyNotification': dailyNotification,
-      'darkTheme': darkTheme,
+      'themeMode': themeMode,
       'pinSecurity': pinSecurity,
     };
   }
 
   factory AppSettings.fromJson(Map<String, dynamic> jsonMap) {
+    // Backward-compat: migrasi dari boolean darkTheme lama
+    String resolvedThemeMode;
+    if (jsonMap.containsKey('themeMode')) {
+      resolvedThemeMode = jsonMap['themeMode'] as String? ?? 'dark';
+    } else {
+      final darkTheme = jsonMap['darkTheme'] as bool? ?? true;
+      resolvedThemeMode = darkTheme ? 'dark' : 'light';
+    }
+
     return AppSettings(
       localeCode: jsonMap['localeCode'] as String? ?? 'id',
       dailyNotification: jsonMap['dailyNotification'] as bool? ?? false,
-      darkTheme: jsonMap['darkTheme'] as bool? ?? true,
+      themeMode: resolvedThemeMode,
       pinSecurity: jsonMap['pinSecurity'] as bool? ?? true,
     );
   }

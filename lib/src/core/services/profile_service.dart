@@ -23,5 +23,15 @@ class ProfileService {
     }
   }
 
+  Future<void> updateProfile(String userId, UserProfile profile) async {
+    await _supabase.from('profiles').upsert({
+      'id': userId,
+      'owner_name': profile.fullName,
+      'business_name': profile.businessName,
+      'whatsapp': profile.whatsapp,
+      'email': profile.email,
+    });
+  }
+
   Future<void> signOut() => _supabase.auth.signOut();
 }

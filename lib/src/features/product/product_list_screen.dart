@@ -3,6 +3,7 @@ import '../../core/formatters/idr_formatter.dart';
 import '../../core/localization/transalation_extansions.dart';
 import '../../core/state/app_state.dart';
 import '../../core/theme/app_colors.dart';
+import '../../core/theme/app_dynamic_colors.dart';
 import '../../core/ui/app_gradient_scaffold.dart';
 import 'hpp_calculator_screen.dart';
 
@@ -51,7 +52,7 @@ class _ProductListScreenState extends State<ProductListScreen> {
                 hintText: context.t('product.list.search'),
                 prefixIcon: const Icon(Icons.search),
                 filled: true,
-                fillColor: AppColors.cardSoft,
+                fillColor: context.appColors.cardSoft,
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
                   borderSide: BorderSide.none,
@@ -68,7 +69,7 @@ class _ProductListScreenState extends State<ProductListScreen> {
                     itemBuilder: (context, index) {
                       final product = filteredProducts[index];
                       return Card(
-                        color: AppColors.card,
+                        color: context.appColors.card,
                         margin: const EdgeInsets.only(bottom: 12),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(12),
@@ -93,17 +94,17 @@ class _ProductListScreenState extends State<ProductListScreen> {
                                     children: [
                                       Text(
                                         product.name,
-                                        style: const TextStyle(
+                                        style: TextStyle(
                                           fontSize: 16,
                                           fontWeight: FontWeight.bold,
-                                          color: AppColors.textPrimary,
+                                          color: context.appColors.textPrimary,
                                         ),
                                       ),
                                       const SizedBox(height: 4),
                                       Text(
                                         '${context.t('product.list.hppPrefix')}${IdrFormatter.format(product.hppPerUnit.round())}',
-                                        style: const TextStyle(
-                                          color: AppColors.textSecondary,
+                                        style: TextStyle(
+                                          color: context.appColors.textSecondary,
                                           fontSize: 14,
                                         ),
                                       ),
@@ -112,10 +113,10 @@ class _ProductListScreenState extends State<ProductListScreen> {
                                 ),
                                 Text(
                                   IdrFormatter.format(product.sellingPrice.round()),
-                                  style: const TextStyle(
+                                  style: TextStyle(
                                     fontSize: 16,
                                     fontWeight: FontWeight.bold,
-                                    color: AppColors.textPrimary,
+                                    color: context.appColors.textPrimary,
                                   ),
                                 ),
                               ],
@@ -151,33 +152,33 @@ class _ProductListScreenState extends State<ProductListScreen> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-             Container(
+            Container(
               padding: const EdgeInsets.all(24),
-              decoration: const BoxDecoration(
-                color: AppColors.cardSoft,
+              decoration: BoxDecoration(
+                color: context.appColors.cardSoft,
                 shape: BoxShape.circle,
               ),
-              child: const Icon(
+              child: Icon(
                 Icons.inventory_2_outlined,
                 size: 64,
-                color: AppColors.textSecondary,
+                color: context.appColors.textSecondary,
               ),
             ),
             const SizedBox(height: 24),
             Text(
               context.t('product.list.emptyTitle'),
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 20,
                 fontWeight: FontWeight.bold,
-                color: AppColors.textPrimary,
+                color: context.appColors.textPrimary,
               ),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 12),
             Text(
               context.t('product.list.emptySubtitle'),
-              style: const TextStyle(
-                color: AppColors.textSecondary,
+              style: TextStyle(
+                color: context.appColors.textSecondary,
                 height: 1.5,
               ),
               textAlign: TextAlign.center,

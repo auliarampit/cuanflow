@@ -6,6 +6,7 @@ import '../../core/localization/transalation_extansions.dart';
 import '../../core/models/money_transaction.dart';
 import '../../core/state/app_state.dart';
 import '../../core/theme/app_colors.dart';
+import '../../core/theme/app_dynamic_colors.dart';
 import '../../core/ui/app_gradient_scaffold.dart';
 import '../../shared/widgets/loading_dialog.dart';
 import '../transactions/add_expense/add_expense_screen.dart';
@@ -112,7 +113,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
 
     return allTxs.where((tx) {
       final txDate = tx.effectiveDate;
-      return txDate.isAfter(start.subtract(const Duration(seconds: 1))) && 
+      return txDate.isAfter(start.subtract(const Duration(seconds: 1))) &&
              txDate.isBefore(end);
     }).toList();
   }
@@ -123,7 +124,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
     final screenContext = context;
     showModalBottomSheet(
       context: screenContext,
-      backgroundColor: AppColors.card,
+      backgroundColor: screenContext.appColors.card,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
@@ -201,7 +202,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
   @override
   Widget build(BuildContext context) {
     final filteredTxs = _getFilteredTransactions();
-    
+
     // Calculate totals
     int totalIncome = 0;
     int totalExpense = 0;
@@ -219,7 +220,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
       final date = tx.effectiveDate;
       return DateTime(date.year, date.month, date.day);
     });
-    
+
     // Sort groups by date descending
     final sortedDates = grouped.keys.toList()
       ..sort((a, b) => b.compareTo(a));
@@ -262,9 +263,9 @@ class _HistoryScreenState extends State<HistoryScreen> {
               child: Container(
                 padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                 decoration: BoxDecoration(
-                  color: AppColors.cardSoft,
+                  color: context.appColors.cardSoft,
                   borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: AppColors.outline),
+                  border: Border.all(color: context.appColors.outline),
                 ),
                 child: Row(
                   children: [
@@ -272,14 +273,14 @@ class _HistoryScreenState extends State<HistoryScreen> {
                     const SizedBox(width: 12),
                     Text(
                       _getFilterLabel(),
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontWeight: FontWeight.bold,
                         fontSize: 14,
-                        color: Colors.white,
+                        color: context.appColors.textPrimary,
                       ),
                     ),
                     const Spacer(),
-                    const Icon(Icons.keyboard_arrow_down, color: AppColors.textSecondary),
+                    Icon(Icons.keyboard_arrow_down, color: context.appColors.textSecondary),
                   ],
                 ),
               ),
@@ -292,7 +293,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
                 ? Center(
                     child: Text(
                       context.t('history.empty'),
-                      style: TextStyle(color: AppColors.textSecondary.withOpacity(0.5)),
+                      style: TextStyle(color: context.appColors.textSecondary.withOpacity(0.5)),
                     ),
                   )
                 : ListView.separated(
@@ -314,9 +315,9 @@ class _HistoryScreenState extends State<HistoryScreen> {
           // Bottom Summary
           Container(
             padding: const EdgeInsets.all(20),
-            decoration: const BoxDecoration(
-              color: AppColors.backgroundBottom,
-              border: Border(top: BorderSide(color: AppColors.outline)),
+            decoration: BoxDecoration(
+              color: context.appColors.backgroundBottom,
+              border: Border(top: BorderSide(color: context.appColors.outline)),
             ),
             child: SafeArea(
               child: HistorySummaryCard(

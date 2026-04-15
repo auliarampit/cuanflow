@@ -9,6 +9,7 @@ import '../../../core/localization/transalation_extansions.dart';
 import '../../../core/models/money_transaction.dart';
 import '../../../core/state/app_state.dart';
 import '../../../core/theme/app_colors.dart';
+import '../../../core/theme/app_dynamic_colors.dart';
 
 // ─── Bulk item model ────────────────────────────────────────────────────────
 class _BulkItem {
@@ -254,8 +255,7 @@ class _AddIncomeScreenState extends State<AddIncomeScreen> {
                     ),
                     Text(
                       context.t('income.add.amountHint'),
-                      style:
-                          const TextStyle(color: AppColors.textSecondary),
+                      style: TextStyle(color: context.appColors.textSecondary),
                     ),
                   ],
                 ),
@@ -263,10 +263,10 @@ class _AddIncomeScreenState extends State<AddIncomeScreen> {
               const SizedBox(height: 26),
               Text(
                 context.t('income.quick.title'),
-                style: const TextStyle(
+                style: TextStyle(
                   letterSpacing: 2,
                   fontWeight: FontWeight.w700,
-                  color: AppColors.textSecondary,
+                  color: context.appColors.textSecondary,
                 ),
               ),
               const SizedBox(height: 10),
@@ -282,17 +282,17 @@ class _AddIncomeScreenState extends State<AddIncomeScreen> {
                         setState(() => _selectedCategory = e),
                     selectedColor:
                         AppColors.positive.withValues(alpha: 0.18),
-                    backgroundColor: AppColors.cardSoft,
+                    backgroundColor: context.appColors.cardSoft,
                     labelStyle: TextStyle(
                       color: isSelected
                           ? AppColors.positive
-                          : AppColors.textPrimary,
+                          : context.appColors.textPrimary,
                       fontWeight: FontWeight.w700,
                     ),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12),
                       side: BorderSide(
-                        color: AppColors.outline.withValues(alpha: 0.7),
+                        color: context.appColors.outline.withValues(alpha: 0.7),
                       ),
                     ),
                   );
@@ -408,7 +408,7 @@ class _AddIncomeScreenState extends State<AddIncomeScreen> {
                                   hintStyle: TextStyle(
                                     fontSize: 36,
                                     fontWeight: FontWeight.w900,
-                                    color: AppColors.textPrimary
+                                    color: context.appColors.textPrimary
                                         .withValues(alpha: 0.25),
                                   ),
                                   border: InputBorder.none,
@@ -425,11 +425,11 @@ class _AddIncomeScreenState extends State<AddIncomeScreen> {
                       // Categories
                       Text(
                         context.t('income.quick.title'),
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 11,
                           letterSpacing: 2,
                           fontWeight: FontWeight.w700,
-                          color: AppColors.textSecondary,
+                          color: context.appColors.textSecondary,
                         ),
                       ),
                       const SizedBox(height: 8),
@@ -446,11 +446,11 @@ class _AddIncomeScreenState extends State<AddIncomeScreen> {
                                 setState(() => _selectedCategory = e),
                             selectedColor: AppColors.positive
                                 .withValues(alpha: 0.18),
-                            backgroundColor: AppColors.cardSoft,
+                            backgroundColor: context.appColors.cardSoft,
                             labelStyle: TextStyle(
                               color: isSelected
                                   ? AppColors.positive
-                                  : AppColors.textPrimary,
+                                  : context.appColors.textPrimary,
                               fontWeight: FontWeight.w700,
                             ),
                             shape: RoundedRectangleBorder(
@@ -458,7 +458,7 @@ class _AddIncomeScreenState extends State<AddIncomeScreen> {
                               side: BorderSide(
                                 color: isSelected
                                     ? AppColors.positive
-                                    : AppColors.outline
+                                    : context.appColors.outline
                                         .withValues(alpha: 0.7),
                               ),
                             ),
@@ -552,7 +552,7 @@ class _OutletPill extends StatelessWidget {
             fontSize: 11,
             letterSpacing: 2,
             fontWeight: FontWeight.w700,
-            color: AppColors.textSecondary,
+            color: context.appColors.textSecondary,
           ),
         ),
         const SizedBox(height: 8),
@@ -583,7 +583,7 @@ class _OutletPill extends StatelessWidget {
                 ),
                 const SizedBox(width: 4),
                 Icon(Icons.expand_more,
-                    size: 16, color: AppColors.textSecondary),
+                    size: 16, color: context.appColors.textSecondary),
               ],
             ),
           ),
@@ -595,7 +595,7 @@ class _OutletPill extends StatelessWidget {
   void _showSheet(BuildContext context, List outlets) {
     showModalBottomSheet<void>(
       context: context,
-      backgroundColor: AppColors.card,
+      backgroundColor: context.appColors.card,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
@@ -672,10 +672,10 @@ class _ItemListCard extends StatelessWidget {
                 const SizedBox(width: 8),
                 Text(
                   'DAFTAR ITEM (${items.length})',
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontWeight: FontWeight.w800,
                     letterSpacing: 1.5,
-                    color: AppColors.textSecondary,
+                    color: context.appColors.textSecondary,
                   ),
                 ),
               ],
@@ -683,7 +683,7 @@ class _ItemListCard extends StatelessWidget {
             const SizedBox(height: 10),
             for (int i = 0; i < items.length; i++) ...[
               if (i > 0)
-                const Divider(height: 1, color: AppColors.outline),
+                Divider(height: 1, color: context.appColors.outline),
               _ItemTile(
                   item: items[i],
                   index: i,
@@ -753,21 +753,21 @@ class _ItemTile extends StatelessWidget {
                   children: [
                     Text(
                       item.category,
-                      style: const TextStyle(
-                          fontSize: 12, color: AppColors.textSecondary),
+                      style: TextStyle(
+                          fontSize: 12, color: context.appColors.textSecondary),
                     ),
                     if (outletName != null) ...[
-                      const Text(
+                      Text(
                         '  ·  ',
-                        style: TextStyle(color: AppColors.textSecondary),
+                        style: TextStyle(color: context.appColors.textSecondary),
                       ),
                       Icon(Icons.storefront_outlined,
-                          size: 12, color: AppColors.textSecondary),
+                          size: 12, color: context.appColors.textSecondary),
                       const SizedBox(width: 3),
                       Text(
                         outletName,
-                        style: const TextStyle(
-                            fontSize: 12, color: AppColors.textSecondary),
+                        style: TextStyle(
+                            fontSize: 12, color: context.appColors.textSecondary),
                       ),
                     ],
                   ],
@@ -802,9 +802,9 @@ class _BottomBar extends StatelessWidget {
     return SafeArea(
       child: Container(
         padding: const EdgeInsets.fromLTRB(18, 12, 18, 12),
-        decoration: const BoxDecoration(
-          color: AppColors.card,
-          border: Border(top: BorderSide(color: AppColors.outline)),
+        decoration: BoxDecoration(
+          color: context.appColors.card,
+          border: Border(top: BorderSide(color: context.appColors.outline)),
         ),
         child: Row(
           children: [
@@ -813,12 +813,12 @@ class _BottomBar extends StatelessWidget {
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text(
+                  Text(
                     'TOTAL SESI INI',
                     style: TextStyle(
                       fontSize: 11,
                       letterSpacing: 1.5,
-                      color: AppColors.textSecondary,
+                      color: context.appColors.textSecondary,
                     ),
                   ),
                   Text(
@@ -893,9 +893,9 @@ class _DateRowPicker extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
         decoration: BoxDecoration(
-          color: AppColors.cardSoft,
+          color: context.appColors.cardSoft,
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: AppColors.outline),
+          border: Border.all(color: context.appColors.outline),
         ),
         child: Row(
           children: [
@@ -924,9 +924,9 @@ class _DateRowPicker extends StatelessWidget {
               padding:
                   const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
               decoration: BoxDecoration(
-                color: AppColors.card,
+                color: context.appColors.card,
                 borderRadius: BorderRadius.circular(999),
-                border: Border.all(color: AppColors.outline),
+                border: Border.all(color: context.appColors.outline),
               ),
               child: Row(
                 mainAxisSize: MainAxisSize.min,
@@ -939,8 +939,8 @@ class _DateRowPicker extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(width: 4),
-                  const Icon(Icons.keyboard_arrow_down_rounded,
-                      size: 16, color: AppColors.textSecondary),
+                  Icon(Icons.keyboard_arrow_down_rounded,
+                      size: 16, color: context.appColors.textSecondary),
                 ],
               ),
             ),
@@ -975,9 +975,9 @@ class _DatePickerTile extends StatelessWidget {
         padding:
             const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
         decoration: BoxDecoration(
-          color: AppColors.cardSoft,
+          color: context.appColors.cardSoft,
           borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: AppColors.outline),
+          border: Border.all(color: context.appColors.outline),
         ),
         child: Row(
           children: [
@@ -988,7 +988,7 @@ class _DatePickerTile extends StatelessWidget {
               child: Text(
                   '${selectedDate.day}/${selectedDate.month}/${selectedDate.year}'),
             ),
-            const Icon(Icons.expand_more, color: AppColors.textSecondary),
+            Icon(Icons.expand_more, color: context.appColors.textSecondary),
           ],
         ),
       ),
@@ -1023,7 +1023,7 @@ class _OutletSelectorBlock extends StatelessWidget {
         InkWell(
           onTap: () => showModalBottomSheet<void>(
             context: context,
-            backgroundColor: AppColors.card,
+            backgroundColor: context.appColors.card,
             shape: const RoundedRectangleBorder(
               borderRadius:
                   BorderRadius.vertical(top: Radius.circular(20)),
@@ -1078,9 +1078,9 @@ class _OutletSelectorBlock extends StatelessWidget {
             padding: const EdgeInsets.symmetric(
                 horizontal: 14, vertical: 14),
             decoration: BoxDecoration(
-              color: AppColors.cardSoft,
+              color: context.appColors.cardSoft,
               borderRadius: BorderRadius.circular(14),
-              border: Border.all(color: AppColors.outline),
+              border: Border.all(color: context.appColors.outline),
             ),
             child: Row(
               children: [
@@ -1088,8 +1088,8 @@ class _OutletSelectorBlock extends StatelessWidget {
                     color: AppColors.positive),
                 const SizedBox(width: 10),
                 Expanded(child: Text(selectedName)),
-                const Icon(Icons.expand_more,
-                    color: AppColors.textSecondary),
+                Icon(Icons.expand_more,
+                    color: context.appColors.textSecondary),
               ],
             ),
           ),

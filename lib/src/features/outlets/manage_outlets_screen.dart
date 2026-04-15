@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../core/models/outlet_model.dart';
 import '../../core/state/app_state.dart';
 import '../../core/theme/app_colors.dart';
+import '../../core/theme/app_dynamic_colors.dart';
 import '../../core/ui/app_gradient_scaffold.dart';
 
 class ManageOutletsScreen extends StatelessWidget {
@@ -14,7 +15,7 @@ class ManageOutletsScreen extends StatelessWidget {
   }) {
     showModalBottomSheet<void>(
       context: context,
-      backgroundColor: AppColors.card,
+      backgroundColor: context.appColors.card,
       isScrollControlled: true,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
@@ -75,16 +76,16 @@ class ManageOutletsScreen extends StatelessWidget {
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  const Icon(
+                  Icon(
                     Icons.store_outlined,
                     size: 64,
-                    color: AppColors.textSecondary,
+                    color: context.appColors.textSecondary,
                   ),
                   const SizedBox(height: 16),
-                  const Text(
+                  Text(
                     'Belum ada outlet',
                     style: TextStyle(
-                      color: AppColors.textSecondary,
+                      color: context.appColors.textSecondary,
                       fontSize: 16,
                     ),
                   ),
@@ -106,9 +107,9 @@ class ManageOutletsScreen extends StatelessWidget {
                 return Container(
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
-                    color: AppColors.card,
+                    color: context.appColors.card,
                     borderRadius: BorderRadius.circular(16),
-                    border: Border.all(color: AppColors.outline),
+                    border: Border.all(color: context.appColors.outline),
                   ),
                   child: Row(
                     children: [
@@ -165,8 +166,8 @@ class ManageOutletsScreen extends StatelessWidget {
                               const SizedBox(height: 4),
                               Text(
                                 outlet.address!,
-                                style: const TextStyle(
-                                  color: AppColors.textSecondary,
+                                style: TextStyle(
+                                  color: context.appColors.textSecondary,
                                   fontSize: 13,
                                 ),
                               ),

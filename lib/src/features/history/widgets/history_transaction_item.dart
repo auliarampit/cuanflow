@@ -5,6 +5,7 @@ import '../../../core/formatters/idr_formatter.dart';
 import '../../../core/localization/transalation_extansions.dart';
 import '../../../core/models/money_transaction.dart';
 import '../../../core/theme/app_colors.dart';
+import '../../../core/theme/app_dynamic_colors.dart';
 
 class HistoryTransactionItem extends StatelessWidget {
   const HistoryTransactionItem({
@@ -29,9 +30,9 @@ class HistoryTransactionItem extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         decoration: BoxDecoration(
-          color: AppColors.card,
+          color: context.appColors.card,
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: AppColors.outline.withOpacity(0.5)),
+          border: Border.all(color: context.appColors.outline.withOpacity(0.5)),
         ),
         child: Row(
           children: [
@@ -40,7 +41,7 @@ class HistoryTransactionItem extends StatelessWidget {
               width: 48,
               height: 48,
               decoration: BoxDecoration(
-                color: AppColors.cardSoft,
+                color: context.appColors.cardSoft,
                 shape: BoxShape.circle,
               ),
               child: Icon(icon, color: color, size: 20),
@@ -59,10 +60,10 @@ class HistoryTransactionItem extends StatelessWidget {
                               ? 'history.transaction.income'
                               : 'history.transaction.expense'),
                     ),
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.bold,
-                      color: Colors.white,
+                      color: context.appColors.textPrimary,
                     ),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
@@ -72,9 +73,9 @@ class HistoryTransactionItem extends StatelessWidget {
                       transaction.note!.isNotEmpty) ...[
                     Text(
                       transaction.note!,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 12,
-                        color: AppColors.textSecondary,
+                        color: context.appColors.textSecondary,
                       ),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
@@ -83,9 +84,9 @@ class HistoryTransactionItem extends StatelessWidget {
                   ],
                   Text(
                     DateFormat('HH:mm').format(transaction.createdAt.toLocal()),
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 12,
-                      color: AppColors.textSecondary,
+                      color: context.appColors.textSecondary,
                     ),
                   ),
                 ],
@@ -98,7 +99,7 @@ class HistoryTransactionItem extends StatelessWidget {
               style: TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.bold,
-                color: isIncome ? AppColors.positive : Colors.white,
+                color: isIncome ? AppColors.positive : context.appColors.textPrimary,
               ),
             ),
           ],

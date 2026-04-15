@@ -12,4 +12,5 @@ final class AppRoutes {
   static const profile = '/profile';
   static const accountSettings = '/account/settings';
   static const settings = '/settings';
+  static const aboutApp = '/about';
 }

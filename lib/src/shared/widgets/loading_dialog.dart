@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:cari_untung/src/core/theme/app_colors.dart';
+import 'package:cari_untung/src/core/theme/app_dynamic_colors.dart';
 
 class LoadingDialog extends StatelessWidget {
   const LoadingDialog({super.key});
@@ -31,9 +32,9 @@ class LoadingDialog extends StatelessWidget {
           width: 80,
           height: 80,
           decoration: BoxDecoration(
-            color: AppColors.card,
+            color: context.appColors.card,
             borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: AppColors.outline),
+            border: Border.all(color: context.appColors.outline),
           ),
           padding: const EdgeInsets.all(20),
           child: const CircularProgressIndicator(

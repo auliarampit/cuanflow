@@ -2,7 +2,9 @@ import 'package:cari_untung/src/core/localization/transalation_extansions.dart';
 import 'package:cari_untung/src/core/models/outlet_model.dart';
 import 'package:cari_untung/src/core/state/app_state.dart';
 import 'package:cari_untung/src/core/theme/app_colors.dart';
+import 'package:cari_untung/src/core/theme/app_dynamic_colors.dart';
 import 'package:cari_untung/src/core/ui/app_gradient_scaffold.dart';
+import 'package:cari_untung/src/core/ui/responsive_utils.dart';
 import 'package:cari_untung/src/features/home/home_screen.dart';
 import 'package:cari_untung/src/features/product/product_list_screen.dart';
 import 'package:flutter/material.dart';
@@ -57,9 +59,9 @@ class _SyncBanner extends StatelessWidget {
                 if (errorMsg != null)
                   Text(
                     errorMsg,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 11,
-                      color: AppColors.textSecondary,
+                      color: context.appColors.textSecondary,
                     ),
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
@@ -80,7 +82,7 @@ class _SyncBanner extends StatelessWidget {
       );
     } else if (isSyncing) {
       // Sedang sinkron
-      bannerColor = AppColors.chipBg;
+      bannerColor = context.appColors.chipBg;
       content = Row(
         children: [
           const SizedBox(
@@ -97,9 +99,9 @@ class _SyncBanner extends StatelessWidget {
               pending > 0
                   ? 'Mengirim $pending transaksi ke server...'
                   : 'Memperbarui data dari server...',
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 12,
-                color: AppColors.textSecondary,
+                color: context.appColors.textSecondary,
               ),
             ),
           ),
@@ -107,18 +109,18 @@ class _SyncBanner extends StatelessWidget {
       );
     } else {
       // Pending tapi belum pernah coba (offline)
-      bannerColor = AppColors.chipBg;
+      bannerColor = context.appColors.chipBg;
       content = Row(
         children: [
-          const Icon(Icons.cloud_off_outlined,
-              size: 16, color: AppColors.textSecondary),
+          Icon(Icons.cloud_off_outlined,
+              size: 16, color: context.appColors.textSecondary),
           const SizedBox(width: 10),
           Expanded(
             child: Text(
               '$pending transaksi belum tersimpan ke server',
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 12,
-                color: AppColors.textSecondary,
+                color: context.appColors.textSecondary,
               ),
             ),
           ),
@@ -149,9 +151,9 @@ class _SyncBanner extends StatelessWidget {
               child: content,
             ),
             if (isSyncing)
-              const LinearProgressIndicator(
+              LinearProgressIndicator(
                 minHeight: 2,
-                backgroundColor: AppColors.outline,
+                backgroundColor: context.appColors.outline,
                 color: AppColors.brandBlue,
               ),
           ],
@@ -174,7 +176,7 @@ class _HomeShellScreenState extends State<HomeShellScreen> {
 
     showModalBottomSheet<void>(
       context: context,
-      backgroundColor: AppColors.card,
+      backgroundColor: context.appColors.card,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
@@ -227,51 +229,87 @@ class _HomeShellScreenState extends State<HomeShellScreen> {
   Widget build(BuildContext context) {
     final appState = context.appState;
     final selectedOutlet = appState.selectedOutlet;
+    final isTablet = context.isTablet;
+
     final pages = const [
       HomeScreen(),
       ProductListScreen(),
       ReportScreen(),
-      ProfileScreen()
+      ProfileScreen(),
     ];
-    return AppGradientScaffold(
-      body: Column(
-        children: [
-          // Outlet switcher — hanya tampil jika ada outlet
-          if (appState.outlets.isNotEmpty)
-            _OutletSwitcherBar(
-              selectedOutlet: selectedOutlet,
-              onTap: () => _showOutletPicker(context),
+
+    final navItems = [
+      (icon: Icons.home_outlined, activeIcon: Icons.home, label: context.t('nav.home')),
+      (icon: Icons.inventory_2_outlined, activeIcon: Icons.inventory_2, label: context.t('nav.product')),
+      (icon: Icons.bar_chart_outlined, activeIcon: Icons.bar_chart, label: context.t('nav.report')),
+      (icon: Icons.person_outlined, activeIcon: Icons.person, label: context.t('nav.profile')),
+    ];
+
+    final contentColumn = Column(
+      children: [
+        if (appState.outlets.isNotEmpty)
+          _OutletSwitcherBar(
+            selectedOutlet: selectedOutlet,
+            onTap: () => _showOutletPicker(context),
+          ),
+        const _SyncBanner(),
+        Expanded(child: pages[_index]),
+      ],
+    );
+
+    if (isTablet) {
+      return AppGradientScaffold(
+        body: Row(
+          children: [
+            NavigationRail(
+              backgroundColor: Colors.transparent,
+              selectedIndex: _index,
+              onDestinationSelected: _onTap,
+              labelType: NavigationRailLabelType.all,
+              indicatorColor: AppColors.brandBlue.withValues(alpha: 0.15),
+              selectedIconTheme: const IconThemeData(color: AppColors.brandBlue),
+              unselectedIconTheme: IconThemeData(color: context.appColors.textSecondary),
+              selectedLabelTextStyle: const TextStyle(
+                color: AppColors.brandBlue,
+                fontWeight: FontWeight.w700,
+                fontSize: 12,
+              ),
+              unselectedLabelTextStyle: TextStyle(
+                color: context.appColors.textSecondary,
+                fontSize: 12,
+              ),
+              destinations: navItems
+                  .map((item) => NavigationRailDestination(
+                        icon: Icon(item.icon),
+                        selectedIcon: Icon(item.activeIcon),
+                        label: Text(item.label),
+                      ))
+                  .toList(),
             ),
-          const _SyncBanner(),
-          Expanded(child: pages[_index]),
-        ],
-      ),
+            VerticalDivider(
+              thickness: 1,
+              width: 1,
+              color: context.appColors.outline,
+            ),
+            Expanded(child: contentColumn),
+          ],
+        ),
+      );
+    }
+
+    return AppGradientScaffold(
+      body: contentColumn,
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _index,
         onTap: _onTap,
-        type: BottomNavigationBarType.fixed, // Ensure all items are shown
-        items: [
-          BottomNavigationBarItem(
-            icon: const Icon(Icons.home_outlined),
-            activeIcon: const Icon(Icons.home),
-            label: context.t('nav.home'),
-          ),
-          BottomNavigationBarItem(
-            icon: const Icon(Icons.inventory_2_outlined),
-            activeIcon: const Icon(Icons.inventory_2),
-            label: context.t('nav.product'),
-          ),
-          BottomNavigationBarItem(
-            icon: const Icon(Icons.bar_chart_outlined),
-            activeIcon: const Icon(Icons.bar_chart),
-            label: context.t('nav.report'),
-          ),
-          BottomNavigationBarItem(
-            icon: const Icon(Icons.person_outlined),
-            activeIcon: const Icon(Icons.person),
-            label: context.t('nav.profile'),
-          ),
-        ],
+        type: BottomNavigationBarType.fixed,
+        items: navItems
+            .map((item) => BottomNavigationBarItem(
+                  icon: Icon(item.icon),
+                  activeIcon: Icon(item.activeIcon),
+                  label: item.label,
+                ))
+            .toList(),
       ),
     );
   }
@@ -292,7 +330,7 @@ class _OutletSwitcherBar extends StatelessWidget {
       onTap: onTap,
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-        color: AppColors.chipBg,
+        color: context.appColors.chipBg,
         child: Row(
           children: [
             const Icon(Icons.storefront_outlined,
@@ -301,15 +339,15 @@ class _OutletSwitcherBar extends StatelessWidget {
             Expanded(
               child: Text(
                 selectedOutlet?.name ?? context.t('outlet.allOutlets'),
-                style: const TextStyle(
+                style: TextStyle(
                   fontWeight: FontWeight.w700,
                   fontSize: 13,
-                  color: AppColors.textPrimary,
+                  color: context.appColors.textPrimary,
                 ),
               ),
             ),
-            const Icon(Icons.unfold_more,
-                size: 18, color: AppColors.textSecondary),
+            Icon(Icons.unfold_more,
+                size: 18, color: context.appColors.textSecondary),
           ],
         ),
       ),
@@ -337,19 +375,19 @@ class _OutletTile extends StatelessWidget {
     return ListTile(
       leading: Icon(
         icon,
-        color: isSelected ? AppColors.brandBlue : AppColors.textSecondary,
+        color: isSelected ? AppColors.brandBlue : context.appColors.textSecondary,
       ),
       title: Text(
         label,
         style: TextStyle(
           fontWeight: isSelected ? FontWeight.w700 : FontWeight.normal,
-          color: isSelected ? AppColors.brandBlue : AppColors.textPrimary,
+          color: isSelected ? AppColors.brandBlue : context.appColors.textPrimary,
         ),
       ),
       subtitle: subtitle != null
           ? Text(subtitle!,
-              style: const TextStyle(
-                  fontSize: 12, color: AppColors.textSecondary))
+              style: TextStyle(
+                  fontSize: 12, color: context.appColors.textSecondary))
           : null,
       trailing: isSelected
           ? const Icon(Icons.check, color: AppColors.brandBlue, size: 18)

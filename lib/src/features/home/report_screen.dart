@@ -7,6 +7,7 @@ import '../../core/services/report_pdf_service.dart';
 import '../../core/state/app_state.dart';
 
 import '../../core/theme/app_colors.dart';
+import '../../core/theme/app_dynamic_colors.dart';
 
 class ReportScreen extends StatefulWidget {
   const ReportScreen({super.key});
@@ -86,7 +87,7 @@ class _ReportScreenState extends State<ReportScreen> {
     final profile = context.appState.profile;
 
     final monthName = _formatMonth(_selectedDate);
-    
+
     await ReportPdfService().generateAndShowPdf(
       monthName,
       summary,
@@ -94,7 +95,7 @@ class _ReportScreenState extends State<ReportScreen> {
       profile,
       locale: locale,
     );
-    
+
     if (mounted) LoadingDialog.hide(context);
   }
 
@@ -164,7 +165,7 @@ class _ReportScreenState extends State<ReportScreen> {
                         padding: const EdgeInsets.symmetric(
                             horizontal: 12, vertical: 4),
                         decoration: BoxDecoration(
-                          color: AppColors.chipBg,
+                          color: context.appColors.chipBg,
                           borderRadius: BorderRadius.circular(999),
                         ),
                         child: Row(
@@ -270,7 +271,7 @@ class _ReportScreenState extends State<ReportScreen> {
                   horizontal: 32,
                   vertical: 15,
                 ),
-                side: const BorderSide(color: AppColors.outline),
+                side: BorderSide(color: context.appColors.outline),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(14),
                 ),
@@ -307,8 +308,8 @@ class _SummaryCard extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              context.t(title), 
-              style: const TextStyle(color: AppColors.textSecondary)),
+              context.t(title),
+              style: TextStyle(color: context.appColors.textSecondary)),
             const SizedBox(height: 10),
             Text(
               amount,
@@ -351,7 +352,7 @@ class _ReportRow extends StatelessWidget {
                 const SizedBox(height: 2),
                 Text(
                   subtitle,
-                  style: const TextStyle(color: AppColors.textSecondary),
+                  style: TextStyle(color: context.appColors.textSecondary),
                 ),
               ],
             ),
@@ -363,7 +364,7 @@ class _ReportRow extends StatelessWidget {
               fontWeight: FontWeight.w700,
               color: amount.startsWith('-')
                   ? AppColors.negative
-                  : AppColors.textPrimary,
+                  : context.appColors.textPrimary,
             ),
           ),
         ],
