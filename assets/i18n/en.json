@@ -69,7 +69,18 @@
   "home.expense": "Expense",
   "home.addIncome": "Income",
   "home.addExpense": "Expense",
+  "home.addBulkIncome": "Bulk Income Input",
+  "home.addBulkExpense": "Bulk Expense Input",
   "home.viewHistory": "View History",
+
+  "bulk.income.title": "Bulk Income Input",
+  "bulk.expense.title": "Bulk Expense Input",
+  "bulk.addToList": "ADD TO LIST",
+  "bulk.addMore": "ADD MORE ITEMS",
+  "bulk.saveAll": "SAVE ALL ({count})",
+  "bulk.saveSuccess": "{count} transactions saved successfully!",
+  "bulk.validation.amountRequired": "Please enter an amount first!",
+  "bulk.validation.emptyList": "Add at least 1 item first!",
 
   "income.add.title": "Add Income",
   "income.edit.title": "Edit Income",
@@ -78,7 +89,7 @@
   "income.add.noteHint": "Example: Sold Dimsum",
   "income.quick.title": "QUICK CATEGORY",
   "income.quick.sales": "Sales",
-  "income.quick.service": "Service",
+  "income.quick.service": "Online",
   "income.quick.other": "Others",
   "income.validation.categoryRequired": "Please select a category first!",
 

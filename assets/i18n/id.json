@@ -69,7 +69,18 @@
   "home.expense": "Pengeluaran",
   "home.addIncome": "Pemasukan",
   "home.addExpense": "Pengeluaran",
+  "home.addBulkIncome": "Input Banyak Pemasukan",
+  "home.addBulkExpense": "Input Banyak Pengeluaran",
   "home.viewHistory": "Lihat Riwayat",
+
+  "bulk.income.title": "Input Banyak Pemasukan",
+  "bulk.expense.title": "Input Banyak Pengeluaran",
+  "bulk.addToList": "TAMBAHKAN KE LIST",
+  "bulk.addMore": "TAMBAH ITEM LAGI",
+  "bulk.saveAll": "SIMPAN SEMUA ({count})",
+  "bulk.saveSuccess": "{count} transaksi berhasil disimpan!",
+  "bulk.validation.amountRequired": "Masukkan nominal terlebih dahulu!",
+  "bulk.validation.emptyList": "Tambahkan minimal 1 item terlebih dahulu!",
 
   "income.add.title": "Tambah Pemasukan",
   "income.edit.title": "Edit Pemasukan",
@@ -78,7 +89,7 @@
   "income.add.noteHint": "Contoh: Jual Dimsum",
   "income.quick.title": "KATEGORI CEPAT",
   "income.quick.sales": "Penjualan",
-  "income.quick.service": "Jasa",
+  "income.quick.service": "Online",
   "income.quick.other": "Lainnya",
   "income.validation.categoryRequired": "Pilih kategori terlebih dahulu!",
 

@@ -153,8 +153,8 @@ class _HomeScreenState extends State<HomeScreen> {
     final income = dailySummary.totalIncome;
     final expense = dailySummary.totalExpense;
 
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(18, 18, 18, 0),
+    return SingleChildScrollView(
+      padding: const EdgeInsets.fromLTRB(18, 18, 18, 24),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -231,7 +231,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   shape: BoxShape.circle,
                   color: _currentPage == index
                       ? AppColors.positive
-                      : AppColors.textSecondary.withOpacity(0.3),
+                      : AppColors.textSecondary.withValues(alpha: 0.3),
                 ),
               );
             }),

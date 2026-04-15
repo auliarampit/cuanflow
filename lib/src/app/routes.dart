@@ -5,6 +5,8 @@ final class AppRoutes {
   static const productList = '/product/list';
   static const addIncome = '/income/add';
   static const addExpense = '/expense/add';
+  static const addBulkIncome = '/income/add-bulk';
+  static const addBulkExpense = '/expense/add-bulk';
   static const history = '/history';
   static const report = '/report';
   static const profile = '/profile';

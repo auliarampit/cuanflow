@@ -2,15 +2,25 @@ import 'package:collection/collection.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../../../core/formatters/currency_input_formatter.dart';
+import '../../../core/formatters/idr_formatter.dart';
 import '../../../core/localization/transalation_extansions.dart';
 import '../../../core/models/money_transaction.dart';
 import '../../../core/state/app_state.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/ui/app_gradient_scaffold.dart';
 
+// ─── Bulk item model ────────────────────────────────────────────────────────
+class _BulkItem {
+  _BulkItem({required this.amount, required this.category, this.note, this.outletId});
+  final int amount;
+  final String category;
+  final String? note;
+  final String? outletId;
+}
+
+// ─── Screen ────────────────────────────────────────────────────────────────
 class AddExpenseScreen extends StatefulWidget {
   const AddExpenseScreen({super.key, this.transaction});
-
   final MoneyTransaction? transaction;
 
   @override
@@ -18,17 +28,24 @@ class AddExpenseScreen extends StatefulWidget {
 }
 
 class _AddExpenseScreenState extends State<AddExpenseScreen> {
-  final _noteController = TextEditingController();
   final _amountController = TextEditingController();
+  final _noteController = TextEditingController();
+  final _amountFocus = FocusNode();
+
   _QuickCategory? _selectedCategory;
   String? _selectedOutletId;
   DateTime _selectedDate = DateTime.now();
   bool _didInit = false;
 
+  // Bulk state
+  final List<_BulkItem> _items = [];
+
+  bool get _isEditMode => widget.transaction != null;
+
   @override
   void initState() {
     super.initState();
-    if (widget.transaction != null) {
+    if (_isEditMode) {
       final tx = widget.transaction!;
       _amountController.text = CurrencyInputFormatter.formatVal(tx.amount);
       _noteController.text = tx.note ?? '';
@@ -43,12 +60,8 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
     if (_didInit) return;
     _didInit = true;
 
-    if (_selectedOutletId == null && widget.transaction == null) {
-      _selectedOutletId = context.appState.selectedOutletId;
-    }
+    _selectedOutletId ??= context.appState.selectedOutletId;
 
-    // Match kategori dari transaksi yang diedit —
-    // support data lama (key: 'expense.quick.material') dan baru (label: 'Bahan Baku')
     if (widget.transaction?.category != null) {
       final cats = _buildCategories(context);
       final stored = widget.transaction!.category!;
@@ -60,26 +73,118 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
 
   @override
   void dispose() {
-    _noteController.dispose();
     _amountController.dispose();
+    _noteController.dispose();
+    _amountFocus.dispose();
     super.dispose();
   }
 
-  List<_QuickCategory> _buildCategories(BuildContext context) {
-    return [
-      _QuickCategory(
-        key: 'expense.quick.material',
-        label: context.t('expense.quick.material'),
+  List<_QuickCategory> _buildCategories(BuildContext context) => [
+        _QuickCategory(
+          key: 'expense.quick.material',
+          label: context.t('expense.quick.material'),
+        ),
+        _QuickCategory(
+          key: 'expense.quick.transport',
+          label: context.t('expense.quick.transport'),
+        ),
+        _QuickCategory(
+          key: 'expense.quick.operational',
+          label: context.t('expense.quick.operational'),
+        ),
+      ];
+
+  void _addToList() {
+    final rawAmount = _amountController.text.replaceAll('.', '');
+    final amount = int.tryParse(rawAmount) ?? 0;
+
+    if (amount <= 0) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text(context.t('bulk.validation.amountRequired')),
+        backgroundColor: AppColors.negative,
+      ));
+      return;
+    }
+    if (_selectedCategory == null) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text(context.t('common.validation.mandatory')),
+        backgroundColor: AppColors.negative,
+      ));
+      return;
+    }
+
+    setState(() {
+      _items.add(_BulkItem(
+        amount: amount,
+        category: _selectedCategory!.label,
+        note: _noteController.text.isEmpty ? null : _noteController.text,
+        outletId: _selectedOutletId,
+      ));
+      _amountController.clear();
+      _noteController.clear();
+      _selectedCategory = null;
+      // outlet stays selected for convenience
+    });
+
+    _amountFocus.requestFocus();
+  }
+
+  void _saveAll() {
+    if (_items.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text(context.t('bulk.validation.emptyList')),
+        backgroundColor: AppColors.negative,
+      ));
+      return;
+    }
+
+    for (final item in _items) {
+      context.appState.addExpense(
+        amount: item.amount,
+        note: item.note,
+        category: item.category,
+        outletId: item.outletId,
+        effectiveDate: _selectedDate,
+      );
+    }
+
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+      content: Text(
+        context.t('bulk.saveSuccess', {'count': _items.length.toString()}),
       ),
-      _QuickCategory(
-        key: 'expense.quick.transport',
-        label: context.t('expense.quick.transport'),
-      ),
-      _QuickCategory(
-        key: 'expense.quick.operational',
-        label: context.t('expense.quick.operational'),
-      ),
-    ];
+      backgroundColor: AppColors.positive,
+    ));
+
+    Navigator.of(context).pop();
+  }
+
+  void _saveEdit(BuildContext context) {
+    final rawAmount = _amountController.text.replaceAll('.', '');
+    final amount = int.tryParse(rawAmount) ?? 0;
+    if (amount <= 0) return;
+
+    if (_selectedCategory == null) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text(context.t('common.validation.mandatory')),
+        backgroundColor: AppColors.negative,
+      ));
+      return;
+    }
+
+    context.appState.updateTransaction(widget.transaction!.copyWith(
+      amount: amount,
+      note: _noteController.text.isEmpty ? null : _noteController.text,
+      category: _selectedCategory!.label,
+      outletId: _selectedOutletId,
+      effectiveDate: _selectedDate,
+    ));
+
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+      content: Text(context.t('common.validation.success')),
+      backgroundColor: AppColors.positive,
+    ));
+
+    Navigator.of(context).pop();
   }
 
   @override
@@ -91,7 +196,7 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
         backgroundColor: Colors.transparent,
         elevation: 0,
         title: Text(
-          widget.transaction != null
+          _isEditMode
               ? context.t('expense.edit.title')
               : context.t('expense.add.title'),
           style: const TextStyle(
@@ -104,110 +209,266 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
           icon: const Icon(Icons.close),
         ),
       ),
-      body: LayoutBuilder(
-        builder: (context, constraints) {
-          final bottomInset = MediaQuery.of(context).viewInsets.bottom;
-          return SingleChildScrollView(
-            padding: EdgeInsets.fromLTRB(18, 18, 18, bottomInset + 24),
-            child: ConstrainedBox(
-              constraints: BoxConstraints(minHeight: constraints.maxHeight),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Align(
-                    alignment: Alignment.center,
-                    child: InkWell(
-                      onTap: () async {
-                        final picked = await showDatePicker(
-                          context: context,
-                          initialDate: _selectedDate,
-                          firstDate: DateTime(2000),
-                          lastDate: DateTime(2100),
-                        );
-                        if (picked != null) {
-                          setState(() => _selectedDate = picked);
-                        }
-                      },
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 18,
-                          vertical: 10,
-                        ),
-                        decoration: BoxDecoration(
-                          color: AppColors.cardSoft,
-                          borderRadius: BorderRadius.circular(999),
-                          border: Border.all(color: AppColors.outline),
-                        ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            const Icon(
-                              Icons.calendar_today_outlined,
-                              size: 18,
-                              color: AppColors.textSecondary,
-                            ),
-                            const SizedBox(width: 10),
-                            Text(
-                              '${_selectedDate.day}/${_selectedDate.month}/${_selectedDate.year}',
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 22),
-                  Text(
-                    context.t('expense.add.amountLabel'),
-                    style: const TextStyle(
-                      letterSpacing: 2,
-                      fontWeight: FontWeight.w700,
-                      color: AppColors.textSecondary,
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  Container(
-                    padding: const EdgeInsets.all(14),
+      bottomNavigationBar:
+          _isEditMode ? null : _BottomBar(items: _items, onSave: _saveAll),
+      body: SingleChildScrollView(
+        padding: EdgeInsets.fromLTRB(
+          18,
+          18,
+          18,
+          MediaQuery.of(context).viewInsets.bottom + 24,
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // ── Edit mode ────────────────────────────────────────────────
+            if (_isEditMode) ...[
+              Align(
+                alignment: Alignment.center,
+                child: InkWell(
+                  onTap: () async {
+                    final picked = await showDatePicker(
+                      context: context,
+                      initialDate: _selectedDate,
+                      firstDate: DateTime(2000),
+                      lastDate: DateTime(2100),
+                    );
+                    if (picked != null) {
+                      setState(() => _selectedDate = picked);
+                    }
+                  },
+                  borderRadius: BorderRadius.circular(999),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 18, vertical: 10),
                     decoration: BoxDecoration(
                       color: AppColors.cardSoft,
-                      borderRadius: BorderRadius.circular(18),
-                      border: Border.all(
-                        color: AppColors.negative.withValues(alpha: 0.5),
-                        width: 2,
-                      ),
+                      borderRadius: BorderRadius.circular(999),
+                      border: Border.all(color: AppColors.outline),
                     ),
                     child: Row(
+                      mainAxisSize: MainAxisSize.min,
                       children: [
-                        Container(
-                          width: 48,
-                          height: 48,
-                          decoration: BoxDecoration(
-                            color: AppColors.negative.withValues(alpha: 0.15),
-                            borderRadius: BorderRadius.circular(999),
+                        const Icon(Icons.calendar_today_outlined,
+                            size: 18, color: AppColors.textSecondary),
+                        const SizedBox(width: 10),
+                        Text(
+                          '${_selectedDate.day}/${_selectedDate.month}/${_selectedDate.year}',
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 22),
+              Text(
+                context.t('expense.add.amountLabel'),
+                style: const TextStyle(
+                  letterSpacing: 2,
+                  fontWeight: FontWeight.w700,
+                  color: AppColors.textSecondary,
+                ),
+              ),
+              const SizedBox(height: 12),
+              Container(
+                padding: const EdgeInsets.all(14),
+                decoration: BoxDecoration(
+                  color: AppColors.cardSoft,
+                  borderRadius: BorderRadius.circular(18),
+                  border: Border.all(
+                    color: AppColors.negative.withValues(alpha: 0.5),
+                    width: 2,
+                  ),
+                ),
+                child: Row(
+                  children: [
+                    Container(
+                      width: 48,
+                      height: 48,
+                      decoration: BoxDecoration(
+                        color: AppColors.negative.withValues(alpha: 0.15),
+                        borderRadius: BorderRadius.circular(999),
+                      ),
+                      alignment: Alignment.center,
+                      child: const Icon(Icons.remove,
+                          color: AppColors.negative),
+                    ),
+                    const SizedBox(width: 14),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            context.t('expense.add.currencyLabel'),
+                            style: const TextStyle(
+                              color: AppColors.negative,
+                              fontWeight: FontWeight.w700,
+                            ),
                           ),
-                          alignment: Alignment.center,
-                          child: const Icon(
-                            Icons.remove,
-                            color: AppColors.negative,
+                          const SizedBox(height: 6),
+                          TextField(
+                            controller: _amountController,
+                            keyboardType: TextInputType.number,
+                            style: const TextStyle(
+                              fontSize: 44,
+                              fontWeight: FontWeight.w900,
+                            ),
+                            inputFormatters: [
+                              FilteringTextInputFormatter.digitsOnly,
+                              CurrencyInputFormatter(),
+                            ],
+                            decoration: InputDecoration(
+                              hintText: '0',
+                              hintStyle: TextStyle(
+                                fontSize: 44,
+                                fontWeight: FontWeight.w900,
+                                color: AppColors.textPrimary
+                                    .withValues(alpha: 0.3),
+                              ),
+                              border: InputBorder.none,
+                              isDense: true,
+                              contentPadding: EdgeInsets.zero,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const Icon(Icons.unfold_more,
+                        color: AppColors.textSecondary),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 18),
+              Text(
+                context.t('common.note'),
+                style: const TextStyle(
+                  letterSpacing: 2,
+                  fontWeight: FontWeight.w700,
+                  color: AppColors.textSecondary,
+                ),
+              ),
+              const SizedBox(height: 10),
+              TextField(
+                controller: _noteController,
+                decoration: InputDecoration(
+                  prefixIcon: const Icon(Icons.edit_outlined),
+                  hintText: context.t('expense.add.noteHint'),
+                ),
+              ),
+              const SizedBox(height: 18),
+              _OutletSelectorBlock(
+                selectedOutletId: _selectedOutletId,
+                onChanged: (id) => setState(() => _selectedOutletId = id),
+              ),
+              const SizedBox(height: 18),
+              Text(
+                context.t('expense.quick.title'),
+                style: const TextStyle(
+                  letterSpacing: 2,
+                  fontWeight: FontWeight.w700,
+                  color: AppColors.textSecondary,
+                ),
+              ),
+              const SizedBox(height: 10),
+              Wrap(
+                spacing: 10,
+                runSpacing: 10,
+                children: categories.map((e) {
+                  final isSelected = _selectedCategory?.key == e.key;
+                  return ChoiceChip(
+                    label: Text(e.label),
+                    selected: isSelected,
+                    onSelected: (_) =>
+                        setState(() => _selectedCategory = e),
+                    selectedColor:
+                        AppColors.negative.withValues(alpha: 0.18),
+                    backgroundColor: AppColors.cardSoft,
+                    labelStyle: TextStyle(
+                      color: isSelected
+                          ? AppColors.negative
+                          : AppColors.textPrimary,
+                      fontWeight: FontWeight.w700,
+                    ),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      side: BorderSide(
+                        color: AppColors.outline.withValues(alpha: 0.7),
+                      ),
+                    ),
+                  );
+                }).toList(),
+              ),
+              const SizedBox(height: 24),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton.icon(
+                  onPressed: () => _saveEdit(context),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.negative,
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                  ),
+                  icon: const Icon(Icons.save_outlined),
+                  label: Text(context.t('expense.add.save')),
+                ),
+              ),
+              const SizedBox(height: 18),
+            ],
+
+            // ── Bulk mode ────────────────────────────────────────────────
+            if (!_isEditMode) ...[
+              // Date row (global for all items in this session)
+              _DateRowPicker(
+                selectedDate: _selectedDate,
+                accentColor: AppColors.negative,
+                onChanged: (d) => setState(() => _selectedDate = d),
+              ),
+              const SizedBox(height: 18),
+
+              // Form card
+              Card(
+                child: Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Amount
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 14, vertical: 10),
+                        decoration: BoxDecoration(
+                          color: AppColors.negative.withValues(alpha: 0.06),
+                          borderRadius: BorderRadius.circular(14),
+                          border: Border.all(
+                            color:
+                                AppColors.negative.withValues(alpha: 0.4),
+                            width: 1.5,
                           ),
                         ),
-                        const SizedBox(width: 14),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                context.t('expense.add.currencyLabel'),
-                                style: const TextStyle(
-                                  color: AppColors.negative,
-                                  fontWeight: FontWeight.w700,
-                                ),
+                        child: Row(
+                          children: [
+                            Container(
+                              width: 40,
+                              height: 40,
+                              decoration: BoxDecoration(
+                                color: AppColors.negative
+                                    .withValues(alpha: 0.15),
+                                shape: BoxShape.circle,
                               ),
-                              const SizedBox(height: 6),
-                              TextField(
+                              alignment: Alignment.center,
+                              child: const Icon(Icons.remove,
+                                  color: AppColors.negative, size: 20),
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: TextField(
                                 controller: _amountController,
+                                focusNode: _amountFocus,
                                 keyboardType: TextInputType.number,
                                 style: const TextStyle(
-                                  fontSize: 44,
+                                  fontSize: 36,
                                   fontWeight: FontWeight.w900,
                                 ),
                                 inputFormatters: [
@@ -217,168 +478,581 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
                                 decoration: InputDecoration(
                                   hintText: '0',
                                   hintStyle: TextStyle(
-                                    fontSize: 44,
+                                    fontSize: 36,
                                     fontWeight: FontWeight.w900,
                                     color: AppColors.textPrimary
-                                        .withValues(alpha: 0.3),
+                                        .withValues(alpha: 0.25),
                                   ),
                                   border: InputBorder.none,
                                   isDense: true,
                                   contentPadding: EdgeInsets.zero,
                                 ),
                               ),
-                            ],
-                          ),
+                            ),
+                          ],
                         ),
-                        const Icon(
-                          Icons.unfold_more,
+                      ),
+                      const SizedBox(height: 14),
+
+                      // Note
+                      TextField(
+                        controller: _noteController,
+                        decoration: InputDecoration(
+                          prefixIcon: const Icon(
+                            Icons.edit_outlined,
+                            size: 18,
+                            color: AppColors.textSecondary,
+                          ),
+                          hintText: context.t('expense.add.noteHint'),
+                          labelText: context.t('common.noteOptional'),
+                          isDense: true,
+                        ),
+                      ),
+                      const SizedBox(height: 14),
+
+                      // Categories
+                      Text(
+                        context.t('expense.quick.title'),
+                        style: const TextStyle(
+                          fontSize: 11,
+                          letterSpacing: 2,
+                          fontWeight: FontWeight.w700,
                           color: AppColors.textSecondary,
                         ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 18),
-                  Text(
-                    context.t('common.note'),
-                    style: const TextStyle(
-                      letterSpacing: 2,
-                      fontWeight: FontWeight.w700,
-                      color: AppColors.textSecondary,
-                    ),
-                  ),
-                  const SizedBox(height: 10),
-                  TextField(
-                    controller: _noteController,
-                    decoration: InputDecoration(
-                      prefixIcon: const Icon(Icons.edit_outlined),
-                      hintText: context.t('expense.add.noteHint'),
-                    ),
-                  ),
-                  const SizedBox(height: 18),
-                  _OutletSelector(
-                    selectedOutletId: _selectedOutletId,
-                    onChanged: (id) => setState(() => _selectedOutletId = id),
-                  ),
-                  const SizedBox(height: 18),
-                  Text(
-                    context.t('expense.quick.title'),
-                    style: const TextStyle(
-                      letterSpacing: 2,
-                      fontWeight: FontWeight.w700,
-                      color: AppColors.textSecondary,
-                    ),
-                  ),
-                  const SizedBox(height: 10),
-                  Wrap(
-                    spacing: 10,
-                    runSpacing: 10,
-                    children: categories.map((e) {
-                      final isSelected = _selectedCategory?.key == e.key;
-                      return ChoiceChip(
-                        label: Text(e.label),
-                        selected: isSelected,
-                        onSelected: (_) =>
-                            setState(() => _selectedCategory = e),
-                        selectedColor: AppColors.negative.withValues(
-                          alpha: 0.18,
-                        ),
-                        backgroundColor: AppColors.cardSoft,
-                        labelStyle: TextStyle(
-                          color: isSelected
-                              ? AppColors.negative
-                              : AppColors.textPrimary,
-                          fontWeight: FontWeight.w700,
-                        ),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          side: BorderSide(
-                            color: AppColors.outline.withValues(alpha: 0.7),
-                          ),
-                        ),
-                      );
-                    }).toList(),
-                  ),
-                  const SizedBox(height: 24),
-                  SizedBox(
-                    width: double.infinity,
-                    child: ElevatedButton.icon(
-                      onPressed: () => _saveExpense(context),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: AppColors.negative,
-                        foregroundColor: Colors.white,
                       ),
-                      icon: const Icon(Icons.save_outlined),
-                      label: Text(context.t('expense.add.save')),
+                      const SizedBox(height: 8),
+                      Wrap(
+                        spacing: 8,
+                        runSpacing: 8,
+                        children: categories.map((e) {
+                          final isSelected =
+                              _selectedCategory?.key == e.key;
+                          return ChoiceChip(
+                            label: Text(e.label),
+                            selected: isSelected,
+                            onSelected: (_) =>
+                                setState(() => _selectedCategory = e),
+                            selectedColor: AppColors.negative
+                                .withValues(alpha: 0.18),
+                            backgroundColor: AppColors.cardSoft,
+                            labelStyle: TextStyle(
+                              color: isSelected
+                                  ? AppColors.negative
+                                  : AppColors.textPrimary,
+                              fontWeight: FontWeight.w700,
+                            ),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(10),
+                              side: BorderSide(
+                                color: isSelected
+                                    ? AppColors.negative
+                                    : AppColors.outline
+                                        .withValues(alpha: 0.7),
+                              ),
+                            ),
+                          );
+                        }).toList(),
+                      ),
+                      const SizedBox(height: 14),
+
+                      // Outlet (per-item)
+                      _OutletPill(
+                        selectedOutletId: _selectedOutletId,
+                        accentColor: AppColors.negative,
+                        onChanged: (id) =>
+                            setState(() => _selectedOutletId = id),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(height: 12),
+
+              // Add to list button
+              SizedBox(
+                width: double.infinity,
+                child: OutlinedButton.icon(
+                  onPressed: _addToList,
+                  style: OutlinedButton.styleFrom(
+                    side: const BorderSide(
+                        color: AppColors.negative, width: 1.5),
+                    foregroundColor: AppColors.negative,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(14),
                     ),
                   ),
-                  const SizedBox(height: 18),
-                ],
+                  icon: const Icon(Icons.add_circle_outline),
+                  label: Text(
+                    context.t('bulk.addToList'),
+                    style: const TextStyle(
+                        fontWeight: FontWeight.w800, letterSpacing: 1),
+                  ),
+                ),
               ),
-            ),
-          );
-        },
+
+              // Item list (below form)
+              if (_items.isNotEmpty) ...[
+                const SizedBox(height: 18),
+                _ItemListCard(
+                  items: _items,
+                  accentColor: AppColors.negative,
+                  onDelete: (i) => setState(() => _items.removeAt(i)),
+                ),
+              ],
+
+              const SizedBox(height: 80),
+            ],
+          ],
+        ),
       ),
     );
   }
+}
 
-  void _saveExpense(BuildContext context) {
-    final rawAmount = _amountController.text.replaceAll('.', '');
-    final amount = int.tryParse(rawAmount) ?? 0;
-    if (amount > 0) {
-      if (_selectedCategory == null) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(context.t('common.validation.mandatory')),
-            backgroundColor: AppColors.negative,
-          ),
-        );
-        return;
-      }
+// ─── Date row picker (bulk mode, full-width) ─────────────────────────────────
+class _DateRowPicker extends StatelessWidget {
+  const _DateRowPicker({
+    required this.selectedDate,
+    required this.accentColor,
+    required this.onChanged,
+  });
 
-      if (widget.transaction != null) {
-        final updatedTx = widget.transaction!.copyWith(
-          amount: amount,
-          note: _noteController.text.isEmpty ? null : _noteController.text,
-          // kirim label (Bahan Baku), bukan key (expense.quick.material)
-          category: _selectedCategory!.label,
-          outletId: _selectedOutletId,
-          effectiveDate: _selectedDate,
-        );
-        context.appState.updateTransaction(updatedTx);
-      } else {
-        context.appState.addExpense(
-          amount: amount,
-          note: _noteController.text.isEmpty ? null : _noteController.text,
-          category: _selectedCategory!.label,
-          outletId: _selectedOutletId,
-          effectiveDate: _selectedDate,
-        );
-      }
+  final DateTime selectedDate;
+  final Color accentColor;
+  final ValueChanged<DateTime> onChanged;
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(context.t('common.validation.success')),
-          backgroundColor: AppColors.positive,
+  String _formatDate(DateTime d) {
+    const months = [
+      'Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun',
+      'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des',
+    ];
+    return '${d.day} ${months[d.month - 1]} ${d.year}';
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: () async {
+        final picked = await showDatePicker(
+          context: context,
+          initialDate: selectedDate,
+          firstDate: DateTime(2000),
+          lastDate: DateTime(2100),
+        );
+        if (picked != null) onChanged(picked);
+      },
+      borderRadius: BorderRadius.circular(16),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        decoration: BoxDecoration(
+          color: AppColors.cardSoft,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: AppColors.outline),
         ),
-      );
-
-      Navigator.of(context).pop();
-    }
+        child: Row(
+          children: [
+            Container(
+              width: 38,
+              height: 38,
+              decoration: BoxDecoration(
+                color: accentColor.withValues(alpha: 0.12),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              alignment: Alignment.center,
+              child: Icon(Icons.calendar_month_outlined,
+                  color: accentColor, size: 20),
+            ),
+            const SizedBox(width: 12),
+            const Expanded(
+              child: Text(
+                'Tanggal Transaksi',
+                style: TextStyle(
+                  fontWeight: FontWeight.w600,
+                  fontSize: 14,
+                ),
+              ),
+            ),
+            Container(
+              padding:
+                  const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+              decoration: BoxDecoration(
+                color: AppColors.card,
+                borderRadius: BorderRadius.circular(999),
+                border: Border.all(color: AppColors.outline),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    _formatDate(selectedDate),
+                    style: const TextStyle(
+                      fontWeight: FontWeight.w700,
+                      fontSize: 13,
+                    ),
+                  ),
+                  const SizedBox(width: 4),
+                  const Icon(Icons.keyboard_arrow_down_rounded,
+                      size: 16, color: AppColors.textSecondary),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 }
 
-class _QuickCategory {
-  const _QuickCategory({required this.key, required this.label});
-
-  final String key;
-  final String label;
-}
-
-class _OutletSelector extends StatelessWidget {
-  const _OutletSelector({
+// ─── Outlet pill (compact, for inside form card) ────────────────────────────
+class _OutletPill extends StatelessWidget {
+  const _OutletPill({
     required this.selectedOutletId,
+    required this.accentColor,
     required this.onChanged,
   });
+
+  final String? selectedOutletId;
+  final Color accentColor;
+  final ValueChanged<String?> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    final outlets = context.appState.outlets;
+    if (outlets.isEmpty) return const SizedBox.shrink();
+
+    final outletName = selectedOutletId == null
+        ? context.t('outlet.allOutlets')
+        : outlets.firstWhereOrNull((o) => o.id == selectedOutletId)?.name ??
+            context.t('outlet.selectOutlet');
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          'OUTLET',
+          style: TextStyle(
+            fontSize: 11,
+            letterSpacing: 2,
+            fontWeight: FontWeight.w700,
+            color: AppColors.textSecondary,
+          ),
+        ),
+        const SizedBox(height: 8),
+        InkWell(
+          onTap: () => _showSheet(context, outlets),
+          borderRadius: BorderRadius.circular(999),
+          child: Container(
+            padding:
+                const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            decoration: BoxDecoration(
+              color: accentColor.withValues(alpha: 0.08),
+              borderRadius: BorderRadius.circular(999),
+              border:
+                  Border.all(color: accentColor.withValues(alpha: 0.4)),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(Icons.storefront_outlined,
+                    size: 16, color: accentColor),
+                const SizedBox(width: 6),
+                Text(
+                  outletName,
+                  style: TextStyle(
+                    color: accentColor,
+                    fontWeight: FontWeight.w700,
+                    fontSize: 13,
+                  ),
+                ),
+                const SizedBox(width: 4),
+                const Icon(Icons.expand_more,
+                    size: 16, color: AppColors.textSecondary),
+              ],
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  void _showSheet(BuildContext context, List outlets) {
+    showModalBottomSheet<void>(
+      context: context,
+      backgroundColor: AppColors.card,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (ctx) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(20, 20, 20, 8),
+              child: Align(
+                alignment: Alignment.centerLeft,
+                child: Text(
+                  context.t('outlet.selectOutlet'),
+                  style: const TextStyle(
+                      fontWeight: FontWeight.w800, fontSize: 16),
+                ),
+              ),
+            ),
+            ListTile(
+              leading: const Icon(Icons.store_outlined),
+              title: Text(context.t('outlet.allOutlets')),
+              trailing: selectedOutletId == null
+                  ? const Icon(Icons.check, color: AppColors.brandBlue)
+                  : null,
+              onTap: () {
+                onChanged(null);
+                Navigator.pop(ctx);
+              },
+            ),
+            const Divider(height: 1),
+            for (final o in outlets)
+              ListTile(
+                leading: const Icon(Icons.storefront_outlined),
+                title: Text(o.name),
+                trailing: selectedOutletId == o.id
+                    ? const Icon(Icons.check, color: AppColors.brandBlue)
+                    : null,
+                onTap: () {
+                  onChanged(o.id);
+                  Navigator.pop(ctx);
+                },
+              ),
+            const SizedBox(height: 8),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// ─── Item list card ─────────────────────────────────────────────────────────
+class _ItemListCard extends StatelessWidget {
+  const _ItemListCard({
+    required this.items,
+    required this.accentColor,
+    required this.onDelete,
+  });
+
+  final List<_BulkItem> items;
+  final Color accentColor;
+  final ValueChanged<int> onDelete;
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(14),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Icon(Icons.list_alt_outlined,
+                    size: 18, color: accentColor),
+                const SizedBox(width: 8),
+                Text(
+                  'DAFTAR ITEM (${items.length})',
+                  style: const TextStyle(
+                    fontWeight: FontWeight.w800,
+                    letterSpacing: 1.5,
+                    color: AppColors.textSecondary,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 10),
+            for (int i = 0; i < items.length; i++) ...[
+              if (i > 0)
+                const Divider(height: 1, color: AppColors.outline),
+              _ItemTile(
+                  item: items[i],
+                  index: i,
+                  accentColor: accentColor,
+                  onDelete: onDelete),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _ItemTile extends StatelessWidget {
+  const _ItemTile({
+    required this.item,
+    required this.index,
+    required this.accentColor,
+    required this.onDelete,
+  });
+
+  final _BulkItem item;
+  final int index;
+  final Color accentColor;
+  final ValueChanged<int> onDelete;
+
+  @override
+  Widget build(BuildContext context) {
+    final outletName = item.outletId == null
+        ? null
+        : context.appState.outlets
+            .firstWhereOrNull((o) => o.id == item.outletId)
+            ?.name;
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8),
+      child: Row(
+        children: [
+          Container(
+            width: 28,
+            height: 28,
+            decoration: BoxDecoration(
+              color: accentColor.withValues(alpha: 0.15),
+              shape: BoxShape.circle,
+            ),
+            alignment: Alignment.center,
+            child: Text(
+              '${index + 1}',
+              style: TextStyle(
+                color: accentColor,
+                fontWeight: FontWeight.w800,
+                fontSize: 12,
+              ),
+            ),
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  IdrFormatter.format(item.amount),
+                  style: TextStyle(
+                      fontWeight: FontWeight.w800, color: accentColor),
+                ),
+                if (item.note != null)
+                  Text(
+                    item.note!,
+                    style: const TextStyle(
+                        fontSize: 12, color: AppColors.textPrimary),
+                  ),
+                Row(
+                  children: [
+                    Text(
+                      item.category,
+                      style: const TextStyle(
+                          fontSize: 12, color: AppColors.textSecondary),
+                    ),
+                    if (outletName != null) ...[
+                      const Text(
+                        '  ·  ',
+                        style:
+                            TextStyle(color: AppColors.textSecondary),
+                      ),
+                      const Icon(Icons.storefront_outlined,
+                          size: 12, color: AppColors.textSecondary),
+                      const SizedBox(width: 3),
+                      Text(
+                        outletName,
+                        style: const TextStyle(
+                            fontSize: 12,
+                            color: AppColors.textSecondary),
+                      ),
+                    ],
+                  ],
+                ),
+              ],
+            ),
+          ),
+          IconButton(
+            icon: const Icon(Icons.delete_outline,
+                size: 18, color: AppColors.negative),
+            onPressed: () => onDelete(index),
+            padding: EdgeInsets.zero,
+            constraints: const BoxConstraints(),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ─── Bottom bar ──────────────────────────────────────────────────────────────
+class _BottomBar extends StatelessWidget {
+  const _BottomBar({required this.items, required this.onSave});
+
+  final List<_BulkItem> items;
+  final VoidCallback onSave;
+
+  @override
+  Widget build(BuildContext context) {
+    final total = items.fold<int>(0, (s, e) => s + e.amount);
+
+    return SafeArea(
+      child: Container(
+        padding: const EdgeInsets.fromLTRB(18, 12, 18, 12),
+        decoration: const BoxDecoration(
+          color: AppColors.card,
+          border: Border(top: BorderSide(color: AppColors.outline)),
+        ),
+        child: Row(
+          children: [
+            Expanded(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'TOTAL SESI INI',
+                    style: TextStyle(
+                      fontSize: 11,
+                      letterSpacing: 1.5,
+                      color: AppColors.textSecondary,
+                    ),
+                  ),
+                  Text(
+                    IdrFormatter.format(total),
+                    style: const TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w800,
+                      color: AppColors.negative,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(width: 14),
+            ElevatedButton(
+              onPressed: items.isNotEmpty ? onSave : null,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.negative,
+                foregroundColor: Colors.white,
+                minimumSize: const Size(64, 56),
+                padding: const EdgeInsets.symmetric(horizontal: 20),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(14),
+                ),
+              ),
+              child: Text(
+                'SIMPAN SEMUA (${items.length})',
+                style: const TextStyle(
+                    fontWeight: FontWeight.w800, letterSpacing: 1),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// ─── Outlet selector block (edit mode) ──────────────────────────────────────
+class _OutletSelectorBlock extends StatelessWidget {
+  const _OutletSelectorBlock(
+      {required this.selectedOutletId, required this.onChanged});
 
   final String? selectedOutletId;
   final ValueChanged<String?> onChanged;
@@ -389,12 +1063,9 @@ class _OutletSelector extends StatelessWidget {
     if (outlets.isEmpty) return const SizedBox.shrink();
 
     final selectedName = selectedOutletId == null
-        ? 'Semua / Tidak ditentukan'
-        : outlets
-                .where((o) => o.id == selectedOutletId)
-                .firstOrNull
-                ?.name ??
-            'Pilih Outlet';
+        ? context.t('outlet.allOutlets')
+        : outlets.firstWhereOrNull((o) => o.id == selectedOutletId)?.name ??
+            context.t('outlet.selectOutlet');
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -409,69 +1080,62 @@ class _OutletSelector extends StatelessWidget {
         ),
         const SizedBox(height: 10),
         InkWell(
-          onTap: () async {
-            await showModalBottomSheet<void>(
-              context: context,
-              backgroundColor: AppColors.card,
-              shape: const RoundedRectangleBorder(
-                borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-              ),
-              builder: (ctx) {
-                return SafeArea(
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      const Padding(
-                        padding: EdgeInsets.fromLTRB(20, 20, 20, 8),
-                        child: Align(
-                          alignment: Alignment.centerLeft,
-                          child: Text(
-                            'Pilih Outlet',
-                            style: TextStyle(
-                              fontWeight: FontWeight.w800,
-                              fontSize: 16,
-                            ),
-                          ),
-                        ),
+          onTap: () => showModalBottomSheet<void>(
+            context: context,
+            backgroundColor: AppColors.card,
+            shape: const RoundedRectangleBorder(
+              borderRadius:
+                  BorderRadius.vertical(top: Radius.circular(20)),
+            ),
+            builder: (ctx) => SafeArea(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(20, 20, 20, 8),
+                    child: Align(
+                      alignment: Alignment.centerLeft,
+                      child: Text(
+                        context.t('outlet.selectOutlet'),
+                        style: const TextStyle(
+                            fontWeight: FontWeight.w800, fontSize: 16),
                       ),
-                      ListTile(
-                        leading: const Icon(Icons.store_outlined),
-                        title: const Text('Tidak ditentukan'),
-                        trailing: selectedOutletId == null
-                            ? const Icon(Icons.check,
-                                color: AppColors.brandBlue)
-                            : null,
-                        onTap: () {
-                          onChanged(null);
-                          Navigator.pop(ctx);
-                        },
-                      ),
-                      const Divider(height: 1),
-                      ...outlets.map((o) => ListTile(
-                            leading: const Icon(Icons.storefront_outlined),
-                            title: Text(o.name),
-                            subtitle: o.address != null
-                                ? Text(o.address!,
-                                    style: const TextStyle(fontSize: 12))
-                                : null,
-                            trailing: selectedOutletId == o.id
-                                ? const Icon(Icons.check,
-                                    color: AppColors.brandBlue)
-                                : null,
-                            onTap: () {
-                              onChanged(o.id);
-                              Navigator.pop(ctx);
-                            },
-                          )),
-                      const SizedBox(height: 8),
-                    ],
+                    ),
                   ),
-                );
-              },
-            );
-          },
+                  ListTile(
+                    leading: const Icon(Icons.store_outlined),
+                    title: Text(context.t('outlet.allOutlets')),
+                    trailing: selectedOutletId == null
+                        ? const Icon(Icons.check,
+                            color: AppColors.brandBlue)
+                        : null,
+                    onTap: () {
+                      onChanged(null);
+                      Navigator.pop(ctx);
+                    },
+                  ),
+                  const Divider(height: 1),
+                  for (final o in outlets)
+                    ListTile(
+                      leading: const Icon(Icons.storefront_outlined),
+                      title: Text(o.name),
+                      trailing: selectedOutletId == o.id
+                          ? const Icon(Icons.check,
+                              color: AppColors.brandBlue)
+                          : null,
+                      onTap: () {
+                        onChanged(o.id);
+                        Navigator.pop(ctx);
+                      },
+                    ),
+                  const SizedBox(height: 8),
+                ],
+              ),
+            ),
+          ),
           child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+            padding: const EdgeInsets.symmetric(
+                horizontal: 14, vertical: 14),
             decoration: BoxDecoration(
               color: AppColors.cardSoft,
               borderRadius: BorderRadius.circular(14),
@@ -482,13 +1146,12 @@ class _OutletSelector extends StatelessWidget {
             ),
             child: Row(
               children: [
-                const Icon(
-                  Icons.storefront_outlined,
-                  color: AppColors.negative,
-                ),
+                const Icon(Icons.storefront_outlined,
+                    color: AppColors.negative),
                 const SizedBox(width: 10),
                 Expanded(child: Text(selectedName)),
-                const Icon(Icons.expand_more, color: AppColors.textSecondary),
+                const Icon(Icons.expand_more,
+                    color: AppColors.textSecondary),
               ],
             ),
           ),
@@ -496,4 +1159,11 @@ class _OutletSelector extends StatelessWidget {
       ],
     );
   }
+}
+
+// ─── Quick category model ────────────────────────────────────────────────────
+class _QuickCategory {
+  const _QuickCategory({required this.key, required this.label});
+  final String key;
+  final String label;
 }
