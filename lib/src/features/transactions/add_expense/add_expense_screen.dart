@@ -7,6 +7,7 @@ import '../../../core/localization/transalation_extansions.dart';
 import '../../../core/models/money_transaction.dart';
 import '../../../core/state/app_state.dart';
 import '../../../core/theme/app_colors.dart';
+import '../../../core/theme/app_dynamic_colors.dart';
 import '../../../core/ui/app_gradient_scaffold.dart';
 
 // ─── Bulk item model ────────────────────────────────────────────────────────
@@ -242,15 +243,15 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
                     padding: const EdgeInsets.symmetric(
                         horizontal: 18, vertical: 10),
                     decoration: BoxDecoration(
-                      color: AppColors.cardSoft,
+                      color: context.appColors.cardSoft,
                       borderRadius: BorderRadius.circular(999),
-                      border: Border.all(color: AppColors.outline),
+                      border: Border.all(color: context.appColors.outline),
                     ),
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        const Icon(Icons.calendar_today_outlined,
-                            size: 18, color: AppColors.textSecondary),
+                        Icon(Icons.calendar_today_outlined,
+                            size: 18, color: context.appColors.textSecondary),
                         const SizedBox(width: 10),
                         Text(
                           '${_selectedDate.day}/${_selectedDate.month}/${_selectedDate.year}',
@@ -263,17 +264,17 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
               const SizedBox(height: 22),
               Text(
                 context.t('expense.add.amountLabel'),
-                style: const TextStyle(
+                style: TextStyle(
                   letterSpacing: 2,
                   fontWeight: FontWeight.w700,
-                  color: AppColors.textSecondary,
+                  color: context.appColors.textSecondary,
                 ),
               ),
               const SizedBox(height: 12),
               Container(
                 padding: const EdgeInsets.all(14),
                 decoration: BoxDecoration(
-                  color: AppColors.cardSoft,
+                  color: context.appColors.cardSoft,
                   borderRadius: BorderRadius.circular(18),
                   border: Border.all(
                     color: AppColors.negative.withValues(alpha: 0.5),
@@ -322,7 +323,7 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
                               hintStyle: TextStyle(
                                 fontSize: 44,
                                 fontWeight: FontWeight.w900,
-                                color: AppColors.textPrimary
+                                color: context.appColors.textPrimary
                                     .withValues(alpha: 0.3),
                               ),
                               border: InputBorder.none,
@@ -333,18 +334,18 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
                         ],
                       ),
                     ),
-                    const Icon(Icons.unfold_more,
-                        color: AppColors.textSecondary),
+                    Icon(Icons.unfold_more,
+                        color: context.appColors.textSecondary),
                   ],
                 ),
               ),
               const SizedBox(height: 18),
               Text(
                 context.t('common.note'),
-                style: const TextStyle(
+                style: TextStyle(
                   letterSpacing: 2,
                   fontWeight: FontWeight.w700,
-                  color: AppColors.textSecondary,
+                  color: context.appColors.textSecondary,
                 ),
               ),
               const SizedBox(height: 10),
@@ -363,10 +364,10 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
               const SizedBox(height: 18),
               Text(
                 context.t('expense.quick.title'),
-                style: const TextStyle(
+                style: TextStyle(
                   letterSpacing: 2,
                   fontWeight: FontWeight.w700,
-                  color: AppColors.textSecondary,
+                  color: context.appColors.textSecondary,
                 ),
               ),
               const SizedBox(height: 10),
@@ -382,17 +383,19 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
                         setState(() => _selectedCategory = e),
                     selectedColor:
                         AppColors.negative.withValues(alpha: 0.18),
-                    backgroundColor: AppColors.cardSoft,
+                    backgroundColor: context.appColors.cardSoft,
                     labelStyle: TextStyle(
                       color: isSelected
                           ? AppColors.negative
-                          : AppColors.textPrimary,
+                          : context.appColors.textPrimary,
                       fontWeight: FontWeight.w700,
                     ),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12),
                       side: BorderSide(
-                        color: AppColors.outline.withValues(alpha: 0.7),
+                        color: isSelected
+                            ? AppColors.negative
+                            : context.appColors.outline.withValues(alpha: 0.7),
                       ),
                     ),
                   );
@@ -480,7 +483,7 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
                                   hintStyle: TextStyle(
                                     fontSize: 36,
                                     fontWeight: FontWeight.w900,
-                                    color: AppColors.textPrimary
+                                    color: context.appColors.textPrimary
                                         .withValues(alpha: 0.25),
                                   ),
                                   border: InputBorder.none,
@@ -498,10 +501,10 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
                       TextField(
                         controller: _noteController,
                         decoration: InputDecoration(
-                          prefixIcon: const Icon(
+                          prefixIcon: Icon(
                             Icons.edit_outlined,
                             size: 18,
-                            color: AppColors.textSecondary,
+                            color: context.appColors.textSecondary,
                           ),
                           hintText: context.t('expense.add.noteHint'),
                           labelText: context.t('common.noteOptional'),
@@ -513,11 +516,11 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
                       // Categories
                       Text(
                         context.t('expense.quick.title'),
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 11,
                           letterSpacing: 2,
                           fontWeight: FontWeight.w700,
-                          color: AppColors.textSecondary,
+                          color: context.appColors.textSecondary,
                         ),
                       ),
                       const SizedBox(height: 8),
@@ -534,11 +537,11 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
                                 setState(() => _selectedCategory = e),
                             selectedColor: AppColors.negative
                                 .withValues(alpha: 0.18),
-                            backgroundColor: AppColors.cardSoft,
+                            backgroundColor: context.appColors.cardSoft,
                             labelStyle: TextStyle(
                               color: isSelected
                                   ? AppColors.negative
-                                  : AppColors.textPrimary,
+                                  : context.appColors.textPrimary,
                               fontWeight: FontWeight.w700,
                             ),
                             shape: RoundedRectangleBorder(
@@ -546,7 +549,7 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
                               side: BorderSide(
                                 color: isSelected
                                     ? AppColors.negative
-                                    : AppColors.outline
+                                    : context.appColors.outline
                                         .withValues(alpha: 0.7),
                               ),
                             ),
@@ -645,9 +648,9 @@ class _DateRowPicker extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
         decoration: BoxDecoration(
-          color: AppColors.cardSoft,
+          color: context.appColors.cardSoft,
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: AppColors.outline),
+          border: Border.all(color: context.appColors.outline),
         ),
         child: Row(
           children: [
@@ -663,12 +666,13 @@ class _DateRowPicker extends StatelessWidget {
                   color: accentColor, size: 20),
             ),
             const SizedBox(width: 12),
-            const Expanded(
+            Expanded(
               child: Text(
                 'Tanggal Transaksi',
                 style: TextStyle(
                   fontWeight: FontWeight.w600,
                   fontSize: 14,
+                  color: context.appColors.textPrimary,
                 ),
               ),
             ),
@@ -676,23 +680,24 @@ class _DateRowPicker extends StatelessWidget {
               padding:
                   const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
               decoration: BoxDecoration(
-                color: AppColors.card,
+                color: context.appColors.card,
                 borderRadius: BorderRadius.circular(999),
-                border: Border.all(color: AppColors.outline),
+                border: Border.all(color: context.appColors.outline),
               ),
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Text(
                     _formatDate(selectedDate),
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontWeight: FontWeight.w700,
                       fontSize: 13,
+                      color: context.appColors.textPrimary,
                     ),
                   ),
                   const SizedBox(width: 4),
-                  const Icon(Icons.keyboard_arrow_down_rounded,
-                      size: 16, color: AppColors.textSecondary),
+                  Icon(Icons.keyboard_arrow_down_rounded,
+                      size: 16, color: context.appColors.textSecondary),
                 ],
               ),
             ),
@@ -728,13 +733,13 @@ class _OutletPill extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
+        Text(
           'OUTLET',
           style: TextStyle(
             fontSize: 11,
             letterSpacing: 2,
             fontWeight: FontWeight.w700,
-            color: AppColors.textSecondary,
+            color: context.appColors.textSecondary,
           ),
         ),
         const SizedBox(height: 8),
@@ -765,8 +770,8 @@ class _OutletPill extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(width: 4),
-                const Icon(Icons.expand_more,
-                    size: 16, color: AppColors.textSecondary),
+                Icon(Icons.expand_more,
+                    size: 16, color: context.appColors.textSecondary),
               ],
             ),
           ),
@@ -778,7 +783,7 @@ class _OutletPill extends StatelessWidget {
   void _showSheet(BuildContext context, List outlets) {
     showModalBottomSheet<void>(
       context: context,
-      backgroundColor: AppColors.card,
+      backgroundColor: context.appColors.card,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
@@ -856,10 +861,10 @@ class _ItemListCard extends StatelessWidget {
                 const SizedBox(width: 8),
                 Text(
                   'DAFTAR ITEM (${items.length})',
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontWeight: FontWeight.w800,
                     letterSpacing: 1.5,
-                    color: AppColors.textSecondary,
+                    color: context.appColors.textSecondary,
                   ),
                 ),
               ],
@@ -867,7 +872,7 @@ class _ItemListCard extends StatelessWidget {
             const SizedBox(height: 10),
             for (int i = 0; i < items.length; i++) ...[
               if (i > 0)
-                const Divider(height: 1, color: AppColors.outline),
+                Divider(height: 1, color: context.appColors.outline),
               _ItemTile(
                   item: items[i],
                   index: i,
@@ -936,30 +941,33 @@ class _ItemTile extends StatelessWidget {
                 if (item.note != null)
                   Text(
                     item.note!,
-                    style: const TextStyle(
-                        fontSize: 12, color: AppColors.textPrimary),
+                    style: TextStyle(
+                        fontSize: 12,
+                        color: context.appColors.textPrimary),
                   ),
                 Row(
                   children: [
                     Text(
                       item.category,
-                      style: const TextStyle(
-                          fontSize: 12, color: AppColors.textSecondary),
+                      style: TextStyle(
+                          fontSize: 12,
+                          color: context.appColors.textSecondary),
                     ),
                     if (outletName != null) ...[
-                      const Text(
+                      Text(
                         '  ·  ',
-                        style:
-                            TextStyle(color: AppColors.textSecondary),
+                        style: TextStyle(
+                            color: context.appColors.textSecondary),
                       ),
-                      const Icon(Icons.storefront_outlined,
-                          size: 12, color: AppColors.textSecondary),
+                      Icon(Icons.storefront_outlined,
+                          size: 12,
+                          color: context.appColors.textSecondary),
                       const SizedBox(width: 3),
                       Text(
                         outletName,
-                        style: const TextStyle(
+                        style: TextStyle(
                             fontSize: 12,
-                            color: AppColors.textSecondary),
+                            color: context.appColors.textSecondary),
                       ),
                     ],
                   ],
@@ -994,9 +1002,10 @@ class _BottomBar extends StatelessWidget {
     return SafeArea(
       child: Container(
         padding: const EdgeInsets.fromLTRB(18, 12, 18, 12),
-        decoration: const BoxDecoration(
-          color: AppColors.card,
-          border: Border(top: BorderSide(color: AppColors.outline)),
+        decoration: BoxDecoration(
+          color: context.appColors.card,
+          border: Border(
+              top: BorderSide(color: context.appColors.outline)),
         ),
         child: Row(
           children: [
@@ -1005,12 +1014,12 @@ class _BottomBar extends StatelessWidget {
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text(
+                  Text(
                     'TOTAL SESI INI',
                     style: TextStyle(
                       fontSize: 11,
                       letterSpacing: 1.5,
-                      color: AppColors.textSecondary,
+                      color: context.appColors.textSecondary,
                     ),
                   ),
                   Text(
@@ -1070,19 +1079,19 @@ class _OutletSelectorBlock extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
+        Text(
           'Outlet',
           style: TextStyle(
             letterSpacing: 2,
             fontWeight: FontWeight.w700,
-            color: AppColors.textSecondary,
+            color: context.appColors.textSecondary,
           ),
         ),
         const SizedBox(height: 10),
         InkWell(
           onTap: () => showModalBottomSheet<void>(
             context: context,
-            backgroundColor: AppColors.card,
+            backgroundColor: context.appColors.card,
             shape: const RoundedRectangleBorder(
               borderRadius:
                   BorderRadius.vertical(top: Radius.circular(20)),
@@ -1137,7 +1146,7 @@ class _OutletSelectorBlock extends StatelessWidget {
             padding: const EdgeInsets.symmetric(
                 horizontal: 14, vertical: 14),
             decoration: BoxDecoration(
-              color: AppColors.cardSoft,
+              color: context.appColors.cardSoft,
               borderRadius: BorderRadius.circular(14),
               border: Border.all(
                 color: AppColors.negative.withValues(alpha: 0.5),
@@ -1150,8 +1159,8 @@ class _OutletSelectorBlock extends StatelessWidget {
                     color: AppColors.negative),
                 const SizedBox(width: 10),
                 Expanded(child: Text(selectedName)),
-                const Icon(Icons.expand_more,
-                    color: AppColors.textSecondary),
+                Icon(Icons.expand_more,
+                    color: context.appColors.textSecondary),
               ],
             ),
           ),

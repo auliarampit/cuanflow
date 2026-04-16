@@ -269,7 +269,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
                 ),
                 child: Row(
                   children: [
-                    const Icon(Icons.calendar_today, size: 20, color: Colors.white),
+                    Icon(Icons.calendar_today, size: 20, color: context.appColors.textPrimary),
                     const SizedBox(width: 12),
                     Text(
                       _getFilterLabel(),
@@ -293,13 +293,13 @@ class _HistoryScreenState extends State<HistoryScreen> {
                 ? Center(
                     child: Text(
                       context.t('history.empty'),
-                      style: TextStyle(color: context.appColors.textSecondary.withOpacity(0.5)),
+                      style: TextStyle(color: context.appColors.textSecondary.withValues(alpha: 0.5)),
                     ),
                   )
                 : ListView.separated(
                     padding: const EdgeInsets.symmetric(horizontal: 20),
                     itemCount: sortedDates.length,
-                    separatorBuilder: (_, __) => const SizedBox(height: 24),
+                    separatorBuilder: (_, i) => const SizedBox(height: 24),
                     itemBuilder: (context, index) {
                       final date = sortedDates[index];
                       final txs = grouped[date]!;
@@ -321,8 +321,9 @@ class _HistoryScreenState extends State<HistoryScreen> {
             ),
             child: SafeArea(
               child: HistorySummaryCard(
+                totalIncome: totalIncome,
+                totalExpense: totalExpense,
                 totalProfit: totalProfit,
-                percentageChange: null, // To implement percentage change, we need previous period data
               ),
             ),
           ),
