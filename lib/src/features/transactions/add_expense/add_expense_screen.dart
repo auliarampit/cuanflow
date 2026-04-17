@@ -5,10 +5,12 @@ import '../../../core/formatters/currency_input_formatter.dart';
 import '../../../core/formatters/idr_formatter.dart';
 import '../../../core/localization/transalation_extansions.dart';
 import '../../../core/models/money_transaction.dart';
+import '../../../core/models/user_category.dart';
 import '../../../core/state/app_state.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_dynamic_colors.dart';
 import '../../../core/ui/app_gradient_scaffold.dart';
+import '../../../shared/widgets/category_dropdown.dart';
 
 // ─── Bulk item model ────────────────────────────────────────────────────────
 class _BulkItem {
@@ -33,7 +35,7 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
   final _noteController = TextEditingController();
   final _amountFocus = FocusNode();
 
-  _QuickCategory? _selectedCategory;
+  UserCategory? _selectedCategory;
   String? _selectedOutletId;
   DateTime _selectedDate = DateTime.now();
   bool _didInit = false;
@@ -80,20 +82,8 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
     super.dispose();
   }
 
-  List<_QuickCategory> _buildCategories(BuildContext context) => [
-        _QuickCategory(
-          key: 'expense.quick.material',
-          label: context.t('expense.quick.material'),
-        ),
-        _QuickCategory(
-          key: 'expense.quick.transport',
-          label: context.t('expense.quick.transport'),
-        ),
-        _QuickCategory(
-          key: 'expense.quick.operational',
-          label: context.t('expense.quick.operational'),
-        ),
-      ];
+  List<UserCategory> _buildCategories(BuildContext context) =>
+      context.appState.categoriesFor(MoneyTransactionType.expense);
 
   void _addToList() {
     final rawAmount = _amountController.text.replaceAll('.', '');
@@ -362,44 +352,11 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
                 onChanged: (id) => setState(() => _selectedOutletId = id),
               ),
               const SizedBox(height: 18),
-              Text(
-                context.t('expense.quick.title'),
-                style: TextStyle(
-                  letterSpacing: 2,
-                  fontWeight: FontWeight.w700,
-                  color: context.appColors.textSecondary,
-                ),
-              ),
-              const SizedBox(height: 10),
-              Wrap(
-                spacing: 10,
-                runSpacing: 10,
-                children: categories.map((e) {
-                  final isSelected = _selectedCategory?.key == e.key;
-                  return ChoiceChip(
-                    label: Text(e.label),
-                    selected: isSelected,
-                    onSelected: (_) =>
-                        setState(() => _selectedCategory = e),
-                    selectedColor:
-                        AppColors.negative.withValues(alpha: 0.18),
-                    backgroundColor: context.appColors.cardSoft,
-                    labelStyle: TextStyle(
-                      color: isSelected
-                          ? AppColors.negative
-                          : context.appColors.textPrimary,
-                      fontWeight: FontWeight.w700,
-                    ),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      side: BorderSide(
-                        color: isSelected
-                            ? AppColors.negative
-                            : context.appColors.outline.withValues(alpha: 0.7),
-                      ),
-                    ),
-                  );
-                }).toList(),
+              CategoryDropdown(
+                categories: categories,
+                selected: _selectedCategory,
+                accentColor: AppColors.negative,
+                onChanged: (cat) => setState(() => _selectedCategory = cat),
               ),
               const SizedBox(height: 24),
               SizedBox(
@@ -514,47 +471,12 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
                       const SizedBox(height: 14),
 
                       // Categories
-                      Text(
-                        context.t('expense.quick.title'),
-                        style: TextStyle(
-                          fontSize: 11,
-                          letterSpacing: 2,
-                          fontWeight: FontWeight.w700,
-                          color: context.appColors.textSecondary,
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      Wrap(
-                        spacing: 8,
-                        runSpacing: 8,
-                        children: categories.map((e) {
-                          final isSelected =
-                              _selectedCategory?.key == e.key;
-                          return ChoiceChip(
-                            label: Text(e.label),
-                            selected: isSelected,
-                            onSelected: (_) =>
-                                setState(() => _selectedCategory = e),
-                            selectedColor: AppColors.negative
-                                .withValues(alpha: 0.18),
-                            backgroundColor: context.appColors.cardSoft,
-                            labelStyle: TextStyle(
-                              color: isSelected
-                                  ? AppColors.negative
-                                  : context.appColors.textPrimary,
-                              fontWeight: FontWeight.w700,
-                            ),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(10),
-                              side: BorderSide(
-                                color: isSelected
-                                    ? AppColors.negative
-                                    : context.appColors.outline
-                                        .withValues(alpha: 0.7),
-                              ),
-                            ),
-                          );
-                        }).toList(),
+                      CategoryDropdown(
+                        categories: categories,
+                        selected: _selectedCategory,
+                        accentColor: AppColors.negative,
+                        onChanged: (cat) =>
+                            setState(() => _selectedCategory = cat),
                       ),
                       const SizedBox(height: 14),
 
@@ -1170,9 +1092,3 @@ class _OutletSelectorBlock extends StatelessWidget {
   }
 }
 
-// ─── Quick category model ────────────────────────────────────────────────────
-class _QuickCategory {
-  const _QuickCategory({required this.key, required this.label});
-  final String key;
-  final String label;
-}

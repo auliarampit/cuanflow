@@ -1,6 +1,7 @@
 import 'package:cari_untung/src/app/routes.dart';
 import 'package:cari_untung/src/core/state/app_state.dart';
 import 'package:cari_untung/src/features/outlets/manage_outlets_screen.dart';
+import 'package:cari_untung/src/features/categories/manage_categories_screen.dart';
 import 'package:cari_untung/src/shared/widgets/loading_dialog.dart';
 import 'package:flutter/material.dart';
 import 'package:package_info_plus/package_info_plus.dart';
@@ -63,31 +64,45 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final profile = context.appState.profile;
+
     return SafeArea(
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(18, 24, 18, 16),
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.fromLTRB(18, 24, 18, 24),
         child: Column(
           children: [
+            // ── Avatar & nama ─────────────────────────────────────────────
             CircleAvatar(
               radius: 40,
               backgroundColor: context.appColors.chipBg,
-            ),
-            const SizedBox(height: 16),
-            Text(
-              context.t('profile.ownerName'),
-              style: const TextStyle(
-                fontSize: 22,
-                fontWeight: FontWeight.w800,
+              child: Text(
+                profile.fullName.isNotEmpty
+                    ? profile.fullName[0].toUpperCase()
+                    : '?',
+                style: TextStyle(
+                  fontSize: 28,
+                  fontWeight: FontWeight.w800,
+                  color: context.appColors.textPrimary,
+                ),
               ),
+            ),
+            const SizedBox(height: 12),
+            Text(
+              profile.fullName.isNotEmpty
+                  ? profile.fullName
+                  : context.t('profile.ownerName'),
+              style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w800),
             ),
             const SizedBox(height: 4),
             Text(
-              context.t('profile.businessName'),
-              style: TextStyle(
-                color: context.appColors.textSecondary,
-              ),
+              profile.businessName.isNotEmpty
+                  ? profile.businessName
+                  : context.t('profile.businessName'),
+              style: TextStyle(color: context.appColors.textSecondary),
             ),
-            const SizedBox(height: 24),
+            const SizedBox(height: 28),
+
+            // ── Section label ─────────────────────────────────────────────
             Align(
               alignment: Alignment.centerLeft,
               child: Text(
@@ -95,47 +110,57 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 style: TextStyle(
                   fontWeight: FontWeight.w700,
                   letterSpacing: 1.4,
+                  fontSize: 12,
                   color: context.appColors.textSecondary,
                 ),
               ),
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: 10),
+
+            // ── Menu items ────────────────────────────────────────────────
             _ProfileMenuItem(
               icon: Icons.person_outline,
               title: context.t('profile.menu.accountSettings'),
               subtitle: context.t('profile.menu.accountSettingsSubtitle'),
               onTap: () => _openAccountSettings(context),
             ),
-            const SizedBox(height: 10),
+            const SizedBox(height: 8),
             _ProfileMenuItem(
               icon: Icons.store_outlined,
               title: 'Kelola Outlet',
               subtitle: '${context.appState.outlets.length} outlet terdaftar',
-              onTap: () {
-                Navigator.of(context).push(
-                  MaterialPageRoute(
-                    builder: (_) => const ManageOutletsScreen(),
-                  ),
-                );
-              },
+              onTap: () => Navigator.of(context).push(
+                MaterialPageRoute(builder: (_) => const ManageOutletsScreen()),
+              ),
             ),
-            const SizedBox(height: 10),
-            // _ProfileMenuItem(
-            //   icon: Icons.lock_outline,
-            //   title: context.t('profile.menu.changePin'),
-            //   subtitle: context.t('profile.menu.changePinSubtitle'),
-            //   onTap: () {},
-            // ),
-            const SizedBox(height: 10),
+            const SizedBox(height: 8),
+            _ProfileMenuItem(
+              icon: Icons.category_outlined,
+              title: 'Kelola Kategori',
+              subtitle: 'Atur kategori pemasukan & pengeluaran',
+              onTap: () => Navigator.of(context).push(
+                MaterialPageRoute(
+                    builder: (_) => const ManageCategoriesScreen()),
+              ),
+            ),
+            const SizedBox(height: 8),
+            _ProfileMenuItem(
+              icon: Icons.lock_outline,
+              title: context.t('profile.menu.changePin'),
+              subtitle: context.t('profile.menu.changePinSubtitle'),
+              onTap: () =>
+                  Navigator.of(context).pushNamed(AppRoutes.changePin),
+            ),
+            const SizedBox(height: 8),
             _ProfileMenuItem(
               icon: Icons.language,
               title: context.t('profile.menu.language'),
               subtitle: context.t('profile.menu.languageValue'),
-              onTap: () {
-                Navigator.of(context).pushNamed(AppRoutes.settings);
-              },
+              onTap: () => Navigator.of(context).pushNamed(AppRoutes.settings),
             ),
-            const Spacer(),
+            const SizedBox(height: 24),
+
+            // ── Logout ────────────────────────────────────────────────────
             SizedBox(
               width: double.infinity,
               child: ElevatedButton(

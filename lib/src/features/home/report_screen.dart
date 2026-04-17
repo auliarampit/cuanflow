@@ -9,6 +9,7 @@ import '../../core/services/report_pdf_service.dart';
 import '../../core/state/app_state.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_dynamic_colors.dart';
+import 'widgets/monthly_bar_chart.dart';
 
 class ReportScreen extends StatefulWidget {
   const ReportScreen({super.key});
@@ -208,6 +209,14 @@ class _ReportScreenState extends State<ReportScreen> {
                         ),
                       ],
                     ),
+                  ),
+
+                  const SizedBox(height: 16),
+
+                  // ── Bar chart: 6 bulan terakhir ─────────────────────────
+                  MonthlyBarChart(
+                    selectedDate: _selectedDate,
+                    appState: appState,
                   ),
 
                   const SizedBox(height: 16),

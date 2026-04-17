@@ -4,6 +4,7 @@ import 'package:cari_untung/src/core/state/app_state.dart';
 import 'package:cari_untung/src/core/theme/app_colors.dart';
 import 'package:cari_untung/src/core/ui/app_gradient_scaffold.dart';
 import 'package:cari_untung/src/core/ui/responsive_utils.dart';
+import 'package:cari_untung/src/features/auth/forgot_pin_sheet.dart';
 import 'package:cari_untung/src/features/auth/pin_input.dart';
 import 'package:cari_untung/src/shared/widgets/loading_dialog.dart';
 import 'package:flutter/material.dart';
@@ -176,7 +177,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       Align(
                         alignment: Alignment.centerRight,
                         child: TextButton(
-                          onPressed: () {},
+                          onPressed: () => ForgotPinSheet.show(context),
                           child: Text(context.t('auth.login.forgotPin')),
                         ),
                       ),
@@ -204,7 +205,8 @@ class _LoginScreenState extends State<LoginScreen> {
                                 color: AppColors.textSecondary),
                           ),
                           TextButton(
-                            onPressed: () {},
+                            onPressed: () => Navigator.of(context)
+                                .pushNamed(AppRoutes.register),
                             child: Text(context.t('auth.login.register')),
                           ),
                         ],

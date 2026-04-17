@@ -37,6 +37,9 @@ dependencies:
   package_info_plus: ^9.0.0
   path_provider: ^2.1.5
   
+  fl_chart: ^0.69.0
+  flutter_local_notifications: ^17.2.4
+  timezone: ^0.9.4
   cupertino_icons: ^1.0.8
   pdf: ^3.11.3
   printing: ^5.14.2

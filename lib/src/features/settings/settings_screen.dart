@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../app/routes.dart';
 import '../../core/localization/transalation_extansions.dart';
+import '../../core/services/notification_service.dart';
 import '../../core/state/app_state.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_dynamic_colors.dart';
@@ -69,11 +70,19 @@ class _SettingsScreenState extends State<SettingsScreen> {
           _SettingsSwitchTile(
             icon: Icons.notifications_outlined,
             title: context.t('settings.dailyNotification'),
+            subtitle: settings.dailyNotification
+                ? context.t('settings.dailyNotificationOn')
+                : context.t('settings.dailyNotificationOff'),
             value: settings.dailyNotification,
-            onChanged: (v) {
+            onChanged: (v) async {
               context.appState.updateSettings(
                 settings.copyWith(dailyNotification: v),
               );
+              if (v) {
+                await NotificationService.schedule();
+              } else {
+                await NotificationService.cancel();
+              }
             },
           ),
 
@@ -305,17 +314,19 @@ class _SettingsSwitchTile extends StatelessWidget {
     required this.title,
     required this.value,
     required this.onChanged,
+    this.subtitle,
   });
 
   final IconData icon;
   final String title;
   final bool value;
   final ValueChanged<bool> onChanged;
+  final String? subtitle;
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
       decoration: BoxDecoration(
         color: context.appColors.card,
         borderRadius: BorderRadius.circular(16),
@@ -325,7 +336,23 @@ class _SettingsSwitchTile extends StatelessWidget {
         children: [
           Icon(icon, color: AppColors.brandBlue, size: 22),
           const SizedBox(width: 14),
-          Expanded(child: Text(title, style: const TextStyle(fontSize: 15))),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(title, style: const TextStyle(fontSize: 15)),
+                if (subtitle != null)
+                  Text(
+                    subtitle!,
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: context.appColors.textSecondary,
+                    ),
+                  ),
+              ],
+            ),
+          ),
           Switch(value: value, onChanged: onChanged),
         ],
       ),

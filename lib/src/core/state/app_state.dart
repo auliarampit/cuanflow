@@ -8,7 +8,9 @@ import '../models/money_transaction.dart';
 import '../models/outlet_model.dart';
 import '../models/product_model.dart';
 import '../models/summary.dart';
+import '../models/user_category.dart';
 import '../models/user_profile.dart';
+import '../services/category_sync_service.dart';
 import '../services/outlet_service.dart';
 import '../services/profile_service.dart';
 import '../services/transaction_sync_service.dart';
@@ -26,6 +28,7 @@ class AppState extends ChangeNotifier {
   late final _syncService = TransactionSyncService(supabase);
   late final _outletService = OutletService(supabase);
   late final _profileService = ProfileService(supabase);
+  late final _categoryService = CategorySyncService(supabase);
 
   bool _initialized = false;
   bool _isSyncing = false;
@@ -33,6 +36,7 @@ class AppState extends ChangeNotifier {
   List<MoneyTransaction> _transactions = [];
   List<ProductModel> _products = [];
   List<OutletModel> _outlets = [];
+  List<UserCategory> _categories = [];
   String? _selectedOutletId;
   UserProfile _profile = UserProfile.empty();
   AppSettings _settings = AppSettings.defaults();
@@ -46,7 +50,19 @@ class AppState extends ChangeNotifier {
   List<MoneyTransaction> get allTransactions => _transactions;
   List<ProductModel> get products => _products;
   List<OutletModel> get outlets => _outlets;
+  List<UserCategory> get categories => _categories;
   String? get selectedOutletId => _selectedOutletId;
+
+  /// Semua kategori untuk tipe tertentu (default + custom), tanpa duplikat nama.
+  List<UserCategory> categoriesFor(MoneyTransactionType type) {
+    final defaults = UserCategory.defaultCategories
+        .where((c) => c.type == type)
+        .toList();
+    final custom = _categories
+        .where((c) => c.type == type)
+        .toList();
+    return [...defaults, ...custom];
+  }
   OutletModel? get selectedOutlet =>
       _outlets.where((o) => o.id == _selectedOutletId).firstOrNull;
   UserProfile get profile => _profile;
@@ -74,6 +90,7 @@ class AppState extends ChangeNotifier {
     _transactions = _parseList(raw['transactions'], MoneyTransaction.fromJson);
     _products = _parseList(raw['products'], ProductModel.fromJson);
     _outlets = _parseList(raw['outlets'], OutletModel.fromJson);
+    _categories = _parseList(raw['categories'], UserCategory.fromJson);
 
     final profileMap = raw['profile'];
     if (profileMap is Map<String, dynamic>) {
@@ -92,6 +109,7 @@ class AppState extends ChangeNotifier {
     if (currentUser != null) {
       unawaited(syncTransactions());
       unawaited(fetchProfile());
+      unawaited(syncCategories());
     }
   }
 
@@ -297,6 +315,44 @@ class AppState extends ChangeNotifier {
     notifyListeners();
   }
 
+  // ─── Category CRUD & Sync ────────────────────────────────────────────────────
+
+  /// Merge local categories with Supabase. Local-only entries are uploaded first.
+  Future<void> syncCategories() async {
+    if (currentUser == null) return;
+    try {
+      final remote = await _categoryService.fetchAll();
+      final remoteIds = remote.map((c) => c.id).toSet();
+      // Upload any local-only categories that aren't on the server yet
+      final localOnly = _categories.where((c) => !remoteIds.contains(c.id));
+      for (final cat in localOnly) {
+        await _categoryService.upsert(cat);
+      }
+      // Merge: server list + any local-only
+      _categories = [...remote, ...localOnly];
+      await _persist();
+      notifyListeners();
+    } catch (e) {
+      debugPrint('[CategorySync] failed: $e');
+    }
+  }
+
+  Future<void> addCategory(UserCategory category) async {
+    _categories = [..._categories, category];
+    await _persist();
+    notifyListeners();
+    // Best-effort server sync (non-blocking)
+    _categoryService.upsert(category).ignore();
+  }
+
+  Future<void> deleteCategory(String id) async {
+    _categories = _categories.where((c) => c.id != id).toList();
+    await _persist();
+    notifyListeners();
+    // Best-effort server sync (non-blocking)
+    _categoryService.delete(id).ignore();
+  }
+
   // ─── Product CRUD ─────────────────────────────────────────────────────────────
 
   Future<void> addProduct(ProductModel product) async {
@@ -498,6 +554,7 @@ class AppState extends ChangeNotifier {
         'transactions': _transactions.map((e) => e.toJson()).toList(),
         'products': _products.map((e) => e.toJson()).toList(),
         'outlets': _outlets.map((e) => e.toJson()).toList(),
+        'categories': _categories.map((e) => e.toJson()).toList(),
         'profile': _profile.toJson(),
         'settings': _settings.toJson(),
       });

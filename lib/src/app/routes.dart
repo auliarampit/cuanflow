@@ -1,6 +1,7 @@
 final class AppRoutes {
   static const splash = '/';
   static const login = '/login';
+  static const register = '/register';
   static const home = '/home';
   static const productList = '/product/list';
   static const addIncome = '/income/add';
@@ -13,4 +14,6 @@ final class AppRoutes {
   static const accountSettings = '/account/settings';
   static const settings = '/settings';
   static const aboutApp = '/about';
+  static const manageCategories = '/categories';
+  static const changePin = '/auth/change-pin';
 }

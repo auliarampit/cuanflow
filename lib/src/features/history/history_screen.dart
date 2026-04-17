@@ -8,6 +8,7 @@ import '../../core/state/app_state.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_dynamic_colors.dart';
 import '../../core/ui/app_gradient_scaffold.dart';
+import '../../core/utils/pdf_exporter.dart';
 import '../../shared/widgets/loading_dialog.dart';
 import '../transactions/add_expense/add_expense_screen.dart';
 import '../transactions/add_income/add_income_screen.dart';
@@ -35,6 +36,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
         selectedFilter: _selectedFilter,
         onSelect: (filter) async {
           if (filter == HistoryFilter.custom) {
+            final nav = Navigator.of(context);
             final picked = await showDateRangePicker(
               context: context,
               firstDate: DateTime(2020),
@@ -58,7 +60,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
                 _customRange = picked;
                 _selectedFilter = filter;
               });
-              Navigator.pop(context);
+              nav.pop();
             }
           } else {
             setState(() => _selectedFilter = filter);
@@ -190,6 +192,27 @@ class _HistoryScreenState extends State<HistoryScreen> {
     );
   }
 
+  Future<void> _exportPdf() async {
+    final txs = _getFilteredTransactions();
+    if (txs.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text(context.t('history.exportPdfEmpty')),
+        backgroundColor: AppColors.negative,
+      ));
+      return;
+    }
+    LoadingDialog.show(context);
+    try {
+      await PdfExporter.exportHistory(
+        transactions: txs,
+        profile: context.appState.profile,
+        periodLabel: _getFilterLabel(),
+      );
+    } finally {
+      if (mounted) LoadingDialog.hide(context);
+    }
+  }
+
   String _getFilterLabel() {
     if (_selectedFilter == HistoryFilter.custom && _customRange != null) {
       final start = DateFormat('d MMM', 'id_ID').format(_customRange!.start);
@@ -251,6 +274,13 @@ class _HistoryScreenState extends State<HistoryScreen> {
           onPressed: () => Navigator.of(context).pop(),
           icon: const Icon(Icons.arrow_back_ios_new, size: 20),
         ),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.picture_as_pdf_outlined),
+            tooltip: context.t('history.exportPdf'),
+            onPressed: _exportPdf,
+          ),
+        ],
       ),
       body: Column(
         children: [
