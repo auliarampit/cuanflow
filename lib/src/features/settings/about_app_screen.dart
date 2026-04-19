@@ -6,6 +6,8 @@ import '../../core/localization/transalation_extansions.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_dynamic_colors.dart';
 import '../../core/ui/app_gradient_scaffold.dart';
+import 'privacy_policy_screen.dart';
+import 'terms_of_service_screen.dart';
 
 class AboutAppScreen extends StatefulWidget {
   const AboutAppScreen({super.key});
@@ -149,16 +151,20 @@ class _AboutAppScreenState extends State<AboutAppScreen> {
           _LinkTile(
             icon: Icons.privacy_tip_outlined,
             label: context.t('about.privacyPolicy'),
-            onTap: () {
-              // TODO: buka URL privacy policy
-            },
+            onTap: () => Navigator.of(context).push(
+              MaterialPageRoute(
+                builder: (_) => const PrivacyPolicyScreen(),
+              ),
+            ),
           ),
           _LinkTile(
             icon: Icons.gavel_outlined,
             label: context.t('about.termsOfService'),
-            onTap: () {
-              // TODO: buka URL terms of service
-            },
+            onTap: () => Navigator.of(context).push(
+              MaterialPageRoute(
+                builder: (_) => const TermsOfServiceScreen(),
+              ),
+            ),
           ),
 
           const SizedBox(height: 32),

@@ -119,6 +119,7 @@ class _ChangePinScreenState extends State<ChangePinScreen> {
   @override
   Widget build(BuildContext context) {
     return AppGradientScaffold(
+      showAd: false,
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,

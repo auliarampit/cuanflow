@@ -98,6 +98,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
   @override
   Widget build(BuildContext context) {
     return AppGradientScaffold(
+      showAd: false,
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,

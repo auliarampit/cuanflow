@@ -1,4 +1,4 @@
-package com.example.cari_untung
+package app.cuanflow
 
 import io.flutter.embedding.android.FlutterActivity
 
