@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../../../core/formatters/currency_input_formatter.dart';
 import '../../../core/formatters/idr_formatter.dart';
+import '../../../core/localization/transalation_extansions.dart';
 import '../../../core/models/product_model.dart';
 import '../../../core/theme/app_colors.dart';
 
@@ -121,14 +122,14 @@ class _AddItemSheetState extends State<AddItemSheet> {
                 children: [
                   Expanded(
                     child: _buildToggleOption(
-                      title: 'Input Manual',
+                      title: context.t('addItem.modeManual'),
                       isSelected: _isManual,
                       onTap: () => setState(() => _isManual = true),
                     ),
                   ),
                   Expanded(
                     child: _buildToggleOption(
-                      title: 'Pilih Produk',
+                      title: context.t('addItem.modeProduct'),
                       isSelected: !_isManual,
                       onTap: () => setState(() => _isManual = false),
                     ),
@@ -141,7 +142,7 @@ class _AddItemSheetState extends State<AddItemSheet> {
 
           if (!_isManual && !widget.isCost) ...[
             // PRODUCT SELECTION MODE
-            _buildLabel('Pilih Produk (Varian)', hintColor),
+            _buildLabel(context.t('addItem.modeVariant'), hintColor),
             const SizedBox(height: 8),
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -153,7 +154,7 @@ class _AddItemSheetState extends State<AddItemSheet> {
               child: DropdownButtonHideUnderline(
                 child: DropdownButton<ProductModel>(
                   value: _selectedProduct,
-                  hint: Text('Pilih produk...', style: TextStyle(color: hintColor)),
+                  hint: Text(context.t('addItem.productHint'), style: TextStyle(color: hintColor)),
                   dropdownColor: inputColor,
                   isExpanded: true,
                   icon: Icon(Icons.keyboard_arrow_down, color: hintColor),
@@ -185,7 +186,7 @@ class _AddItemSheetState extends State<AddItemSheet> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      _buildLabel('Jumlah Dipakai', hintColor),
+                      _buildLabel(context.t('addItem.usedAmount'), hintColor),
                       const SizedBox(height: 8),
                       _buildInput(
                         controller: _qtyController,
@@ -204,7 +205,7 @@ class _AddItemSheetState extends State<AddItemSheet> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      _buildLabel('Satuan', hintColor),
+                      _buildLabel(context.t('addItem.unit'), hintColor),
                       const SizedBox(height: 8),
                       Container(
                         height: 50,
@@ -216,7 +217,7 @@ class _AddItemSheetState extends State<AddItemSheet> {
                           border: Border.all(color: Colors.white12),
                         ),
                         child: Text(
-                          _selectedProduct?.yieldUnit ?? 'Unit',
+                          _selectedProduct?.yieldUnit ?? context.t('addItem.unitPlaceholder'),
                           style: TextStyle(color: textColor.withOpacity(0.7)),
                         ),
                       ),
@@ -228,7 +229,7 @@ class _AddItemSheetState extends State<AddItemSheet> {
             const SizedBox(height: 16),
 
             // Auto-calculated Price Display
-            _buildLabel('Total Biaya (Otomatis)', hintColor),
+            _buildLabel(context.t('addItem.autoTotal'), hintColor),
             const SizedBox(height: 8),
             Container(
               padding: const EdgeInsets.symmetric(vertical: 16),

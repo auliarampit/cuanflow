@@ -157,7 +157,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         keyboardType: TextInputType.emailAddress,
                         decoration: InputDecoration(
                           prefixIcon: const Icon(Icons.email_outlined),
-                          hintText: 'contoh@email.com',
+                          hintText: context.t('auth.register.emailHint'),
                         ),
                       ),
                       const SizedBox(height: 18),

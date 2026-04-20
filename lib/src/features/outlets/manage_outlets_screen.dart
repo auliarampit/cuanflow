@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../core/localization/transalation_extansions.dart';
 import '../../core/models/outlet_model.dart';
 import '../../core/state/app_state.dart';
 import '../../core/theme/app_colors.dart';
@@ -28,21 +29,21 @@ class ManageOutletsScreen extends StatelessWidget {
     showDialog<void>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Hapus Outlet'),
-        content: Text('Yakin hapus outlet "${outlet.name}"?'),
+        title: Text(ctx.t('outlet.delete.title')),
+        content: Text(ctx.t('outlet.delete.content', {'name': outlet.name})),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: const Text('Batal'),
+            child: Text(ctx.t('common.cancel')),
           ),
           TextButton(
             onPressed: () {
               Navigator.pop(ctx);
               context.appState.deleteOutlet(outlet.id);
             },
-            child: const Text(
-              'Hapus',
-              style: TextStyle(color: AppColors.negative),
+            child: Text(
+              ctx.t('history.menu.delete'),
+              style: const TextStyle(color: AppColors.negative),
             ),
           ),
         ],
@@ -58,7 +59,7 @@ class ManageOutletsScreen extends StatelessWidget {
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
-        title: const Text('Kelola Outlet'),
+        title: Text(context.t('outlet.manage.title')),
         leading: IconButton(
           onPressed: () => Navigator.of(context).pop(),
           icon: const Icon(Icons.arrow_back),
@@ -67,7 +68,7 @@ class ManageOutletsScreen extends StatelessWidget {
           IconButton(
             onPressed: () => _showOutletForm(context),
             icon: const Icon(Icons.add),
-            tooltip: 'Tambah Outlet',
+            tooltip: context.t('outlet.add.tooltip'),
           ),
         ],
       ),
@@ -83,7 +84,7 @@ class ManageOutletsScreen extends StatelessWidget {
                   ),
                   const SizedBox(height: 16),
                   Text(
-                    'Belum ada outlet',
+                    context.t('outlet.empty'),
                     style: TextStyle(
                       color: context.appColors.textSecondary,
                       fontSize: 16,
@@ -93,7 +94,7 @@ class ManageOutletsScreen extends StatelessWidget {
                   ElevatedButton.icon(
                     onPressed: () => _showOutletForm(context),
                     icon: const Icon(Icons.add),
-                    label: const Text('Tambah Outlet'),
+                    label: Text(context.t('outlet.add.button')),
                   ),
                 ],
               ),
@@ -149,9 +150,9 @@ class ManageOutletsScreen extends StatelessWidget {
                                           .withValues(alpha: 0.15),
                                       borderRadius: BorderRadius.circular(999),
                                     ),
-                                    child: const Text(
-                                      'Default',
-                                      style: TextStyle(
+                                    child: Text(
+                                      context.t('outlet.default'),
+                                      style: const TextStyle(
                                         fontSize: 11,
                                         color: AppColors.brandBlue,
                                         fontWeight: FontWeight.w600,
@@ -236,8 +237,8 @@ class _OutletFormSheetState extends State<_OutletFormSheet> {
     final name = _nameController.text.trim();
     if (name.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Nama outlet tidak boleh kosong'),
+        SnackBar(
+          content: Text(context.t('outlet.name.empty')),
           backgroundColor: AppColors.negative,
         ),
       );
@@ -279,37 +280,37 @@ class _OutletFormSheetState extends State<_OutletFormSheet> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            isEdit ? 'Edit Outlet' : 'Tambah Outlet',
+            isEdit ? context.t('outlet.form.editTitle') : context.t('outlet.form.addTitle'),
             style: const TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.w800,
             ),
           ),
           const SizedBox(height: 20),
-          const Text(
-            'Nama Outlet',
-            style: TextStyle(fontWeight: FontWeight.w700),
+          Text(
+            context.t('outlet.form.nameLabel'),
+            style: const TextStyle(fontWeight: FontWeight.w700),
           ),
           const SizedBox(height: 8),
           TextField(
             controller: _nameController,
-            decoration: const InputDecoration(
-              prefixIcon: Icon(Icons.storefront_outlined),
-              hintText: 'contoh: Outlet Pusat, Cabang Mall A',
+            decoration: InputDecoration(
+              prefixIcon: const Icon(Icons.storefront_outlined),
+              hintText: context.t('outlet.form.nameHint'),
             ),
             textCapitalization: TextCapitalization.words,
           ),
           const SizedBox(height: 16),
-          const Text(
-            'Alamat (opsional)',
-            style: TextStyle(fontWeight: FontWeight.w700),
+          Text(
+            context.t('outlet.form.addressLabel'),
+            style: const TextStyle(fontWeight: FontWeight.w700),
           ),
           const SizedBox(height: 8),
           TextField(
             controller: _addressController,
-            decoration: const InputDecoration(
-              prefixIcon: Icon(Icons.location_on_outlined),
-              hintText: 'contoh: Jl. Sudirman No. 10',
+            decoration: InputDecoration(
+              prefixIcon: const Icon(Icons.location_on_outlined),
+              hintText: context.t('outlet.form.addressHint'),
             ),
             textCapitalization: TextCapitalization.sentences,
           ),
@@ -319,7 +320,7 @@ class _OutletFormSheetState extends State<_OutletFormSheet> {
               contentPadding: EdgeInsets.zero,
               value: _isDefault,
               onChanged: (v) => setState(() => _isDefault = v),
-              title: const Text('Jadikan outlet default'),
+              title: Text(context.t('outlet.form.setDefault')),
             ),
           ],
           const SizedBox(height: 24),
@@ -327,7 +328,7 @@ class _OutletFormSheetState extends State<_OutletFormSheet> {
             width: double.infinity,
             child: ElevatedButton(
               onPressed: () => _save(context),
-              child: Text(isEdit ? 'Simpan Perubahan' : 'Tambah Outlet'),
+              child: Text(isEdit ? context.t('outlet.form.save') : context.t('outlet.form.addSubmit')),
             ),
           ),
         ],

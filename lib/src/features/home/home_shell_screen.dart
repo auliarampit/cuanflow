@@ -49,7 +49,7 @@ class _SyncBanner extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  '$pending transaksi gagal dikirim ke server',
+                  context.t('sync.failedCount', {'count': '$pending'}),
                   style: const TextStyle(
                     fontSize: 12,
                     fontWeight: FontWeight.w700,
@@ -75,8 +75,8 @@ class _SyncBanner extends StatelessWidget {
               padding: const EdgeInsets.symmetric(horizontal: 10),
               foregroundColor: AppColors.negative,
             ),
-            child: const Text('Coba lagi',
-                style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700)),
+            child: Text(context.t('sync.retry'),
+                style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700)),
           ),
         ],
       );
@@ -97,8 +97,8 @@ class _SyncBanner extends StatelessWidget {
           Expanded(
             child: Text(
               pending > 0
-                  ? 'Mengirim $pending transaksi ke server...'
-                  : 'Memperbarui data dari server...',
+                  ? context.t('sync.sending', {'count': '$pending'})
+                  : context.t('sync.refreshing'),
               style: TextStyle(
                 fontSize: 12,
                 color: context.appColors.textSecondary,
@@ -117,7 +117,7 @@ class _SyncBanner extends StatelessWidget {
           const SizedBox(width: 10),
           Expanded(
             child: Text(
-              '$pending transaksi belum tersimpan ke server',
+              context.t('sync.pendingCount', {'count': '$pending'}),
               style: TextStyle(
                 fontSize: 12,
                 color: context.appColors.textSecondary,
@@ -130,8 +130,8 @@ class _SyncBanner extends StatelessWidget {
               padding: const EdgeInsets.symmetric(horizontal: 10),
               foregroundColor: AppColors.brandBlue,
             ),
-            child: const Text('Sinkron',
-                style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700)),
+            child: Text(context.t('sync.sync'),
+                style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700)),
           ),
         ],
       );

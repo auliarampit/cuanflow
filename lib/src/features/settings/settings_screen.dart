@@ -101,28 +101,28 @@ class _SettingsScreenState extends State<SettingsScreen> {
           ),
 
           const SizedBox(height: 20),
-          _SectionLabel('FITUR AKTIF'),
+          _SectionLabel(context.t('settings.sectionFeatures')),
           const SizedBox(height: 8),
           _FeatureToggleTile(
             icon: Icons.inventory_2_outlined,
-            title: 'Kalkulator HPP & Produk',
-            subtitle: 'Hitung harga pokok produksi',
+            title: context.t('settings.featureProduct'),
+            subtitle: context.t('settings.featureProductSubtitle'),
             value: profile.featureProduct,
             onChanged: (v) => _toggleFeature(context, featureProduct: v),
           ),
           const SizedBox(height: 8),
           _FeatureToggleTile(
             icon: Icons.store_outlined,
-            title: 'Kelola Outlet / Cabang',
-            subtitle: 'Pisahkan transaksi per outlet',
+            title: context.t('settings.featureOutlets'),
+            subtitle: context.t('settings.featureOutletsSubtitle'),
             value: profile.featureOutlets,
             onChanged: (v) => _toggleFeature(context, featureOutlets: v),
           ),
           const SizedBox(height: 8),
           _FeatureToggleTile(
             icon: Icons.savings_outlined,
-            title: 'Budget & Target Bulanan',
-            subtitle: 'Pantau target pemasukan & batas pengeluaran',
+            title: context.t('settings.featureBudget'),
+            subtitle: context.t('settings.featureBudgetSubtitle'),
             value: profile.featureBudget,
             onChanged: (v) => _toggleFeature(context, featureBudget: v),
           ),
@@ -247,7 +247,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 ),
               ),
               _LanguageOption(
-                label: 'Bahasa Indonesia',
+                label: context.t('settings.langIndonesian'),
                 code: 'id',
                 isSelected: context.appState.settings.localeCode == 'id',
                 onTap: () {
@@ -258,7 +258,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 },
               ),
               _LanguageOption(
-                label: 'English',
+                label: context.t('settings.langEnglish'),
                 code: 'en',
                 isSelected: context.appState.settings.localeCode == 'en',
                 onTap: () {

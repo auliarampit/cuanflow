@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../app/routes.dart';
+import '../../core/localization/transalation_extansions.dart';
 import '../../core/state/app_state.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_dynamic_colors.dart';
@@ -42,7 +43,7 @@ class _ModeSelectionScreenState extends State<ModeSelectionScreen> {
             children: [
               const SizedBox(height: 12),
               Text(
-                'Kamu menggunakan\napp ini untuk apa?',
+                context.t('onboarding.question'),
                 style: const TextStyle(
                   fontSize: 26,
                   fontWeight: FontWeight.w800,
@@ -51,7 +52,7 @@ class _ModeSelectionScreenState extends State<ModeSelectionScreen> {
               ),
               const SizedBox(height: 8),
               Text(
-                'Pilih sesuai kebutuhanmu. Kamu bisa mengubahnya nanti di Pengaturan.',
+                context.t('onboarding.subtitle'),
                 style: TextStyle(
                   color: context.appColors.textSecondary,
                   fontSize: 14,
@@ -61,14 +62,13 @@ class _ModeSelectionScreenState extends State<ModeSelectionScreen> {
               _ModeCard(
                 selected: _selected == 'personal',
                 icon: Icons.account_balance_wallet_outlined,
-                title: 'Catat Keuangan Pribadi / Sederhana',
-                subtitle:
-                    'Catat pemasukan & pengeluaran harian tanpa fitur bisnis.',
-                features: const [
-                  'Pemasukan & pengeluaran',
-                  'Riwayat transaksi',
-                  'Laporan bulanan',
-                  'Notifikasi harian',
+                title: context.t('onboarding.personalTitle'),
+                subtitle: context.t('onboarding.personalSubtitle'),
+                features: [
+                  context.t('onboarding.personalFeature1'),
+                  context.t('onboarding.personalFeature2'),
+                  context.t('onboarding.personalFeature3'),
+                  context.t('onboarding.personalFeature4'),
                 ],
                 onTap: () => setState(() => _selected = 'personal'),
               ),
@@ -76,14 +76,13 @@ class _ModeSelectionScreenState extends State<ModeSelectionScreen> {
               _ModeCard(
                 selected: _selected == 'business',
                 icon: Icons.storefront_outlined,
-                title: 'Pemilik Usaha / Punya Produk',
-                subtitle:
-                    'Lengkap dengan fitur kalkulator HPP, kelola outlet, dan budget.',
-                features: const [
-                  'Semua fitur pencatatan',
-                  'Kalkulator HPP produk',
-                  'Kelola outlet',
-                  'Budget & target bulanan',
+                title: context.t('onboarding.businessTitle'),
+                subtitle: context.t('onboarding.businessSubtitle'),
+                features: [
+                  context.t('onboarding.businessFeature1'),
+                  context.t('onboarding.businessFeature2'),
+                  context.t('onboarding.businessFeature3'),
+                  context.t('onboarding.businessFeature4'),
                 ],
                 onTap: () => setState(() => _selected = 'business'),
               ),
@@ -102,9 +101,9 @@ class _ModeSelectionScreenState extends State<ModeSelectionScreen> {
                       borderRadius: BorderRadius.circular(14),
                     ),
                   ),
-                  child: const Text(
-                    'Mulai Sekarang',
-                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
+                  child: Text(
+                    context.t('onboarding.start'),
+                    style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
                   ),
                 ),
               ),

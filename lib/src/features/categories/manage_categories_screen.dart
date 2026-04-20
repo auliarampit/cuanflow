@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../core/localization/transalation_extansions.dart';
 import '../../core/models/money_transaction.dart';
 import '../../core/models/user_category.dart';
 import '../../core/state/app_state.dart';
@@ -56,19 +57,19 @@ class _ManageCategoriesScreenState extends State<ManageCategoriesScreen>
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Hapus Kategori?'),
-        content: Text('Hapus kategori "${category.name}"?'),
+        title: Text(ctx.t('category.delete.title')),
+        content: Text(ctx.t('category.delete.content', {'name': category.name})),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: const Text('Batal'),
+            child: Text(ctx.t('common.cancel')),
           ),
           TextButton(
             onPressed: () {
               Navigator.pop(ctx);
               context.appState.deleteCategory(category.id);
             },
-            child: const Text('Hapus', style: TextStyle(color: AppColors.negative)),
+            child: Text(ctx.t('history.menu.delete'), style: const TextStyle(color: AppColors.negative)),
           ),
         ],
       ),
@@ -86,9 +87,9 @@ class _ManageCategoriesScreenState extends State<ManageCategoriesScreen>
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
-        title: const Text(
-          'Kelola Kategori',
-          style: TextStyle(fontWeight: FontWeight.bold),
+        title: Text(
+          context.t('category.manage.title'),
+          style: const TextStyle(fontWeight: FontWeight.bold),
         ),
         centerTitle: true,
         leading: IconButton(
@@ -100,9 +101,9 @@ class _ManageCategoriesScreenState extends State<ManageCategoriesScreen>
           indicatorColor: AppColors.brandBlue,
           labelColor: AppColors.brandBlue,
           unselectedLabelColor: context.appColors.textSecondary,
-          tabs: const [
-            Tab(text: 'Pemasukan'),
-            Tab(text: 'Pengeluaran'),
+          tabs: [
+            Tab(text: context.t('category.tab.income')),
+            Tab(text: context.t('category.tab.expense')),
           ],
         ),
       ),
@@ -174,9 +175,9 @@ class _CategoryTab extends StatelessWidget {
                 ),
               ),
               icon: const Icon(Icons.add),
-              label: const Text(
-                'Tambah Kategori',
-                style: TextStyle(fontWeight: FontWeight.w700),
+              label: Text(
+                context.t('category.add.button'),
+                style: const TextStyle(fontWeight: FontWeight.w700),
               ),
             ),
           ),

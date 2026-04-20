@@ -32,11 +32,9 @@ class _ReportScreenState extends State<ReportScreen> {
   }
 
   String _formatMonth(DateTime date) {
-    final months = [
-      'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
-      'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember',
-    ];
-    return '${months[date.month - 1]} ${date.year}';
+    final localeCode = context.appState.settings.localeCode;
+    final locale = localeCode == 'en' ? 'en_US' : 'id_ID';
+    return DateFormat('MMMM yyyy', locale).format(date);
   }
 
   void _exportPdf() async {
@@ -47,16 +45,16 @@ class _ReportScreenState extends State<ReportScreen> {
         children: [
           SimpleDialogOption(
             onPressed: () => Navigator.pop(context, 'id'),
-            child: const Padding(
-              padding: EdgeInsets.symmetric(vertical: 8),
-              child: Text('Bahasa Indonesia'),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(vertical: 8),
+              child: Text(context.t('report.exportLangId')),
             ),
           ),
           SimpleDialogOption(
             onPressed: () => Navigator.pop(context, 'en'),
-            child: const Padding(
-              padding: EdgeInsets.symmetric(vertical: 8),
-              child: Text('English'),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(vertical: 8),
+              child: Text(context.t('report.exportLangEn')),
             ),
           ),
         ],
@@ -285,7 +283,7 @@ class _ReportScreenState extends State<ReportScreen> {
                           borderRadius: BorderRadius.circular(6),
                         ),
                         child: Text(
-                          '${history.length} transaksi',
+                          context.t('report.transactionCount', {'count': '${history.length}'}),
                           style: const TextStyle(
                             fontSize: 11,
                             color: AppColors.brandBlue,
@@ -302,7 +300,7 @@ class _ReportScreenState extends State<ReportScreen> {
                       child: Padding(
                         padding: const EdgeInsets.symmetric(vertical: 32),
                         child: Text(
-                          'Belum ada transaksi bulan ini',
+                          context.t('report.emptyMonth'),
                           style: TextStyle(
                               color: context.appColors.textSecondary),
                         ),
@@ -436,7 +434,7 @@ class _SummaryCard extends StatelessWidget {
                           ),
                           const SizedBox(width: 2),
                           Text(
-                            '${pctChange!.abs().toStringAsFixed(1)}% vs bulan lalu',
+                            '${pctChange!.abs().toStringAsFixed(1)}% ${context.t('report.vsLastMonth')}',
                             style: TextStyle(
                               fontSize: 10,
                               color: changeColor,

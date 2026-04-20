@@ -142,7 +142,13 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final greeting = context.t('home.greeting', {'name': 'GenZ Dimsum'});
+    final profile = context.appState.profile;
+    final displayName = profile.businessName.isNotEmpty
+        ? profile.businessName
+        : profile.fullName.isNotEmpty
+            ? profile.fullName
+            : 'Kamu';
+    final greeting = context.t('home.greeting', {'name': displayName});
     final dateLabel = _formatDate(DateTime.now());
 
     final dailySummary = context.appState.summaryFor(DateRangeType.day);

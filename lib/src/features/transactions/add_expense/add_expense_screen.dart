@@ -610,7 +610,7 @@ class _DateRowPicker extends StatelessWidget {
             const SizedBox(width: 12),
             Expanded(
               child: Text(
-                'Tanggal Transaksi',
+                context.t('common.transactionDate'),
                 style: TextStyle(
                   fontWeight: FontWeight.w600,
                   fontSize: 14,
@@ -676,7 +676,7 @@ class _OutletPill extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'OUTLET',
+          context.t('outlet.label').toUpperCase(),
           style: TextStyle(
             fontSize: 11,
             letterSpacing: 2,
@@ -802,7 +802,7 @@ class _ItemListCard extends StatelessWidget {
                     size: 18, color: accentColor),
                 const SizedBox(width: 8),
                 Text(
-                  'DAFTAR ITEM (${items.length})',
+                  context.t('bulk.itemList', {'count': '${items.length}'}),
                   style: TextStyle(
                     fontWeight: FontWeight.w800,
                     letterSpacing: 1.5,
@@ -957,7 +957,7 @@ class _BottomBar extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'TOTAL SESI INI',
+                    context.t('bulk.sessionTotal'),
                     style: TextStyle(
                       fontSize: 11,
                       letterSpacing: 1.5,
@@ -988,7 +988,7 @@ class _BottomBar extends StatelessWidget {
                 ),
               ),
               child: Text(
-                'SIMPAN SEMUA (${items.length})',
+                context.t('bulk.saveAll', {'count': '${items.length}'}),
                 style: const TextStyle(
                     fontWeight: FontWeight.w800, letterSpacing: 1),
               ),
@@ -1022,7 +1022,7 @@ class _OutletSelectorBlock extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'Outlet',
+          context.t('outlet.label'),
           style: TextStyle(
             letterSpacing: 2,
             fontWeight: FontWeight.w700,

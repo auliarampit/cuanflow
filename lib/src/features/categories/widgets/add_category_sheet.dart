@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../../core/localization/transalation_extansions.dart';
 import '../../../core/models/money_transaction.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_dynamic_colors.dart';
@@ -65,7 +66,9 @@ class _AddCategorySheetState extends State<AddCategorySheet> {
             ),
           ),
           Text(
-            'Tambah Kategori ${isIncome ? 'Pemasukan' : 'Pengeluaran'}',
+            isIncome
+                ? context.t('category.add.titleIncome')
+                : context.t('category.add.titleExpense'),
             style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w800),
           ),
           const SizedBox(height: 16),
@@ -76,7 +79,7 @@ class _AddCategorySheetState extends State<AddCategorySheet> {
             textCapitalization: TextCapitalization.words,
             onSubmitted: (_) => _submit(),
             decoration: InputDecoration(
-              hintText: 'Nama kategori...',
+              hintText: context.t('category.add.nameHint'),
               prefixIcon: Icon(
                 isIncome
                     ? Icons.arrow_upward_rounded
@@ -98,9 +101,9 @@ class _AddCategorySheetState extends State<AddCategorySheet> {
                   borderRadius: BorderRadius.circular(14),
                 ),
               ),
-              child: const Text(
-                'Tambahkan',
-                style: TextStyle(fontWeight: FontWeight.w700),
+              child: Text(
+                context.t('category.add.submit'),
+                style: const TextStyle(fontWeight: FontWeight.w700),
               ),
             ),
           ),

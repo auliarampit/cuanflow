@@ -115,9 +115,9 @@ class _ForgotPinSheetState extends State<ForgotPinSheet> {
           controller: _emailController,
           keyboardType: TextInputType.emailAddress,
           onChanged: (_) => setState(() {}),
-          decoration: const InputDecoration(
-            prefixIcon: Icon(Icons.email_outlined),
-            hintText: 'contoh@email.com',
+          decoration: InputDecoration(
+            prefixIcon: const Icon(Icons.email_outlined),
+            hintText: context.t('auth.forgotPin.emailHint'),
           ),
         ),
         const SizedBox(height: 24),
@@ -185,7 +185,7 @@ class _ForgotPinSheetState extends State<ForgotPinSheet> {
               backgroundColor: AppColors.brandBlue,
               foregroundColor: Colors.white,
             ),
-            child: const Text('OK'),
+            child: Text(context.t('auth.forgotPin.ok')),
           ),
         ),
       ],
