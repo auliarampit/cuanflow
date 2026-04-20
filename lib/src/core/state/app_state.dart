@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../models/app_settings.dart';
+import '../models/budget_model.dart';
 import '../models/money_transaction.dart';
 import '../models/outlet_model.dart';
 import '../models/product_model.dart';
@@ -16,6 +17,7 @@ import '../services/profile_service.dart';
 import '../services/transaction_sync_service.dart';
 import '../storage/local_database.dart';
 
+export '../models/budget_model.dart';
 export '../models/summary.dart';
 export 'app_state_scope.dart';
 
@@ -37,6 +39,7 @@ class AppState extends ChangeNotifier {
   List<ProductModel> _products = [];
   List<OutletModel> _outlets = [];
   List<UserCategory> _categories = [];
+  List<BudgetModel> _budgets = [];
   String? _selectedOutletId;
   UserProfile _profile = UserProfile.empty();
   AppSettings _settings = AppSettings.defaults();
@@ -51,6 +54,7 @@ class AppState extends ChangeNotifier {
   List<ProductModel> get products => _products;
   List<OutletModel> get outlets => _outlets;
   List<UserCategory> get categories => _categories;
+  List<BudgetModel> get budgets => _budgets;
   String? get selectedOutletId => _selectedOutletId;
 
   /// Semua kategori untuk tipe tertentu (default + custom), tanpa duplikat nama.
@@ -91,6 +95,7 @@ class AppState extends ChangeNotifier {
     _products = _parseList(raw['products'], ProductModel.fromJson);
     _outlets = _parseList(raw['outlets'], OutletModel.fromJson);
     _categories = _parseList(raw['categories'], UserCategory.fromJson);
+    _budgets = _parseList(raw['budgets'], BudgetModel.fromJson);
 
     final profileMap = raw['profile'];
     if (profileMap is Map<String, dynamic>) {
@@ -376,6 +381,51 @@ class AppState extends ChangeNotifier {
     notifyListeners();
   }
 
+  // ─── Budget CRUD ─────────────────────────────────────────────────────────────
+
+  List<BudgetModel> budgetsFor(DateTime month) {
+    final key = BudgetModel.monthYearOf(month);
+    return _budgets.where((b) => b.monthYear == key).toList();
+  }
+
+  /// Jumlah aktual (transaksi bulan tsb) untuk satu budget entry.
+  int actualFor(BudgetModel budget) {
+    final range = _rangeFor(DateRangeType.month, DateTime(
+      int.parse(budget.monthYear.split('-')[0]),
+      int.parse(budget.monthYear.split('-')[1]),
+    ));
+    var total = 0;
+    for (final tx in _filteredTransactions) {
+      final d = _stripTime(tx.effectiveDate);
+      if (d.isBefore(range.start) || !d.isBefore(range.end)) continue;
+      if (tx.type != budget.type) continue;
+      if (budget.categoryId != null && tx.category != budget.categoryId) continue;
+      total += tx.amount.abs();
+    }
+    return total;
+  }
+
+  Future<void> addBudget(BudgetModel budget) async {
+    _budgets = [budget, ..._budgets];
+    await _persist();
+    notifyListeners();
+  }
+
+  Future<void> updateBudget(BudgetModel budget) async {
+    final index = _budgets.indexWhere((b) => b.id == budget.id);
+    if (index != -1) {
+      _budgets[index] = budget;
+      await _persist();
+      notifyListeners();
+    }
+  }
+
+  Future<void> deleteBudget(String id) async {
+    _budgets = _budgets.where((b) => b.id != id).toList();
+    await _persist();
+    notifyListeners();
+  }
+
   // ─── Transaction CRUD ────────────────────────────────────────────────────────
 
   Future<void> addIncome({
@@ -555,6 +605,7 @@ class AppState extends ChangeNotifier {
         'products': _products.map((e) => e.toJson()).toList(),
         'outlets': _outlets.map((e) => e.toJson()).toList(),
         'categories': _categories.map((e) => e.toJson()).toList(),
+        'budgets': _budgets.map((e) => e.toJson()).toList(),
         'profile': _profile.toJson(),
         'settings': _settings.toJson(),
       });

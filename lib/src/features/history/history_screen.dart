@@ -9,6 +9,7 @@ import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_dynamic_colors.dart';
 import '../../core/ui/app_gradient_scaffold.dart';
 import '../../core/utils/pdf_exporter.dart';
+import '../../shared/widgets/app_banner_ad.dart';
 import '../../shared/widgets/loading_dialog.dart';
 import '../transactions/add_expense/add_expense_screen.dart';
 import '../transactions/add_income/add_income_screen.dart';
@@ -342,19 +343,27 @@ class _HistoryScreenState extends State<HistoryScreen> {
                   ),
           ),
 
-          // Bottom Summary
+          // Bottom summary + single banner ad
           Container(
-            padding: const EdgeInsets.all(20),
             decoration: BoxDecoration(
               color: context.appColors.backgroundBottom,
               border: Border(top: BorderSide(color: context.appColors.outline)),
             ),
-            child: SafeArea(
-              child: HistorySummaryCard(
-                totalIncome: totalIncome,
-                totalExpense: totalExpense,
-                totalProfit: totalProfit,
-              ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const AppBannerAd(),
+                Padding(
+                  padding: const EdgeInsets.all(20),
+                  child: SafeArea(
+                    child: HistorySummaryCard(
+                      totalIncome: totalIncome,
+                      totalExpense: totalExpense,
+                      totalProfit: totalProfit,
+                    ),
+                  ),
+                ),
+              ],
             ),
           ),
         ],

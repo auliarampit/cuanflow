@@ -6,6 +6,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../app/routes.dart';
 import '../../core/localization/transalation_extansions.dart';
+import '../../core/state/app_state.dart';
 import '../../core/theme/app_colors.dart';
 
 class SplashScreen extends StatefulWidget {
@@ -36,8 +37,13 @@ class _SplashScreenState extends State<SplashScreen> {
     Future.delayed(const Duration(milliseconds: 1500), () {
       if (!mounted) return;
       final hasSession = Supabase.instance.client.auth.currentSession != null;
+      if (!hasSession) {
+        Navigator.of(context).pushReplacementNamed(AppRoutes.login);
+        return;
+      }
+      final onboardingDone = context.appState.profile.onboardingComplete;
       Navigator.of(context).pushReplacementNamed(
-        hasSession ? AppRoutes.home : AppRoutes.login,
+        onboardingDone ? AppRoutes.home : AppRoutes.modeSelection,
       );
     });
   }

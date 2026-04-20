@@ -103,12 +103,19 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
       ));
       return;
     }
+    if (_noteController.text.trim().isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text(context.t('common.validation.mandatory')),
+        backgroundColor: AppColors.negative,
+      ));
+      return;
+    }
 
     setState(() {
       _items.add(_BulkItem(
         amount: amount,
         category: _selectedCategory!.label,
-        note: _noteController.text.isEmpty ? null : _noteController.text,
+        note: _noteController.text.trim(),
         outletId: _selectedOutletId,
       ));
       _amountController.clear();
@@ -161,10 +168,17 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
       ));
       return;
     }
+    if (_noteController.text.trim().isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text(context.t('common.validation.mandatory')),
+        backgroundColor: AppColors.negative,
+      ));
+      return;
+    }
 
     context.appState.updateTransaction(widget.transaction!.copyWith(
       amount: amount,
-      note: _noteController.text.isEmpty ? null : _noteController.text,
+      note: _noteController.text.trim(),
       category: _selectedCategory!.label,
       outletId: _selectedOutletId,
       effectiveDate: _selectedDate,
@@ -181,6 +195,7 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
   @override
   Widget build(BuildContext context) {
     final categories = _buildCategories(context);
+    final featureOutlets = context.appState.profile.featureOutlets;
 
     return AppGradientScaffold(
       appBar: AppBar(
@@ -344,13 +359,16 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
                 decoration: InputDecoration(
                   prefixIcon: const Icon(Icons.edit_outlined),
                   hintText: context.t('expense.add.noteHint'),
+                  labelText: context.t('common.note'),
                 ),
               ),
-              const SizedBox(height: 18),
-              _OutletSelectorBlock(
-                selectedOutletId: _selectedOutletId,
-                onChanged: (id) => setState(() => _selectedOutletId = id),
-              ),
+              if (featureOutlets) ...[
+                const SizedBox(height: 18),
+                _OutletSelectorBlock(
+                  selectedOutletId: _selectedOutletId,
+                  onChanged: (id) => setState(() => _selectedOutletId = id),
+                ),
+              ],
               const SizedBox(height: 18),
               CategoryDropdown(
                 categories: categories,
@@ -454,7 +472,7 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
                       ),
                       const SizedBox(height: 14),
 
-                      // Note
+                      // Note (required)
                       TextField(
                         controller: _noteController,
                         decoration: InputDecoration(
@@ -464,7 +482,7 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
                             color: context.appColors.textSecondary,
                           ),
                           hintText: context.t('expense.add.noteHint'),
-                          labelText: context.t('common.noteOptional'),
+                          labelText: context.t('common.note'),
                           isDense: true,
                         ),
                       ),
@@ -478,15 +496,17 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
                         onChanged: (cat) =>
                             setState(() => _selectedCategory = cat),
                       ),
-                      const SizedBox(height: 14),
 
-                      // Outlet (per-item)
-                      _OutletPill(
-                        selectedOutletId: _selectedOutletId,
-                        accentColor: AppColors.negative,
-                        onChanged: (id) =>
-                            setState(() => _selectedOutletId = id),
-                      ),
+                      // Outlet (per-item, only when feature is on)
+                      if (featureOutlets) ...[
+                        const SizedBox(height: 14),
+                        _OutletPill(
+                          selectedOutletId: _selectedOutletId,
+                          accentColor: AppColors.negative,
+                          onChanged: (id) =>
+                              setState(() => _selectedOutletId = id),
+                        ),
+                      ],
                     ],
                   ),
                 ),

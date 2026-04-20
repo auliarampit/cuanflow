@@ -1,6 +1,7 @@
 final class AppRoutes {
   static const splash = '/';
   static const login = '/login';
+  static const modeSelection = '/onboarding/mode';
   static const register = '/register';
   static const home = '/home';
   static const productList = '/product/list';
@@ -16,4 +17,6 @@ final class AppRoutes {
   static const aboutApp = '/about';
   static const manageCategories = '/categories';
   static const changePin = '/auth/change-pin';
+  static const notificationSettings = '/notifications';
+  static const budget = '/budget';
 }

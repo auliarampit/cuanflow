@@ -5,8 +5,8 @@ import 'package:cari_untung/src/core/theme/app_colors.dart';
 import 'package:cari_untung/src/core/theme/app_dynamic_colors.dart';
 import 'package:cari_untung/src/core/ui/app_gradient_scaffold.dart';
 import 'package:cari_untung/src/core/ui/responsive_utils.dart';
+import 'package:cari_untung/src/features/history/history_screen.dart';
 import 'package:cari_untung/src/features/home/home_screen.dart';
-import 'package:cari_untung/src/features/product/product_list_screen.dart';
 import 'package:flutter/material.dart';
 
 import '../profile/profile_screen.dart';
@@ -233,21 +233,21 @@ class _HomeShellScreenState extends State<HomeShellScreen> {
 
     final pages = const [
       HomeScreen(),
-      ProductListScreen(),
+      HistoryScreen(),
       ReportScreen(),
       ProfileScreen(),
     ];
 
     final navItems = [
       (icon: Icons.home_outlined, activeIcon: Icons.home, label: context.t('nav.home')),
-      (icon: Icons.inventory_2_outlined, activeIcon: Icons.inventory_2, label: context.t('nav.product')),
+      (icon: Icons.history_outlined, activeIcon: Icons.history, label: context.t('nav.history')),
       (icon: Icons.bar_chart_outlined, activeIcon: Icons.bar_chart, label: context.t('nav.report')),
       (icon: Icons.person_outlined, activeIcon: Icons.person, label: context.t('nav.profile')),
     ];
 
     final contentColumn = Column(
       children: [
-        if (appState.outlets.isNotEmpty)
+        if (appState.profile.featureOutlets && appState.outlets.isNotEmpty)
           _OutletSwitcherBar(
             selectedOutlet: selectedOutlet,
             onTap: () => _showOutletPicker(context),

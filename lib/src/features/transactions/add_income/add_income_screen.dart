@@ -15,9 +15,10 @@ import '../../../shared/widgets/category_dropdown.dart';
 
 // ─── Bulk item model ────────────────────────────────────────────────────────
 class _BulkItem {
-  _BulkItem({required this.amount, required this.category, this.outletId});
+  _BulkItem({required this.amount, required this.category, this.note, this.outletId});
   final int amount;
   final String category;
+  final String? note;
   final String? outletId;
 }
 
@@ -105,16 +106,16 @@ class _AddIncomeScreenState extends State<AddIncomeScreen> {
       ));
       return;
     }
-
     setState(() {
       _items.add(_BulkItem(
         amount: amount,
         category: _selectedCategory!.label,
+        note: _noteController.text.trim().isEmpty ? null : _noteController.text.trim(),
         outletId: _selectedOutletId,
       ));
       _amountController.clear();
+      _noteController.clear();
       _selectedCategory = null;
-      // outlet stays selected for convenience
     });
 
     _amountFocus.requestFocus();
@@ -130,12 +131,9 @@ class _AddIncomeScreenState extends State<AddIncomeScreen> {
     }
 
     for (final item in _items) {
-      final outletName = context.appState.outlets
-          .firstWhereOrNull((o) => o.id == item.outletId)
-          ?.name;
       context.appState.addIncome(
         amount: item.amount,
-        note: outletName,
+        note: item.note,
         category: item.category,
         outletId: item.outletId,
         effectiveDate: _selectedDate,
@@ -165,13 +163,9 @@ class _AddIncomeScreenState extends State<AddIncomeScreen> {
       return;
     }
 
-    final outletName = context.appState.outlets
-        .firstWhereOrNull((o) => o.id == _selectedOutletId)
-        ?.name;
-
     context.appState.updateTransaction(widget.transaction!.copyWith(
       amount: amount,
-      note: _noteController.text.isEmpty ? outletName : _noteController.text,
+      note: _noteController.text.trim().isEmpty ? null : _noteController.text.trim(),
       category: _selectedCategory!.label,
       outletId: _selectedOutletId,
       effectiveDate: _selectedDate,
@@ -188,6 +182,7 @@ class _AddIncomeScreenState extends State<AddIncomeScreen> {
   @override
   Widget build(BuildContext context) {
     final categories = _buildCategories(context);
+    final featureOutlets = context.appState.profile.featureOutlets;
 
     return AppGradientScaffold(
       appBar: AppBar(
@@ -258,19 +253,22 @@ class _AddIncomeScreenState extends State<AddIncomeScreen> {
                 onChanged: (cat) => setState(() => _selectedCategory = cat),
               ),
               const SizedBox(height: 16),
-              TextField(
-                controller: _noteController,
-                decoration: InputDecoration(
-                  prefixIcon: const Icon(Icons.edit_outlined),
-                  hintText: context.t('income.add.noteHint'),
-                  labelText: context.t('common.noteOptional'),
+              if (!featureOutlets)
+                TextField(
+                  controller: _noteController,
+                  decoration: InputDecoration(
+                    prefixIcon: const Icon(Icons.edit_outlined),
+                    hintText: context.t('income.add.noteHint'),
+                    labelText: context.t('common.noteOptional'),
+                  ),
                 ),
-              ),
-              const SizedBox(height: 16),
-              _OutletSelectorBlock(
-                selectedOutletId: _selectedOutletId,
-                onChanged: (id) => setState(() => _selectedOutletId = id),
-              ),
+              if (featureOutlets) ...[
+                const SizedBox(height: 16),
+                _OutletSelectorBlock(
+                  selectedOutletId: _selectedOutletId,
+                  onChanged: (id) => setState(() => _selectedOutletId = id),
+                ),
+              ],
               const SizedBox(height: 16),
               Text(
                 context.t('common.date'),
@@ -381,6 +379,22 @@ class _AddIncomeScreenState extends State<AddIncomeScreen> {
                       ),
                       const SizedBox(height: 14),
 
+                      // Note (optional, only when outlet feature is off)
+                      if (!featureOutlets) ...[
+                        TextField(
+                          controller: _noteController,
+                          decoration: InputDecoration(
+                            prefixIcon: Icon(Icons.edit_outlined,
+                                size: 18,
+                                color: context.appColors.textSecondary),
+                            hintText: context.t('income.add.noteHint'),
+                            labelText: context.t('common.noteOptional'),
+                            isDense: true,
+                          ),
+                        ),
+                        const SizedBox(height: 14),
+                      ],
+
                       // Categories
                       CategoryDropdown(
                         categories: categories,
@@ -389,15 +403,17 @@ class _AddIncomeScreenState extends State<AddIncomeScreen> {
                         onChanged: (cat) =>
                             setState(() => _selectedCategory = cat),
                       ),
-                      const SizedBox(height: 14),
 
-                      // Outlet (per-item)
-                      _OutletPill(
-                        selectedOutletId: _selectedOutletId,
-                        accentColor: AppColors.positive,
-                        onChanged: (id) =>
-                            setState(() => _selectedOutletId = id),
-                      ),
+                      // Outlet (per-item, only when feature is on)
+                      if (featureOutlets) ...[
+                        const SizedBox(height: 14),
+                        _OutletPill(
+                          selectedOutletId: _selectedOutletId,
+                          accentColor: AppColors.positive,
+                          onChanged: (id) =>
+                              setState(() => _selectedOutletId = id),
+                        ),
+                      ],
                     ],
                   ),
                 ),
@@ -673,6 +689,12 @@ class _ItemTile extends StatelessWidget {
                   style: TextStyle(
                       fontWeight: FontWeight.w800, color: accentColor),
                 ),
+                if (item.note != null && item.note!.isNotEmpty)
+                  Text(
+                    item.note!,
+                    style: TextStyle(
+                        fontSize: 12, color: context.appColors.textPrimary),
+                  ),
                 Row(
                   children: [
                     Text(

@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 
 import '../../app/routes.dart';
 import '../../core/localization/transalation_extansions.dart';
-import '../../core/services/notification_service.dart';
 import '../../core/state/app_state.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_dynamic_colors.dart';
@@ -16,9 +15,24 @@ class SettingsScreen extends StatefulWidget {
 }
 
 class _SettingsScreenState extends State<SettingsScreen> {
+  void _toggleFeature(
+    BuildContext context, {
+    bool? featureProduct,
+    bool? featureOutlets,
+    bool? featureBudget,
+  }) {
+    final p = context.appState.profile;
+    context.appState.updateProfile(p.copyWith(
+      featureProduct: featureProduct,
+      featureOutlets: featureOutlets,
+      featureBudget: featureBudget,
+    ));
+  }
+
   @override
   Widget build(BuildContext context) {
     final settings = context.appState.settings;
+    final profile = context.appState.profile;
 
     return AppGradientScaffold(
       appBar: AppBar(
@@ -67,23 +81,50 @@ class _SettingsScreenState extends State<SettingsScreen> {
           const SizedBox(height: 10),
 
           // Notifikasi
-          _SettingsSwitchTile(
+          _SettingsTile(
             icon: Icons.notifications_outlined,
             title: context.t('settings.dailyNotification'),
-            subtitle: settings.dailyNotification
-                ? context.t('settings.dailyNotificationOn')
-                : context.t('settings.dailyNotificationOff'),
-            value: settings.dailyNotification,
-            onChanged: (v) async {
-              context.appState.updateSettings(
-                settings.copyWith(dailyNotification: v),
-              );
-              if (v) {
-                await NotificationService.schedule();
-              } else {
-                await NotificationService.cancel();
-              }
-            },
+            trailing: Text(
+              settings.dailyNotification
+                  ? context.t('settings.dailyNotificationOn')
+                  : context.t('settings.dailyNotificationOff'),
+              style: TextStyle(
+                color: settings.dailyNotification
+                    ? AppColors.brandBlue
+                    : context.appColors.textSecondary,
+                fontWeight: FontWeight.w600,
+                fontSize: 12,
+              ),
+            ),
+            onTap: () =>
+                Navigator.of(context).pushNamed(AppRoutes.notificationSettings),
+          ),
+
+          const SizedBox(height: 20),
+          _SectionLabel('FITUR AKTIF'),
+          const SizedBox(height: 8),
+          _FeatureToggleTile(
+            icon: Icons.inventory_2_outlined,
+            title: 'Kalkulator HPP & Produk',
+            subtitle: 'Hitung harga pokok produksi',
+            value: profile.featureProduct,
+            onChanged: (v) => _toggleFeature(context, featureProduct: v),
+          ),
+          const SizedBox(height: 8),
+          _FeatureToggleTile(
+            icon: Icons.store_outlined,
+            title: 'Kelola Outlet / Cabang',
+            subtitle: 'Pisahkan transaksi per outlet',
+            value: profile.featureOutlets,
+            onChanged: (v) => _toggleFeature(context, featureOutlets: v),
+          ),
+          const SizedBox(height: 8),
+          _FeatureToggleTile(
+            icon: Icons.savings_outlined,
+            title: 'Budget & Target Bulanan',
+            subtitle: 'Pantau target pemasukan & batas pengeluaran',
+            value: profile.featureBudget,
+            onChanged: (v) => _toggleFeature(context, featureBudget: v),
           ),
 
           const SizedBox(height: 20),
@@ -308,58 +349,6 @@ class _SettingsTile extends StatelessWidget {
   }
 }
 
-class _SettingsSwitchTile extends StatelessWidget {
-  const _SettingsSwitchTile({
-    required this.icon,
-    required this.title,
-    required this.value,
-    required this.onChanged,
-    this.subtitle,
-  });
-
-  final IconData icon;
-  final String title;
-  final bool value;
-  final ValueChanged<bool> onChanged;
-  final String? subtitle;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-      decoration: BoxDecoration(
-        color: context.appColors.card,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: context.appColors.outline),
-      ),
-      child: Row(
-        children: [
-          Icon(icon, color: AppColors.brandBlue, size: 22),
-          const SizedBox(width: 14),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(title, style: const TextStyle(fontSize: 15)),
-                if (subtitle != null)
-                  Text(
-                    subtitle!,
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: context.appColors.textSecondary,
-                    ),
-                  ),
-              ],
-            ),
-          ),
-          Switch(value: value, onChanged: onChanged),
-        ],
-      ),
-    );
-  }
-}
-
 class _ThemeOption extends StatelessWidget {
   const _ThemeOption({
     required this.icon,
@@ -424,6 +413,61 @@ class _LanguageOption extends StatelessWidget {
       trailing: isSelected
           ? const Icon(Icons.check, color: AppColors.brandBlue)
           : null,
+    );
+  }
+}
+
+class _FeatureToggleTile extends StatelessWidget {
+  const _FeatureToggleTile({
+    required this.icon,
+    required this.title,
+    required this.subtitle,
+    required this.value,
+    required this.onChanged,
+  });
+
+  final IconData icon;
+  final String title;
+  final String subtitle;
+  final bool value;
+  final ValueChanged<bool> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        color: context.appColors.card,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: context.appColors.outline),
+      ),
+      child: ListTile(
+        leading: Container(
+          width: 36,
+          height: 36,
+          decoration: BoxDecoration(
+            color: value
+                ? AppColors.brandBlue.withValues(alpha: 0.12)
+                : context.appColors.cardSoft,
+            borderRadius: BorderRadius.circular(10),
+          ),
+          child: Icon(
+            icon,
+            size: 20,
+            color: value ? AppColors.brandBlue : context.appColors.textSecondary,
+          ),
+        ),
+        title: Text(title,
+            style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
+        subtitle: Text(subtitle,
+            style: TextStyle(
+                fontSize: 12, color: context.appColors.textSecondary)),
+        trailing: Switch.adaptive(
+          value: value,
+          onChanged: onChanged,
+          activeThumbColor: AppColors.brandBlue,
+          activeTrackColor: AppColors.brandBlue.withValues(alpha: 0.4),
+        ),
+      ),
     );
   }
 }

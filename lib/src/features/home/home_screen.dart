@@ -7,6 +7,8 @@ import 'package:flutter/material.dart';
 import '../../core/state/app_state.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_dynamic_colors.dart';
+import 'package:google_mobile_ads/google_mobile_ads.dart';
+
 import '../../shared/widgets/native_ad_card.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -353,7 +355,31 @@ class _HomeScreenState extends State<HomeScreen> {
             ],
           ),
           const SizedBox(height: 18),
-          const NativeAdCard(),
+          Container(
+            decoration: BoxDecoration(
+              color: context.appColors.card,
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: context.appColors.outline),
+            ),
+            clipBehavior: Clip.hardEdge,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+                  child: Text(
+                    'Sponsor',
+                    style: TextStyle(
+                      fontSize: 10,
+                      color: context.appColors.textSecondary,
+                      letterSpacing: 1.2,
+                    ),
+                  ),
+                ),
+                const NativeAdCard(templateType: TemplateType.small),
+              ],
+            ),
+          ),
           const SizedBox(height: 14),
           SizedBox(
             width: double.infinity,

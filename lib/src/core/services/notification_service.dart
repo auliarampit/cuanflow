@@ -15,9 +15,8 @@ class NotificationService {
   static const _channelName = 'Pengingat Harian';
   static const _notifId = 1;
 
-  // Default reminder time: 20:00
-  static const _hour = 20;
-  static const _minute = 0;
+  static const _defaultHour = 20;
+  static const _defaultMinute = 0;
 
   static final _plugin = FlutterLocalNotificationsPlugin();
 
@@ -54,13 +53,16 @@ class NotificationService {
     );
   }
 
-  /// Schedule a daily notification at [_hour]:[_minute] local time.
+  /// Schedule a daily notification at [hour]:[minute] local time.
   /// Requests permission on first call.
-  static Future<void> schedule() async {
+  static Future<void> schedule({
+    int hour = _defaultHour,
+    int minute = _defaultMinute,
+  }) async {
     await _requestPermissions();
     await cancel(); // clear any existing schedule
 
-    final scheduledDate = _nextOccurrence(_hour, _minute);
+    final scheduledDate = _nextOccurrence(hour, minute);
 
     await _plugin.zonedSchedule(
       _notifId,

@@ -2,8 +2,11 @@ import 'package:cari_untung/src/app/routes.dart';
 import 'package:cari_untung/src/core/state/app_state.dart';
 import 'package:cari_untung/src/features/outlets/manage_outlets_screen.dart';
 import 'package:cari_untung/src/features/categories/manage_categories_screen.dart';
+import 'package:cari_untung/src/features/product/product_list_screen.dart';
 import 'package:cari_untung/src/shared/widgets/loading_dialog.dart';
+import 'package:cari_untung/src/shared/widgets/native_ad_card.dart';
 import 'package:flutter/material.dart';
+import 'package:google_mobile_ads/google_mobile_ads.dart' show TemplateType;
 import 'package:package_info_plus/package_info_plus.dart';
 
 import '../../core/localization/transalation_extansions.dart';
@@ -125,15 +128,43 @@ class _ProfileScreenState extends State<ProfileScreen> {
               onTap: () => _openAccountSettings(context),
             ),
             const SizedBox(height: 8),
-            _ProfileMenuItem(
-              icon: Icons.store_outlined,
-              title: 'Kelola Outlet',
-              subtitle: '${context.appState.outlets.length} outlet terdaftar',
-              onTap: () => Navigator.of(context).push(
-                MaterialPageRoute(builder: (_) => const ManageOutletsScreen()),
+
+            // Business-only menus (each gated by its own feature flag)
+            if (profile.featureOutlets) ...[
+              _ProfileMenuItem(
+                icon: Icons.store_outlined,
+                title: 'Kelola Outlet',
+                subtitle:
+                    '${context.appState.outlets.length} outlet terdaftar',
+                onTap: () => Navigator.of(context).push(
+                  MaterialPageRoute(
+                      builder: (_) => const ManageOutletsScreen()),
+                ),
               ),
-            ),
-            const SizedBox(height: 8),
+              const SizedBox(height: 8),
+            ],
+            if (profile.featureProduct) ...[
+              _ProfileMenuItem(
+                icon: Icons.inventory_2_outlined,
+                title: context.t('profile.menu.product'),
+                subtitle: context.t('profile.menu.productSubtitle'),
+                onTap: () => Navigator.of(context).push(
+                  MaterialPageRoute(builder: (_) => const ProductListScreen()),
+                ),
+              ),
+              const SizedBox(height: 8),
+            ],
+            if (profile.featureBudget) ...[
+              _ProfileMenuItem(
+                icon: Icons.savings_outlined,
+                title: context.t('profile.menu.budget'),
+                subtitle: context.t('profile.menu.budgetSubtitle'),
+                onTap: () =>
+                    Navigator.of(context).pushNamed(AppRoutes.budget),
+              ),
+              const SizedBox(height: 8),
+            ],
+
             _ProfileMenuItem(
               icon: Icons.category_outlined,
               title: 'Kelola Kategori',
@@ -142,6 +173,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 MaterialPageRoute(
                     builder: (_) => const ManageCategoriesScreen()),
               ),
+            ),
+            const SizedBox(height: 8),
+            _ProfileMenuItem(
+              icon: Icons.notifications_outlined,
+              title: context.t('profile.menu.notifications'),
+              subtitle: context.t('profile.menu.notificationsSubtitle'),
+              onTap: () => Navigator.of(context)
+                  .pushNamed(AppRoutes.notificationSettings),
             ),
             const SizedBox(height: 8),
             _ProfileMenuItem(
@@ -158,6 +197,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
               subtitle: context.t('profile.menu.languageValue'),
               onTap: () => Navigator.of(context).pushNamed(AppRoutes.settings),
             ),
+            const SizedBox(height: 8),
+
+            // ── Native Ad (styled as menu card) ───────────────────────────
+            _ProfileAdCard(),
             const SizedBox(height: 24),
 
             // ── Logout ────────────────────────────────────────────────────
@@ -248,6 +291,37 @@ class _ProfileMenuItem extends StatelessWidget {
             Icon(Icons.chevron_right, color: context.appColors.textSecondary),
           ],
         ),
+      ),
+    );
+  }
+}
+
+class _ProfileAdCard extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        color: context.appColors.card,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: context.appColors.outline),
+      ),
+      clipBehavior: Clip.hardEdge,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+            child: Text(
+              'Sponsor',
+              style: TextStyle(
+                fontSize: 10,
+                color: context.appColors.textSecondary,
+                letterSpacing: 1.2,
+              ),
+            ),
+          ),
+          const NativeAdCard(templateType: TemplateType.small),
+        ],
       ),
     );
   }
