@@ -90,19 +90,36 @@ Ikuti langkah-langkah berikut untuk menjalankan proyek ini di lingkungan lokal A
 
 Untuk fitur ekspor PDF di macOS/iOS, pastikan konfigurasi di `Info.plist` sudah sesuai untuk izin akses file jika diperlukan (biasanya ditangani oleh `path_provider` dan `printing` package).
 
-### Build APK Release (Lebih Ringan)
+### Build Commands
 
-Untuk menghasilkan file APK yang lebih kecil (sekitar 15-20 MB) dan siap install:
+#### Debug APK (untuk testing cepat)
+```bash
+flutter build apk --debug
+```
+Output: `build/app/outputs/flutter-apk/app-debug.apk`
 
+#### Release APK — Split per ABI (ukuran kecil, untuk distribusi manual)
 ```bash
 flutter build apk --release --split-per-abi
 ```
+Output: `build/app/outputs/flutter-apk/`
+- `app-arm64-v8a-release.apk` → HP Android modern (64-bit)
+- `app-armeabi-v7a-release.apk` → HP Android lama (32-bit)
+- `app-x86_64-release.apk` → Emulator
 
-File APK hasil build akan berada di:
-`build/app/outputs/flutter-apk/`
+#### Release APK — Universal (satu file, ukuran lebih besar)
+```bash
+flutter build apk --release
+```
+Output: `build/app/outputs/flutter-apk/app-release.apk`
 
-*   Gunakan `app-arm64-v8a-release.apk` untuk sebagian besar HP Android modern.
-*   Gunakan `app-armeabi-v7a-release.apk` untuk HP Android model lama.
+#### AAB — Android App Bundle (untuk upload ke Google Play)
+```bash
+flutter build appbundle --release
+```
+Output: `build/app/outputs/bundle/release/app-release.aab`
+
+> Upload file `.aab` ke Google Play Console, bukan `.apk`.
 
 ## 🌍 Lokalisasi
 
