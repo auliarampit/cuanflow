@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -175,7 +176,7 @@ class AppState extends ChangeNotifier {
         _lastSyncError = null;
       }
     } catch (e) {
-      _lastSyncError = e.toString();
+      _lastSyncError = _isNetworkError(e) ? '__no_internet__' : e.toString();
       debugPrint('[Sync] syncTransactions failed: $e');
     } finally {
       _isSyncing = false;
@@ -395,7 +396,7 @@ class AppState extends ChangeNotifier {
       int.parse(budget.monthYear.split('-')[1]),
     ));
     var total = 0;
-    for (final tx in _filteredTransactions) {
+    for (final tx in _transactions) {
       final d = _stripTime(tx.effectiveDate);
       if (d.isBefore(range.start) || !d.isBefore(range.end)) continue;
       if (tx.type != budget.type) continue;
@@ -620,5 +621,14 @@ class AppState extends ChangeNotifier {
 
   DateTime _stripTime(DateTime input) =>
       DateTime(input.year, input.month, input.day);
+
+  bool _isNetworkError(Object e) {
+    if (e is SocketException) return true;
+    final msg = e.toString().toLowerCase();
+    return msg.contains('socketexception') ||
+        msg.contains('connection refused') ||
+        msg.contains('network is unreachable') ||
+        msg.contains('failed host lookup');
+  }
 }
 

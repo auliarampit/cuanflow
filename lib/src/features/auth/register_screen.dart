@@ -3,6 +3,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../app/routes.dart';
 import '../../core/localization/transalation_extansions.dart';
+import '../../core/models/user_profile.dart';
 import '../../core/state/app_state.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_dynamic_colors.dart';
@@ -65,14 +66,15 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
       if (!mounted) return;
 
-      if (!mounted) return;
       final appState = context.appState;
-      await appState.fetchProfile();
+      await appState.updateProfile(
+        UserProfile.empty().copyWith(fullName: name, email: email),
+      );
       await appState.syncTransactions();
 
       if (mounted) {
         LoadingDialog.hide(context);
-        Navigator.of(context).pushReplacementNamed(AppRoutes.home);
+        Navigator.of(context).pushReplacementNamed(AppRoutes.modeSelection);
       }
     } on AuthException catch (e) {
       if (mounted) {

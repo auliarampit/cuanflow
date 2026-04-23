@@ -302,27 +302,11 @@ class _ProfileAdCard extends StatelessWidget {
     return Container(
       decoration: BoxDecoration(
         color: context.appColors.card,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(12),
         border: Border.all(color: context.appColors.outline),
       ),
       clipBehavior: Clip.hardEdge,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
-            child: Text(
-              'Sponsor',
-              style: TextStyle(
-                fontSize: 10,
-                color: context.appColors.textSecondary,
-                letterSpacing: 1.2,
-              ),
-            ),
-          ),
-          const NativeAdCard(templateType: TemplateType.small),
-        ],
-      ),
+      child: const NativeAdCard(templateType: TemplateType.small),
     );
   }
 }

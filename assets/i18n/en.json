@@ -304,6 +304,7 @@
   "sync.refreshing": "Refreshing data from server...",
   "sync.pendingCount": "{count} transactions not yet saved to server",
   "sync.sync": "Sync",
+  "sync.noInternet": "No internet connection. Data will sync when online.",
 
   "settings.sectionFeatures": "ACTIVE FEATURES",
   "settings.featureProduct": "COGS Calculator & Products",

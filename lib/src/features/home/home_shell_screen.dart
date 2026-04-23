@@ -58,7 +58,9 @@ class _SyncBanner extends StatelessWidget {
                 ),
                 if (errorMsg != null)
                   Text(
-                    errorMsg,
+                    errorMsg == '__no_internet__'
+                        ? context.t('sync.noInternet')
+                        : errorMsg,
                     style: TextStyle(
                       fontSize: 11,
                       color: context.appColors.textSecondary,

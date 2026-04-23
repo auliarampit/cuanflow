@@ -304,6 +304,7 @@
   "sync.refreshing": "Memperbarui data dari server...",
   "sync.pendingCount": "{count} transaksi belum tersimpan ke server",
   "sync.sync": "Sinkron",
+  "sync.noInternet": "Tidak ada koneksi internet. Data akan disinkronkan saat online.",
 
   "settings.sectionFeatures": "FITUR AKTIF",
   "settings.featureProduct": "Kalkulator HPP & Produk",
