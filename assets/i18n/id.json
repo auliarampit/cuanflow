@@ -332,6 +332,13 @@
   "report.emptyMonth": "Belum ada transaksi bulan ini",
   "report.exportLangId": "Bahasa Indonesia",
   "report.exportLangEn": "English",
+  "report.outletContribution": "Kontribusi Outlet",
+  "report.outletContributionSubtitle": "Porsi pendapatan per outlet bulan ini",
+  "report.outletTrend": "Tren Pendapatan per Outlet",
+  "report.sharedExpense": "Biaya Bersama",
+  "report.outletOther": "Lainnya",
+  "history.outletFilter": "Filter Outlet",
+  "history.allOutlets": "Semua Outlet",
 
   "onboarding.question": "Kamu menggunakan\napp ini untuk apa?",
   "onboarding.subtitle": "Pilih sesuai kebutuhanmu. Kamu bisa mengubahnya nanti di Pengaturan.",

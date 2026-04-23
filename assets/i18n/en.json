@@ -332,6 +332,13 @@
   "report.emptyMonth": "No transactions this month",
   "report.exportLangId": "Indonesian",
   "report.exportLangEn": "English",
+  "report.outletContribution": "Outlet Contribution",
+  "report.outletContributionSubtitle": "Revenue share per outlet this month",
+  "report.outletTrend": "Income Trend per Outlet",
+  "report.sharedExpense": "Shared Expenses",
+  "report.outletOther": "Others",
+  "history.outletFilter": "Filter Outlet",
+  "history.allOutlets": "All Outlets",
 
   "onboarding.question": "What do you use\nthis app for?",
   "onboarding.subtitle": "Choose what fits. You can change this later in Settings.",

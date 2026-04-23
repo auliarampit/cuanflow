@@ -58,7 +58,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
       final email = _emailController.text.trim();
       final name = _nameController.text.trim();
 
-      await Supabase.instance.client.auth.signUp(
+      final response = await Supabase.instance.client.auth.signUp(
         email: email,
         password: _pin,
         data: {'full_name': name},
@@ -67,8 +67,11 @@ class _RegisterScreenState extends State<RegisterScreen> {
       if (!mounted) return;
 
       final appState = context.appState;
+      // Gunakan userId dari response agar profil tersimpan meski currentUser
+      // belum di-set (misalnya saat email confirmation diaktifkan)
       await appState.updateProfile(
         UserProfile.empty().copyWith(fullName: name, email: email),
+        userId: response.user?.id,
       );
       await appState.syncTransactions();
 

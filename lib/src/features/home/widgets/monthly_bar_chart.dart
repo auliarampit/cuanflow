@@ -5,8 +5,10 @@ import '../../../core/state/app_state.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_dynamic_colors.dart';
 
-/// Bar chart showing income vs expense for the last 6 months.
-class MonthlyBarChart extends StatelessWidget {
+enum _Period { daily, weekly, monthly }
+
+/// Bar chart income vs expense dengan toggle Harian / Mingguan / Bulanan.
+class MonthlyBarChart extends StatefulWidget {
   const MonthlyBarChart({
     super.key,
     required this.selectedDate,
@@ -16,10 +18,78 @@ class MonthlyBarChart extends StatelessWidget {
   final DateTime selectedDate;
   final AppState appState;
 
+  @override
+  State<MonthlyBarChart> createState() => _MonthlyBarChartState();
+}
+
+class _MonthlyBarChartState extends State<MonthlyBarChart> {
+  _Period _period = _Period.monthly;
+
+  static const _dayLabels = ['Sn', 'Sl', 'Rb', 'Km', 'Jm', 'Sb', 'Mg'];
   static const _months = [
     'Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun',
     'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des',
   ];
+
+  // ── Bangun data sesuai periode ──────────────────────────────────────────
+
+  List<_BarData> _buildData() {
+    switch (_period) {
+      case _Period.daily:
+        return _buildDaily();
+      case _Period.weekly:
+        return _buildWeekly();
+      case _Period.monthly:
+        return _buildMonthly();
+    }
+  }
+
+  List<_BarData> _buildDaily() {
+    final today = DateTime.now();
+    return List.generate(7, (i) {
+      final date = today.subtract(Duration(days: 6 - i));
+      final summary = widget.appState.summaryForDate(DateRangeType.day, date);
+      return _BarData(
+        label: _dayLabels[date.weekday - 1],
+        income: summary.totalIncome.toDouble(),
+        expense: summary.totalExpense.toDouble(),
+      );
+    });
+  }
+
+  List<_BarData> _buildWeekly() {
+    final today = DateTime.now();
+    // Senin pekan ini
+    final thisMonday = today.subtract(Duration(days: today.weekday - 1));
+    return List.generate(6, (i) {
+      // pekan ke-(5-i) mundur dari pekan ini
+      final monday = thisMonday.subtract(Duration(days: (5 - i) * 7));
+      final summary = widget.appState.summaryForDate(DateRangeType.week, monday);
+      final day = monday.day.toString().padLeft(2, '0');
+      final mon = _months[monday.month - 1];
+      return _BarData(
+        label: '$day $mon',
+        income: summary.totalIncome.toDouble(),
+        expense: summary.totalExpense.toDouble(),
+      );
+    });
+  }
+
+  List<_BarData> _buildMonthly() {
+    return List.generate(6, (i) {
+      final date = DateTime(
+          widget.selectedDate.year, widget.selectedDate.month - (5 - i), 15);
+      final summary =
+          widget.appState.summaryForDate(DateRangeType.month, date);
+      return _BarData(
+        label: _months[date.month - 1],
+        income: summary.totalIncome.toDouble(),
+        expense: summary.totalExpense.toDouble(),
+      );
+    });
+  }
+
+  // ── Build ────────────────────────────────────────────────────────────────
 
   @override
   Widget build(BuildContext context) {
@@ -36,12 +106,23 @@ class MonthlyBarChart extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Legend
+          // ── Header: legend + toggle ──────────────────────────────────
           Row(
             children: [
-              _LegendDot(color: AppColors.positive, label: 'Pemasukan'),
-              const SizedBox(width: 16),
-              _LegendDot(color: AppColors.negative, label: 'Pengeluaran'),
+              Flexible(
+                child: Wrap(
+                  spacing: 12,
+                  children: [
+                    _LegendDot(color: AppColors.positive, label: 'Pemasukan'),
+                    _LegendDot(color: AppColors.negative, label: 'Pengeluaran'),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 8),
+              _PeriodToggle(
+                selected: _period,
+                onChanged: (p) => setState(() => _period = p),
+              ),
             ],
           ),
           const SizedBox(height: 16),
@@ -97,9 +178,9 @@ class MonthlyBarChart extends StatelessWidget {
                           return const SizedBox.shrink();
                         }
                         return Text(
-                          _months[data[idx].month - 1],
+                          data[idx].label,
                           style: TextStyle(
-                            fontSize: 10,
+                            fontSize: _period == _Period.weekly ? 8 : 10,
                             fontWeight: FontWeight.w600,
                             color: context.appColors.textSecondary,
                           ),
@@ -133,34 +214,17 @@ class MonthlyBarChart extends StatelessWidget {
     );
   }
 
-  // ── Data helpers ────────────────────────────────────────────────────────
+  // ── Helper ───────────────────────────────────────────────────────────────
 
-  List<_MonthData> _buildData() {
-    final result = <_MonthData>[];
-    for (int i = 5; i >= 0; i--) {
-      final date = DateTime(selectedDate.year, selectedDate.month - i, 15);
-      final summary =
-          appState.summaryForDate(DateRangeType.month, date);
-      result.add(_MonthData(
-        month: date.month,
-        income: summary.totalIncome.toDouble(),
-        expense: summary.totalExpense.toDouble(),
-      ));
-    }
-    return result;
-  }
-
-  double _maxY(List<_MonthData> data) {
+  double _maxY(List<_BarData> data) {
     double max = 0;
     for (final d in data) {
       if (d.income > max) max = d.income;
       if (d.expense > max) max = d.expense;
     }
     if (max == 0) return 1000000;
-    // Round up to a clean interval
-    final magnitude = (max).floorToDouble();
-    final step = _niceStep(magnitude);
-    return ((magnitude / step).ceil() * step).toDouble();
+    final step = _niceStep(max);
+    return ((max / step).ceil() * step).toDouble();
   }
 
   double _niceStep(double max) {
@@ -172,7 +236,7 @@ class MonthlyBarChart extends StatelessWidget {
     return 20000000;
   }
 
-  List<BarChartGroupData> _barGroups(List<_MonthData> data) {
+  List<BarChartGroupData> _barGroups(List<_BarData> data) {
     return List.generate(data.length, (i) {
       return BarChartGroupData(
         x: i,
@@ -182,17 +246,13 @@ class MonthlyBarChart extends StatelessWidget {
             toY: data[i].income,
             color: AppColors.positive,
             width: 10,
-            borderRadius: const BorderRadius.vertical(
-              top: Radius.circular(4),
-            ),
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(4)),
           ),
           BarChartRodData(
             toY: data[i].expense,
             color: AppColors.negative,
             width: 10,
-            borderRadius: const BorderRadius.vertical(
-              top: Radius.circular(4),
-            ),
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(4)),
           ),
         ],
       );
@@ -201,7 +261,9 @@ class MonthlyBarChart extends StatelessWidget {
 
   static String _formatY(double value) {
     if (value == 0) return '0';
-    if (value >= 1000000000) return '${(value / 1000000000).toStringAsFixed(1)}M';
+    if (value >= 1000000000) {
+      return '${(value / 1000000000).toStringAsFixed(1)}M';
+    }
     if (value >= 1000000) {
       final v = value / 1000000;
       return v == v.truncate() ? '${v.toInt()}jt' : '${v.toStringAsFixed(1)}jt';
@@ -214,28 +276,89 @@ class MonthlyBarChart extends StatelessWidget {
   }
 
   static String _formatTooltip(double value) {
-    if (value >= 1000000) {
-      return 'Rp ${(value / 1000000).toStringAsFixed(1)}jt';
-    }
-    if (value >= 1000) {
-      return 'Rp ${(value / 1000).toStringAsFixed(0)}rb';
-    }
+    if (value >= 1000000) return 'Rp ${(value / 1000000).toStringAsFixed(1)}jt';
+    if (value >= 1000) return 'Rp ${(value / 1000).toStringAsFixed(0)}rb';
     return 'Rp ${value.toInt()}';
   }
 }
 
-// ── Small helpers ────────────────────────────────────────────────────────────
+// ── Data model ───────────────────────────────────────────────────────────────
 
-class _MonthData {
-  const _MonthData({
-    required this.month,
+class _BarData {
+  const _BarData({
+    required this.label,
     required this.income,
     required this.expense,
   });
-  final int month;
+  final String label;
   final double income;
   final double expense;
 }
+
+// ── Period toggle ─────────────────────────────────────────────────────────────
+
+class _PeriodToggle extends StatelessWidget {
+  const _PeriodToggle({required this.selected, required this.onChanged});
+
+  final _Period selected;
+  final ValueChanged<_Period> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(3),
+      decoration: BoxDecoration(
+        color: context.appColors.cardSoft,
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: context.appColors.outline),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          _Tab(label: 'Hari', active: selected == _Period.daily,
+              onTap: () => onChanged(_Period.daily)),
+          _Tab(label: 'Minggu', active: selected == _Period.weekly,
+              onTap: () => onChanged(_Period.weekly)),
+          _Tab(label: 'Bulan', active: selected == _Period.monthly,
+              onTap: () => onChanged(_Period.monthly)),
+        ],
+      ),
+    );
+  }
+}
+
+class _Tab extends StatelessWidget {
+  const _Tab({required this.label, required this.active, required this.onTap});
+
+  final String label;
+  final bool active;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 150),
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+        decoration: BoxDecoration(
+          color: active ? AppColors.brandBlue : Colors.transparent,
+          borderRadius: BorderRadius.circular(6),
+        ),
+        child: Text(
+          label,
+          style: TextStyle(
+            fontSize: 10,
+            fontWeight: FontWeight.w700,
+            color: active ? Colors.white : context.appColors.textSecondary,
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// ── Legend dot ────────────────────────────────────────────────────────────────
 
 class _LegendDot extends StatelessWidget {
   const _LegendDot({required this.color, required this.label});

@@ -63,7 +63,8 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
     if (_didInit) return;
     _didInit = true;
 
-    _selectedOutletId ??= context.appState.selectedOutletId;
+    // Expenses default to null (shared/business-level), not the active outlet.
+    // User can explicitly assign an outlet via the selector if needed.
 
     if (widget.transaction?.category != null) {
       final cats = _buildCategories(context);

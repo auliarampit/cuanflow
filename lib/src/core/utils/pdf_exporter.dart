@@ -5,6 +5,7 @@ import 'package:printing/printing.dart';
 
 import '../formatters/idr_formatter.dart';
 import '../models/money_transaction.dart';
+import '../models/outlet_model.dart';
 import '../models/user_profile.dart';
 
 /// Generates a transaction history PDF and opens the OS share sheet.
@@ -13,7 +14,10 @@ class PdfExporter {
     required List<MoneyTransaction> transactions,
     required UserProfile profile,
     required String periodLabel,
+    List<OutletModel> outlets = const [],
+    String? selectedOutletId,
   }) async {
+    final outletNames = {for (final o in outlets) o.id: o.name};
     int totalIncome = 0;
     int totalExpense = 0;
     for (final tx in transactions) {
@@ -42,7 +46,8 @@ class PdfExporter {
         build: (_) => [
           _buildSummary(totalIncome, totalExpense, totalProfit),
           pw.SizedBox(height: 20),
-          ..._buildGroups(grouped, sortedDates),
+          ..._buildGroups(grouped, sortedDates, outletNames,
+              showOutletCol: selectedOutletId == null && outlets.isNotEmpty),
         ],
       ),
     );
@@ -167,7 +172,9 @@ class PdfExporter {
   static List<pw.Widget> _buildGroups(
     Map<DateTime, List<MoneyTransaction>> grouped,
     List<DateTime> sortedDates,
-  ) {
+    Map<String, String> outletNames, {
+    bool showOutletCol = false,
+  }) {
     final result = <pw.Widget>[];
     for (final date in sortedDates) {
       final txs = grouped[date]!;
@@ -176,24 +183,33 @@ class PdfExporter {
         padding: const pw.EdgeInsets.symmetric(vertical: 4, horizontal: 8),
         child: pw.Text(
           _fmt(date, dateOnly: true),
-          style: pw.TextStyle(
-              fontWeight: pw.FontWeight.bold, fontSize: 10),
+          style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 10),
         ),
       ));
       result.add(pw.SizedBox(height: 4));
       for (final tx in txs) {
-        result.add(_buildTxRow(tx));
+        result.add(_buildTxRow(tx, outletNames,
+            showOutlet: showOutletCol));
       }
       result.add(pw.SizedBox(height: 12));
     }
     return result;
   }
 
-  static pw.Widget _buildTxRow(MoneyTransaction tx) {
+  static pw.Widget _buildTxRow(
+    MoneyTransaction tx,
+    Map<String, String> outletNames, {
+    bool showOutlet = false,
+  }) {
     final isIncome = tx.isIncome;
     final color = isIncome ? PdfColors.green700 : PdfColors.red700;
     final sign = isIncome ? '+' : '-';
     final category = tx.category ?? (isIncome ? 'Pemasukan' : 'Pengeluaran');
+    final outletLabel = showOutlet
+        ? (tx.outletId != null
+            ? (outletNames[tx.outletId] ?? tx.outletId!)
+            : 'Bersama')
+        : null;
 
     return pw.Padding(
       padding: const pw.EdgeInsets.symmetric(vertical: 4, horizontal: 8),
@@ -203,9 +219,26 @@ class PdfExporter {
             child: pw.Column(
               crossAxisAlignment: pw.CrossAxisAlignment.start,
               children: [
-                pw.Text(category,
-                    style: pw.TextStyle(
-                        fontWeight: pw.FontWeight.bold, fontSize: 10)),
+                pw.Row(children: [
+                  pw.Text(category,
+                      style: pw.TextStyle(
+                          fontWeight: pw.FontWeight.bold, fontSize: 10)),
+                  if (outletLabel != null) ...[
+                    pw.SizedBox(width: 6),
+                    pw.Container(
+                      padding: const pw.EdgeInsets.symmetric(
+                          horizontal: 4, vertical: 1),
+                      decoration: pw.BoxDecoration(
+                        color: PdfColors.blue50,
+                        borderRadius:
+                            const pw.BorderRadius.all(pw.Radius.circular(3)),
+                      ),
+                      child: pw.Text(outletLabel,
+                          style: const pw.TextStyle(
+                              fontSize: 8, color: PdfColors.blue800)),
+                    ),
+                  ],
+                ]),
                 if ((tx.note ?? '').isNotEmpty)
                   pw.Text(tx.note!,
                       style: const pw.TextStyle(

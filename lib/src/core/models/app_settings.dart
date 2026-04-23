@@ -20,7 +20,7 @@ class AppSettings {
   factory AppSettings.defaults() {
     return AppSettings(
       localeCode: 'id',
-      dailyNotification: false,
+      dailyNotification: true,
       notificationHour: 20,
       notificationMinute: 0,
       themeMode: 'dark',

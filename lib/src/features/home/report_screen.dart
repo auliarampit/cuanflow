@@ -10,6 +10,8 @@ import '../../core/state/app_state.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_dynamic_colors.dart';
 import 'widgets/monthly_bar_chart.dart';
+import 'widgets/outlet_contribution_chart.dart';
+import 'widgets/outlet_trend_chart.dart';
 
 class ReportScreen extends StatefulWidget {
   const ReportScreen({super.key});
@@ -77,6 +79,8 @@ class _ReportScreenState extends State<ReportScreen> {
       history,
       profile,
       locale: locale,
+      outlets: appState.outlets,
+      selectedOutletId: appState.selectedOutletId,
     );
 
     if (mounted) LoadingDialog.hide(context);
@@ -211,15 +215,7 @@ class _ReportScreenState extends State<ReportScreen> {
 
                   const SizedBox(height: 16),
 
-                  // ── Bar chart: 6 bulan terakhir ─────────────────────────
-                  MonthlyBarChart(
-                    selectedDate: _selectedDate,
-                    appState: appState,
-                  ),
-
-                  const SizedBox(height: 16),
-
-                  // ── Summary cards ───────────────────────────────────────
+                  // ── Summary cards (di atas chart agar langsung terlihat) ──
                   Row(
                     children: [
                       Expanded(
@@ -238,7 +234,7 @@ class _ReportScreenState extends State<ReportScreen> {
                           amount: IdrFormatter.format(totalExpense),
                           pctChange: expensePct != null
                               ? -expensePct
-                              : null, // invert: more expense = negative
+                              : null,
                           accentColor: AppColors.negative,
                           icon: Icons.arrow_downward_rounded,
                         ),
@@ -251,6 +247,33 @@ class _ReportScreenState extends State<ReportScreen> {
                     pctChange: profitPct,
                     isPositive: netProfit >= 0,
                   ),
+
+                  const SizedBox(height: 16),
+
+                  // ── Bar chart dengan toggle harian/mingguan/bulanan ──────
+                  MonthlyBarChart(
+                    selectedDate: _selectedDate,
+                    appState: appState,
+                  ),
+
+                  // ── Outlet charts (hanya saat Semua Outlet + ≥2 outlet) ─
+                  if (selectedOutlet == null && appState.outlets.length >= 2) ...[
+                    const SizedBox(height: 12),
+                    OutletTrendChart(
+                      outlets: appState.outlets,
+                      selectedDate: _selectedDate,
+                      appState: appState,
+                      title: context.t('report.outletTrend'),
+                    ),
+                    const SizedBox(height: 12),
+                    OutletContributionChart(
+                      outlets: appState.outlets,
+                      transactions: history,
+                      title: context.t('report.outletContribution'),
+                      subtitle: context.t('report.outletContributionSubtitle'),
+                      otherLabel: context.t('report.outletOther'),
+                    ),
+                  ],
 
                   const SizedBox(height: 24),
 

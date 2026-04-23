@@ -27,6 +27,7 @@ class HistoryScreen extends StatefulWidget {
 class _HistoryScreenState extends State<HistoryScreen> {
   HistoryFilter _selectedFilter = HistoryFilter.today;
   DateTimeRange? _customRange;
+  String? _selectedOutletFilter; // null = semua outlet
 
   void _showFilterSheet() {
     showModalBottomSheet(
@@ -73,7 +74,12 @@ class _HistoryScreenState extends State<HistoryScreen> {
   }
 
   List<MoneyTransaction> _getFilteredTransactions() {
-    final allTxs = context.appState.transactions; // sudah difilter per outlet
+    // Gunakan allTransactions agar filter outlet di history bersifat lokal
+    // (tidak tergantung pada outlet yang dipilih di home)
+    final base = context.appState.allTransactions;
+    final allTxs = _selectedOutletFilter == null
+        ? base
+        : base.where((t) => t.outletId == _selectedOutletFilter).toList();
     final now = DateTime.now();
     final today = DateTime(now.year, now.month, now.day);
 
@@ -208,6 +214,8 @@ class _HistoryScreenState extends State<HistoryScreen> {
         transactions: txs,
         profile: context.appState.profile,
         periodLabel: _getFilterLabel(),
+        outlets: context.appState.outlets,
+        selectedOutletId: _selectedOutletFilter,
       );
     } finally {
       if (mounted) LoadingDialog.hide(context);
@@ -285,36 +293,58 @@ class _HistoryScreenState extends State<HistoryScreen> {
       ),
       body: Column(
         children: [
-          // Filter Button
+          // Filter tanggal + outlet dalam satu baris
           Padding(
-            padding: const EdgeInsets.fromLTRB(20, 10, 20, 20),
-            child: InkWell(
-              onTap: _showFilterSheet,
-              borderRadius: BorderRadius.circular(12),
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                decoration: BoxDecoration(
-                  color: context.appColors.cardSoft,
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: context.appColors.outline),
-                ),
-                child: Row(
-                  children: [
-                    Icon(Icons.calendar_today, size: 20, color: context.appColors.textPrimary),
-                    const SizedBox(width: 12),
-                    Text(
-                      _getFilterLabel(),
-                      style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 14,
-                        color: context.appColors.textPrimary,
+            padding: const EdgeInsets.fromLTRB(20, 0, 20, 12),
+            child: Row(
+              children: [
+                // Tombol filter tanggal
+                Expanded(
+                  child: InkWell(
+                    onTap: _showFilterSheet,
+                    borderRadius: BorderRadius.circular(12),
+                    child: Container(
+                      height: 46,
+                      padding: const EdgeInsets.symmetric(horizontal: 12),
+                      decoration: BoxDecoration(
+                        color: context.appColors.cardSoft,
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: context.appColors.outline),
+                      ),
+                      child: Row(
+                        children: [
+                          Icon(Icons.calendar_today, size: 16, color: context.appColors.textPrimary),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              _getFilterLabel(),
+                              style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 13,
+                                color: context.appColors.textPrimary,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                          Icon(Icons.keyboard_arrow_down, size: 18, color: context.appColors.textSecondary),
+                        ],
                       ),
                     ),
-                    const Spacer(),
-                    Icon(Icons.keyboard_arrow_down, color: context.appColors.textSecondary),
-                  ],
+                  ),
                 ),
-              ),
+
+                // Dropdown outlet (hanya jika ada outlet)
+                if (context.appState.outlets.isNotEmpty) ...[
+                  const SizedBox(width: 8),
+                  _OutletDropdown(
+                    outlets: context.appState.outlets,
+                    selectedOutletId: _selectedOutletFilter,
+                    allLabel: context.t('history.allOutlets'),
+                    onSelect: (id) => setState(() => _selectedOutletFilter = id),
+                  ),
+                ],
+              ],
             ),
           ),
 
@@ -367,6 +397,112 @@ class _HistoryScreenState extends State<HistoryScreen> {
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+// ── Outlet dropdown button ────────────────────────────────────────────────────
+
+class _OutletDropdown extends StatelessWidget {
+  const _OutletDropdown({
+    required this.outlets,
+    required this.selectedOutletId,
+    required this.allLabel,
+    required this.onSelect,
+  });
+
+  final List outlets;
+  final String? selectedOutletId;
+  final String allLabel;
+  final ValueChanged<String?> onSelect;
+
+  String _currentLabel() {
+    if (selectedOutletId == null) return allLabel;
+    final outlet = outlets.firstWhere(
+      (o) => o.id == selectedOutletId,
+      orElse: () => null,
+    );
+    return outlet?.name as String? ?? allLabel;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final label = _currentLabel();
+    final isFiltered = selectedOutletId != null;
+
+    return PopupMenuButton<String?>(
+      onSelected: (value) => onSelect(value == '__all__' ? null : value),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      color: context.appColors.card,
+      itemBuilder: (_) => [
+        PopupMenuItem<String?>(
+          value: '__all__',
+          child: Text(
+            allLabel,
+            style: TextStyle(
+              fontWeight: selectedOutletId == null ? FontWeight.w700 : FontWeight.normal,
+              color: selectedOutletId == null
+                  ? AppColors.brandBlue
+                  : context.appColors.textPrimary,
+            ),
+          ),
+        ),
+        ...outlets.map((outlet) => PopupMenuItem<String?>(
+              value: outlet.id as String,
+              child: Text(
+                outlet.name as String,
+                style: TextStyle(
+                  fontWeight: selectedOutletId == outlet.id ? FontWeight.w700 : FontWeight.normal,
+                  color: selectedOutletId == outlet.id
+                      ? AppColors.brandBlue
+                      : context.appColors.textPrimary,
+                ),
+              ),
+            )),
+      ],
+      child: Container(
+        height: 46,
+        padding: const EdgeInsets.symmetric(horizontal: 10),
+        decoration: BoxDecoration(
+          color: isFiltered
+              ? AppColors.brandBlue.withValues(alpha: 0.1)
+              : context.appColors.cardSoft,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: isFiltered ? AppColors.brandBlue : context.appColors.outline,
+          ),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              Icons.storefront_outlined,
+              size: 16,
+              color: isFiltered ? AppColors.brandBlue : context.appColors.textSecondary,
+            ),
+            const SizedBox(width: 4),
+            ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 80),
+              child: Text(
+                label,
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                  color: isFiltered ? AppColors.brandBlue : context.appColors.textPrimary,
+                ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+            const SizedBox(width: 2),
+            Icon(
+              Icons.keyboard_arrow_down,
+              size: 16,
+              color: isFiltered ? AppColors.brandBlue : context.appColors.textSecondary,
+            ),
+          ],
+        ),
       ),
     );
   }

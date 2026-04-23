@@ -191,7 +191,22 @@ class _HomeScreenState extends State<HomeScreen> {
         children: [
           Row(
             children: [
-              CircleAvatar(radius: 18, backgroundColor: context.appColors.chipBg),
+              CircleAvatar(
+                radius: 18,
+                backgroundColor: AppColors.brandBlue.withValues(alpha: 0.18),
+                child: Text(
+                  profile.fullName.isNotEmpty
+                      ? profile.fullName[0].toUpperCase()
+                      : profile.businessName.isNotEmpty
+                          ? profile.businessName[0].toUpperCase()
+                          : '?',
+                  style: const TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w800,
+                    color: AppColors.brandBlue,
+                  ),
+                ),
+              ),
               const SizedBox(width: 12),
               Expanded(
                 child: Column(
@@ -361,30 +376,9 @@ class _HomeScreenState extends State<HomeScreen> {
             ],
           ),
           const SizedBox(height: 18),
-          Container(
-            decoration: BoxDecoration(
-              color: context.appColors.card,
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: context.appColors.outline),
-            ),
-            clipBehavior: Clip.hardEdge,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
-                  child: Text(
-                    'Sponsor',
-                    style: TextStyle(
-                      fontSize: 10,
-                      color: context.appColors.textSecondary,
-                      letterSpacing: 1.2,
-                    ),
-                  ),
-                ),
-                const NativeAdCard(templateType: TemplateType.small),
-              ],
-            ),
+          ClipRRect(
+            borderRadius: BorderRadius.circular(12),
+            child: const NativeAdCard(templateType: TemplateType.small),
           ),
           const SizedBox(height: 14),
           SizedBox(
@@ -410,13 +404,6 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
               icon: const Icon(Icons.remove),
               label: Text(context.t('home.addExpense')),
-            ),
-          ),
-          const SizedBox(height: 10),
-          Center(
-            child: TextButton(
-              onPressed: _goHistory,
-              child: Text(context.t('home.viewHistory')),
             ),
           ),
         ],

@@ -12,7 +12,9 @@ import '../models/product_model.dart';
 import '../models/summary.dart';
 import '../models/user_category.dart';
 import '../models/user_profile.dart';
+import '../services/budget_sync_service.dart';
 import '../services/category_sync_service.dart';
+import '../services/notification_service.dart';
 import '../services/outlet_service.dart';
 import '../services/profile_service.dart';
 import '../services/transaction_sync_service.dart';
@@ -32,6 +34,7 @@ class AppState extends ChangeNotifier {
   late final _outletService = OutletService(supabase);
   late final _profileService = ProfileService(supabase);
   late final _categoryService = CategorySyncService(supabase);
+  late final _budgetSyncService = BudgetSyncService(supabase);
 
   bool _initialized = false;
   bool _isSyncing = false;
@@ -107,6 +110,14 @@ class AppState extends ChangeNotifier {
       _settings = AppSettings.fromJson(settingsMap);
     }
 
+    // Jadwalkan notifikasi harian jika diaktifkan (termasuk default baru = true)
+    if (_settings.dailyNotification) {
+      unawaited(NotificationService.schedule(
+        hour: _settings.notificationHour,
+        minute: _settings.notificationMinute,
+      ));
+    }
+
     _transactions = _syncService.migrateOldIds(_transactions);
 
     _initialized = true;
@@ -116,6 +127,7 @@ class AppState extends ChangeNotifier {
       unawaited(syncTransactions());
       unawaited(fetchProfile());
       unawaited(syncCategories());
+      unawaited(syncBudgets());
     }
   }
 
@@ -219,15 +231,15 @@ class AppState extends ChangeNotifier {
     }
   }
 
-  Future<void> updateProfile(UserProfile updatedProfile) async {
+  Future<void> updateProfile(UserProfile updatedProfile, {String? userId}) async {
     _profile = updatedProfile;
     await _persist();
     notifyListeners();
 
-    final user = currentUser;
-    if (user != null) {
+    final id = userId ?? currentUser?.id;
+    if (id != null) {
       try {
-        await _profileService.updateProfile(user.id, updatedProfile);
+        await _profileService.updateProfile(id, updatedProfile);
       } catch (e) {
         debugPrint('[API] Update profile failed: $e');
         rethrow;
@@ -406,10 +418,29 @@ class AppState extends ChangeNotifier {
     return total;
   }
 
+  Future<void> syncBudgets() async {
+    final user = currentUser;
+    if (user == null) return;
+    try {
+      final remote = await _budgetSyncService.fetchBudgets(user.id);
+      if (remote.isNotEmpty) {
+        _budgets = remote;
+        await _persist();
+        notifyListeners();
+      }
+    } catch (e) {
+      debugPrint('[BudgetSync] syncBudgets failed: $e');
+    }
+  }
+
   Future<void> addBudget(BudgetModel budget) async {
     _budgets = [budget, ..._budgets];
     await _persist();
     notifyListeners();
+    final user = currentUser;
+    if (user != null) {
+      unawaited(_budgetSyncService.upsertBudget(user.id, budget));
+    }
   }
 
   Future<void> updateBudget(BudgetModel budget) async {
@@ -419,12 +450,17 @@ class AppState extends ChangeNotifier {
       await _persist();
       notifyListeners();
     }
+    final user = currentUser;
+    if (user != null) {
+      unawaited(_budgetSyncService.upsertBudget(user.id, budget));
+    }
   }
 
   Future<void> deleteBudget(String id) async {
     _budgets = _budgets.where((b) => b.id != id).toList();
     await _persist();
     notifyListeners();
+    unawaited(_budgetSyncService.deleteBudget(id));
   }
 
   // ─── Transaction CRUD ────────────────────────────────────────────────────────
