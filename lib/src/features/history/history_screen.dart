@@ -10,7 +10,6 @@ import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_dynamic_colors.dart';
 import '../../core/ui/app_gradient_scaffold.dart';
 import '../../core/utils/pdf_exporter.dart';
-import '../../shared/widgets/app_banner_ad.dart';
 import '../../shared/widgets/loading_dialog.dart';
 import '../../shared/widgets/native_ad_card.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart' show TemplateType;
