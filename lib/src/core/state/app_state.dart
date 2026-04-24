@@ -367,8 +367,16 @@ class AppState extends ChangeNotifier {
     _categories = _categories.where((c) => c.id != id).toList();
     await _persist();
     notifyListeners();
-    // Best-effort server sync (non-blocking)
     _categoryService.delete(id).ignore();
+  }
+
+  Future<void> updateCategoryStockFlag(String id, {required bool isStock}) async {
+    final idx = _categories.indexWhere((c) => c.id == id);
+    if (idx == -1) return;
+    _categories[idx] = _categories[idx].copyWith(isStockPurchase: isStock);
+    await _persist();
+    notifyListeners();
+    _categoryService.upsert(_categories[idx]).ignore();
   }
 
   // ─── Product CRUD ─────────────────────────────────────────────────────────────
@@ -618,18 +626,27 @@ class AppState extends ChangeNotifier {
 
   Summary _summaryForDate(DateRangeType rangeType, DateTime refDate) {
     final range = _rangeFor(rangeType, refDate);
+    final stockNames = categoriesFor(MoneyTransactionType.expense)
+        .where((c) => c.isStockPurchase)
+        .map((c) => c.name)
+        .toSet();
     var income = 0;
     var expense = 0;
+    var stockExpense = 0;
     for (final tx in _filteredTransactions) {
       final d = _stripTime(tx.effectiveDate);
       if (d.isBefore(range.start) || !d.isBefore(range.end)) continue;
       if (tx.isIncome) {
         income += tx.amount;
       } else {
-        expense += tx.amount.abs();
+        final abs = tx.amount.abs();
+        expense += abs;
+        if (tx.category != null && stockNames.contains(tx.category)) {
+          stockExpense += abs;
+        }
       }
     }
-    return Summary(totalIncome: income, totalExpense: expense);
+    return Summary(totalIncome: income, totalExpense: expense, stockExpense: stockExpense);
   }
 
   DateTimeRange _rangeFor(DateRangeType type, DateTime now) {

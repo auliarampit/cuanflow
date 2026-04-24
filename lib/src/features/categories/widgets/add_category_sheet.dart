@@ -13,7 +13,7 @@ class AddCategorySheet extends StatefulWidget {
   });
 
   final MoneyTransactionType type;
-  final ValueChanged<String> onAdd;
+  final void Function(String name, bool isStockPurchase) onAdd;
 
   @override
   State<AddCategorySheet> createState() => _AddCategorySheetState();
@@ -21,8 +21,10 @@ class AddCategorySheet extends StatefulWidget {
 
 class _AddCategorySheetState extends State<AddCategorySheet> {
   final _controller = TextEditingController();
+  bool _isStockPurchase = false;
 
   bool get _canAdd => _controller.text.trim().isNotEmpty;
+  bool get _isExpense => widget.type == MoneyTransactionType.expense;
 
   @override
   void dispose() {
@@ -33,14 +35,13 @@ class _AddCategorySheetState extends State<AddCategorySheet> {
   void _submit() {
     final name = _controller.text.trim();
     if (name.isEmpty) return;
-    widget.onAdd(name);
+    widget.onAdd(name, _isExpense && _isStockPurchase);
     Navigator.of(context).pop();
   }
 
   @override
   Widget build(BuildContext context) {
-    final isIncome = widget.type == MoneyTransactionType.income;
-    final accentColor = isIncome ? AppColors.positive : AppColors.negative;
+    final accentColor = _isExpense ? AppColors.negative : AppColors.positive;
     final bottomInset = MediaQuery.of(context).viewInsets.bottom;
 
     return Container(
@@ -53,7 +54,6 @@ class _AddCategorySheetState extends State<AddCategorySheet> {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Handle bar
           Center(
             child: Container(
               width: 40,
@@ -66,9 +66,9 @@ class _AddCategorySheetState extends State<AddCategorySheet> {
             ),
           ),
           Text(
-            isIncome
-                ? context.t('category.add.titleIncome')
-                : context.t('category.add.titleExpense'),
+            _isExpense
+                ? context.t('category.add.titleExpense')
+                : context.t('category.add.titleIncome'),
             style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w800),
           ),
           const SizedBox(height: 16),
@@ -81,13 +81,76 @@ class _AddCategorySheetState extends State<AddCategorySheet> {
             decoration: InputDecoration(
               hintText: context.t('category.add.nameHint'),
               prefixIcon: Icon(
-                isIncome
-                    ? Icons.arrow_upward_rounded
-                    : Icons.arrow_downward_rounded,
+                _isExpense
+                    ? Icons.arrow_downward_rounded
+                    : Icons.arrow_upward_rounded,
                 color: accentColor,
               ),
             ),
           ),
+          if (_isExpense) ...[
+            const SizedBox(height: 12),
+            InkWell(
+              onTap: () => setState(() => _isStockPurchase = !_isStockPurchase),
+              borderRadius: BorderRadius.circular(12),
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                decoration: BoxDecoration(
+                  color: _isStockPurchase
+                      ? const Color(0xFFFF9F00).withValues(alpha: 0.1)
+                      : context.appColors.cardSoft,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(
+                    color: _isStockPurchase
+                        ? const Color(0xFFFF9F00).withValues(alpha: 0.4)
+                        : context.appColors.outline,
+                  ),
+                ),
+                child: Row(
+                  children: [
+                    Icon(
+                      Icons.inventory_2_outlined,
+                      size: 18,
+                      color: _isStockPurchase
+                          ? const Color(0xFFFF9F00)
+                          : context.appColors.textSecondary,
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            context.t('category.stockPurchaseLabel'),
+                            style: TextStyle(
+                              fontSize: 13,
+                              fontWeight: FontWeight.w600,
+                              color: _isStockPurchase
+                                  ? const Color(0xFFFF9F00)
+                                  : context.appColors.textPrimary,
+                            ),
+                          ),
+                          Text(
+                            context.t('category.stockPurchaseHint'),
+                            style: TextStyle(
+                              fontSize: 10,
+                              color: context.appColors.textSecondary,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    Switch(
+                      value: _isStockPurchase,
+                      onChanged: (v) => setState(() => _isStockPurchase = v),
+                      activeThumbColor: const Color(0xFFFF9F00),
+                      materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
           const SizedBox(height: 16),
           SizedBox(
             width: double.infinity,

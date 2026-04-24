@@ -6,12 +6,16 @@ class UserCategory {
     required this.name,
     required this.type,
     this.isDefault = false,
+    this.isStockPurchase = false,
   });
 
   final String id;
   final String name;
   final MoneyTransactionType type;
-  final bool isDefault; // kategori default tidak bisa dihapus
+  final bool isDefault;
+  /// Tandai kategori pengeluaran sebagai "pembelian stok/bahan baku".
+  /// Digunakan untuk memisahkan laporan: stok vs operasional.
+  final bool isStockPurchase;
 
   bool get isIncome => type == MoneyTransactionType.income;
 
@@ -26,11 +30,12 @@ class UserCategory {
   @override
   int get hashCode => id.hashCode;
 
-  UserCategory copyWith({String? name}) => UserCategory(
+  UserCategory copyWith({String? name, bool? isStockPurchase}) => UserCategory(
         id: id,
         name: name ?? this.name,
         type: type,
         isDefault: isDefault,
+        isStockPurchase: isStockPurchase ?? this.isStockPurchase,
       );
 
   Map<String, dynamic> toJson() => {
@@ -38,6 +43,7 @@ class UserCategory {
         'name': name,
         'type': type.name,
         'isDefault': isDefault,
+        'isStockPurchase': isStockPurchase,
       };
 
   static UserCategory fromJson(Map<String, dynamic> json) => UserCategory(
@@ -47,6 +53,7 @@ class UserCategory {
             ? MoneyTransactionType.expense
             : MoneyTransactionType.income,
         isDefault: json['isDefault'] as bool? ?? false,
+        isStockPurchase: json['isStockPurchase'] as bool? ?? false,
       );
 
   // ─── Kategori default ─────────────────────────────────────────────────────
@@ -61,7 +68,7 @@ class UserCategory {
         UserCategory(id: 'def_inc_6', name: 'Bonus', type: MoneyTransactionType.income, isDefault: true),
         UserCategory(id: 'def_inc_7', name: 'Lainnya', type: MoneyTransactionType.income, isDefault: true),
         // Expense
-        UserCategory(id: 'def_exp_1', name: 'Bahan Baku', type: MoneyTransactionType.expense, isDefault: true),
+        UserCategory(id: 'def_exp_1', name: 'Bahan Baku', type: MoneyTransactionType.expense, isDefault: true, isStockPurchase: true),
         UserCategory(id: 'def_exp_2', name: 'Transportasi', type: MoneyTransactionType.expense, isDefault: true),
         UserCategory(id: 'def_exp_3', name: 'Operasional', type: MoneyTransactionType.expense, isDefault: true),
         UserCategory(id: 'def_exp_4', name: 'Makan & Minum', type: MoneyTransactionType.expense, isDefault: true),

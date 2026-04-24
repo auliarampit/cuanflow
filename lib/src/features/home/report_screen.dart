@@ -247,6 +247,12 @@ class _ReportScreenState extends State<ReportScreen> {
                     isPositive: netProfit >= 0,
                   ),
 
+                  // ── Rincian pengeluaran: operasional vs stok ─────────────
+                  if (summary.stockExpense > 0) ...[
+                    const SizedBox(height: 10),
+                    _ExpenseBreakdownCard(summary: summary),
+                  ],
+
                   // ── Budget bulan ini (hanya jika fitur aktif & ada budget) ─
                   if (appState.profile.featureBudget) ...[
                     const SizedBox(height: 16),
@@ -606,6 +612,148 @@ class _NetProfitCard extends StatelessWidget {
             ),
         ],
       ),
+    );
+  }
+}
+
+// ─── Expense Breakdown Card (Operasional vs Stok) ────────────────────────────
+class _ExpenseBreakdownCard extends StatelessWidget {
+  const _ExpenseBreakdownCard({required this.summary});
+
+  final Summary summary;
+
+  @override
+  Widget build(BuildContext context) {
+    final total = summary.totalExpense;
+    final operating = summary.operatingExpense;
+    final stock = summary.stockExpense;
+    final opPct = total > 0 ? operating / total : 0.0;
+    final stPct = total > 0 ? stock / total : 0.0;
+
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: context.appColors.card,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: context.appColors.outline),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                width: 4,
+                height: 14,
+                decoration: BoxDecoration(
+                  color: AppColors.negative,
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+              const SizedBox(width: 8),
+              Text(
+                context.t('report.expenseBreakdownTitle'),
+                style: TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w700,
+                  color: context.appColors.textPrimary,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          _BreakdownRow(
+            label: context.t('report.operatingExpenseLabel'),
+            amount: IdrFormatter.format(operating),
+            pct: opPct,
+            color: AppColors.negative,
+          ),
+          const SizedBox(height: 8),
+          _BreakdownRow(
+            label: context.t('report.stockExpenseLabel'),
+            amount: IdrFormatter.format(stock),
+            pct: stPct,
+            color: const Color(0xFFFF9F00),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _BreakdownRow extends StatelessWidget {
+  const _BreakdownRow({
+    required this.label,
+    required this.amount,
+    required this.pct,
+    required this.color,
+  });
+
+  final String label;
+  final String amount;
+  final double pct;
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Container(
+              width: 8,
+              height: 8,
+              decoration: BoxDecoration(
+                color: color,
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Text(
+                label,
+                style: TextStyle(
+                  fontSize: 12,
+                  color: context.appColors.textSecondary,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+            Text(
+              amount,
+              style: TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.w700,
+                color: context.appColors.textPrimary,
+              ),
+            ),
+            const SizedBox(width: 8),
+            SizedBox(
+              width: 38,
+              child: Text(
+                '${(pct * 100).toStringAsFixed(0)}%',
+                textAlign: TextAlign.right,
+                style: TextStyle(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w700,
+                  color: color,
+                ),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 5),
+        ClipRRect(
+          borderRadius: BorderRadius.circular(4),
+          child: LinearProgressIndicator(
+            value: pct.clamp(0.0, 1.0),
+            minHeight: 5,
+            backgroundColor: color.withValues(alpha: 0.12),
+            valueColor: AlwaysStoppedAnimation<Color>(color),
+          ),
+        ),
+      ],
     );
   }
 }

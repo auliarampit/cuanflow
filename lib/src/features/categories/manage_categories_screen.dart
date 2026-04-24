@@ -40,12 +40,13 @@ class _ManageCategoriesScreenState extends State<ManageCategoriesScreen>
       backgroundColor: Colors.transparent,
       builder: (_) => AddCategorySheet(
         type: type,
-        onAdd: (name) {
+        onAdd: (name, isStockPurchase) {
           context.appState.addCategory(
             UserCategory(
               id: 'cat_${DateTime.now().microsecondsSinceEpoch}',
               name: name,
               type: type,
+              isStockPurchase: isStockPurchase,
             ),
           );
         },
@@ -147,6 +148,7 @@ class _CategoryTab extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isExpense = type == MoneyTransactionType.expense;
     return Column(
       children: [
         Expanded(
@@ -154,11 +156,17 @@ class _CategoryTab extends StatelessWidget {
             padding: const EdgeInsets.fromLTRB(18, 16, 18, 80),
             itemCount: categories.length,
             separatorBuilder: (_, i) => const SizedBox(height: 8),
-            itemBuilder: (_, i) => CategoryListTile(
-              category: categories[i],
-              accentColor: accentColor,
-              onDelete: categories[i].isDefault ? null : () => onDelete(categories[i]),
-            ),
+            itemBuilder: (_, i) {
+              final cat = categories[i];
+              return CategoryListTile(
+                category: cat,
+                accentColor: accentColor,
+                onDelete: cat.isDefault ? null : () => onDelete(cat),
+                onToggleStock: isExpense && !cat.isDefault
+                    ? (isStock) => context.appState.updateCategoryStockFlag(cat.id, isStock: isStock)
+                    : null,
+              );
+            },
           ),
         ),
         Padding(

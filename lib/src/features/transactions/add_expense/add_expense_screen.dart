@@ -14,11 +14,18 @@ import '../../../shared/widgets/category_dropdown.dart';
 
 // ─── Bulk item model ────────────────────────────────────────────────────────
 class _BulkItem {
-  _BulkItem({required this.amount, required this.category, this.note, this.outletId});
+  _BulkItem({
+    required this.amount,
+    required this.category,
+    this.note,
+    this.outletId,
+    this.isStockPurchase = false,
+  });
   final int amount;
   final String category;
   final String? note;
   final String? outletId;
+  final bool isStockPurchase;
 }
 
 // ─── Screen ────────────────────────────────────────────────────────────────
@@ -118,6 +125,7 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
         category: _selectedCategory!.label,
         note: _noteController.text.trim(),
         outletId: _selectedOutletId,
+        isStockPurchase: _selectedCategory!.isStockPurchase,
       ));
       _amountController.clear();
       _noteController.clear();
@@ -377,6 +385,10 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
                 accentColor: AppColors.negative,
                 onChanged: (cat) => setState(() => _selectedCategory = cat),
               ),
+              if (_selectedCategory?.isStockPurchase == true) ...[
+                const SizedBox(height: 8),
+                _StockInfoBanner(),
+              ],
               const SizedBox(height: 24),
               SizedBox(
                 width: double.infinity,
@@ -497,6 +509,10 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
                         onChanged: (cat) =>
                             setState(() => _selectedCategory = cat),
                       ),
+                      if (_selectedCategory?.isStockPurchase == true) ...[
+                        const SizedBox(height: 8),
+                        _StockInfoBanner(),
+                      ],
 
                       // Outlet (per-item, only when feature is on)
                       if (featureOutlets) ...[
@@ -550,6 +566,37 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
             ],
           ],
         ),
+      ),
+    );
+  }
+}
+
+// ─── Stock info banner ───────────────────────────────────────────────────────
+class _StockInfoBanner extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      decoration: BoxDecoration(
+        color: const Color(0xFFFF9F00).withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: const Color(0xFFFF9F00).withValues(alpha: 0.3)),
+      ),
+      child: const Row(
+        children: [
+          Icon(Icons.inventory_2_outlined, size: 14, color: Color(0xFFFF9F00)),
+          SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              'Pengeluaran ini akan tercatat sebagai Pembelian Stok di laporan',
+              style: TextStyle(
+                fontSize: 11,
+                color: Color(0xFFFF9F00),
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -777,7 +824,7 @@ class _OutletPill extends StatelessWidget {
   }
 }
 
-// ─── Item list card ─────────────────────────────────────────────────────────
+// ─── Item list card ──────────────────────────────────────────────────────────
 class _ItemListCard extends StatelessWidget {
   const _ItemListCard({
     required this.items,
@@ -896,6 +943,20 @@ class _ItemTile extends StatelessWidget {
                           fontSize: 12,
                           color: context.appColors.textSecondary),
                     ),
+                    if (item.isStockPurchase) ...[
+                      const SizedBox(width: 5),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFFF9F00).withValues(alpha: 0.15),
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                        child: const Text(
+                          '📦',
+                          style: TextStyle(fontSize: 9),
+                        ),
+                      ),
+                    ],
                     if (outletName != null) ...[
                       Text(
                         '  ·  ',

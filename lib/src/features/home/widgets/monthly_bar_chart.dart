@@ -7,6 +7,8 @@ import '../../../core/theme/app_dynamic_colors.dart';
 
 enum _Period { daily, weekly, monthly }
 
+const _stockColor = Color(0xFFFF9F00);
+
 /// Bar chart income vs expense dengan toggle Harian / Mingguan / Bulanan.
 class MonthlyBarChart extends StatefulWidget {
   const MonthlyBarChart({
@@ -48,29 +50,29 @@ class _MonthlyBarChartState extends State<MonthlyBarChart> {
     final today = DateTime.now();
     return List.generate(7, (i) {
       final date = today.subtract(Duration(days: 6 - i));
-      final summary = widget.appState.summaryForDate(DateRangeType.day, date);
+      final s = widget.appState.summaryForDate(DateRangeType.day, date);
       return _BarData(
         label: _dayLabels[date.weekday - 1],
-        income: summary.totalIncome.toDouble(),
-        expense: summary.totalExpense.toDouble(),
+        income: s.totalIncome.toDouble(),
+        operating: s.operatingExpense.toDouble(),
+        stock: s.stockExpense.toDouble(),
       );
     });
   }
 
   List<_BarData> _buildWeekly() {
     final today = DateTime.now();
-    // Senin pekan ini
     final thisMonday = today.subtract(Duration(days: today.weekday - 1));
     return List.generate(6, (i) {
-      // pekan ke-(5-i) mundur dari pekan ini
       final monday = thisMonday.subtract(Duration(days: (5 - i) * 7));
-      final summary = widget.appState.summaryForDate(DateRangeType.week, monday);
+      final s = widget.appState.summaryForDate(DateRangeType.week, monday);
       final day = monday.day.toString().padLeft(2, '0');
       final mon = _months[monday.month - 1];
       return _BarData(
         label: '$day $mon',
-        income: summary.totalIncome.toDouble(),
-        expense: summary.totalExpense.toDouble(),
+        income: s.totalIncome.toDouble(),
+        operating: s.operatingExpense.toDouble(),
+        stock: s.stockExpense.toDouble(),
       );
     });
   }
@@ -79,12 +81,12 @@ class _MonthlyBarChartState extends State<MonthlyBarChart> {
     return List.generate(6, (i) {
       final date = DateTime(
           widget.selectedDate.year, widget.selectedDate.month - (5 - i), 15);
-      final summary =
-          widget.appState.summaryForDate(DateRangeType.month, date);
+      final s = widget.appState.summaryForDate(DateRangeType.month, date);
       return _BarData(
         label: _months[date.month - 1],
-        income: summary.totalIncome.toDouble(),
-        expense: summary.totalExpense.toDouble(),
+        income: s.totalIncome.toDouble(),
+        operating: s.operatingExpense.toDouble(),
+        stock: s.stockExpense.toDouble(),
       );
     });
   }
@@ -111,10 +113,11 @@ class _MonthlyBarChartState extends State<MonthlyBarChart> {
             children: [
               Flexible(
                 child: Wrap(
-                  spacing: 12,
+                  spacing: 10,
                   children: [
                     _LegendDot(color: AppColors.positive, label: 'Pemasukan'),
-                    _LegendDot(color: AppColors.negative, label: 'Pengeluaran'),
+                    _LegendDot(color: AppColors.negative, label: 'Operasional'),
+                    _LegendDot(color: _stockColor, label: 'Stok'),
                   ],
                 ),
               ),
@@ -192,8 +195,11 @@ class _MonthlyBarChartState extends State<MonthlyBarChart> {
                 barTouchData: BarTouchData(
                   touchTooltipData: BarTouchTooltipData(
                     getTooltipItem: (group, groupIndex, rod, rodIndex) {
-                      final label =
-                          rodIndex == 0 ? 'Pemasukan' : 'Pengeluaran';
+                      final label = rodIndex == 0
+                          ? 'Pemasukan'
+                          : rodIndex == 1
+                              ? 'Operasional'
+                              : 'Stok';
                       final amount = _formatTooltip(rod.toY);
                       return BarTooltipItem(
                         '$label\n$amount',
@@ -220,7 +226,8 @@ class _MonthlyBarChartState extends State<MonthlyBarChart> {
     double max = 0;
     for (final d in data) {
       if (d.income > max) max = d.income;
-      if (d.expense > max) max = d.expense;
+      if (d.operating > max) max = d.operating;
+      if (d.stock > max) max = d.stock;
     }
     if (max == 0) return 1000000;
     final step = _niceStep(max);
@@ -240,19 +247,25 @@ class _MonthlyBarChartState extends State<MonthlyBarChart> {
     return List.generate(data.length, (i) {
       return BarChartGroupData(
         x: i,
-        barsSpace: 4,
+        barsSpace: 3,
         barRods: [
           BarChartRodData(
             toY: data[i].income,
             color: AppColors.positive,
-            width: 10,
-            borderRadius: const BorderRadius.vertical(top: Radius.circular(4)),
+            width: 8,
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(3)),
           ),
           BarChartRodData(
-            toY: data[i].expense,
+            toY: data[i].operating,
             color: AppColors.negative,
-            width: 10,
-            borderRadius: const BorderRadius.vertical(top: Radius.circular(4)),
+            width: 8,
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(3)),
+          ),
+          BarChartRodData(
+            toY: data[i].stock,
+            color: _stockColor,
+            width: 8,
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(3)),
           ),
         ],
       );
@@ -288,11 +301,13 @@ class _BarData {
   const _BarData({
     required this.label,
     required this.income,
-    required this.expense,
+    required this.operating,
+    required this.stock,
   });
   final String label;
   final double income;
-  final double expense;
+  final double operating;
+  final double stock;
 }
 
 // ── Period toggle ─────────────────────────────────────────────────────────────
