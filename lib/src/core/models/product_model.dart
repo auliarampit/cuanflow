@@ -1,5 +1,7 @@
 import 'dart:math';
 
+import 'raw_material_model.dart';
+
 class ProductModel {
   final String id;
   final String name;
@@ -56,6 +58,24 @@ class ProductModel {
     return totalProductionCost / yieldAmount;
   }
 
+  /// HPP per unit using live raw material prices. Falls back to stored price
+  /// for ingredients not linked to a raw material.
+  double liveHppPerUnit(List<RawMaterial> rawMaterials) {
+    final liveIngredientCost = ingredients.fold(0.0, (sum, ing) {
+      if (ing.rawMaterialId != null) {
+        final mat = rawMaterials.cast<RawMaterial?>().firstWhere(
+              (m) => m?.id == ing.rawMaterialId,
+              orElse: () => null,
+            );
+        if (mat != null) return sum + (ing.quantity * mat.costPerUnit);
+      }
+      return sum + ing.totalPrice;
+    });
+    final total = liveIngredientCost + totalOtherCost;
+    if (yieldAmount <= 0) return 0;
+    return total / yieldAmount;
+  }
+
   double get netProfitPerUnit => sellingPrice - hppPerUnit;
 
   double get marginPercentage {
@@ -99,6 +119,7 @@ class ProductIngredient {
   final String unit;
   final double totalPrice;
   final String? note;
+  final String? rawMaterialId;
 
   String get amount =>
       "${quantity % 1 == 0 ? quantity.toInt() : quantity} $unit";
@@ -110,6 +131,7 @@ class ProductIngredient {
     required this.unit,
     required this.totalPrice,
     this.note,
+    this.rawMaterialId,
   });
 
   factory ProductIngredient.create({
@@ -118,6 +140,7 @@ class ProductIngredient {
     required String unit,
     required double totalPrice,
     String? note,
+    String? rawMaterialId,
   }) {
     return ProductIngredient(
       id: ProductModel._generateId(),
@@ -126,6 +149,7 @@ class ProductIngredient {
       unit: unit,
       totalPrice: totalPrice,
       note: note,
+      rawMaterialId: rawMaterialId,
     );
   }
 
@@ -137,6 +161,7 @@ class ProductIngredient {
       'unit': unit,
       'totalPrice': totalPrice,
       'note': note,
+      'rawMaterialId': rawMaterialId,
     };
   }
 
@@ -148,6 +173,7 @@ class ProductIngredient {
       unit: json['unit'] as String? ?? '',
       totalPrice: (json['totalPrice'] as num).toDouble(),
       note: json['note'] as String?,
+      rawMaterialId: json['rawMaterialId'] as String?,
     );
   }
 }

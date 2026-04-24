@@ -22,8 +22,9 @@ import '../features/debt/debt_screen.dart';
 import '../features/recurring/recurring_screen.dart';
 import '../features/inventory/inventory_screen.dart';
 import '../features/quick_sale/quick_sale_screen.dart';
-
-
+import '../features/product/raw_material_screen.dart';
+import '../features/product/production_batch_screen.dart';
+import '../features/product/product_analytics_screen.dart';
 
 import 'routes.dart';
 
@@ -75,6 +76,12 @@ final class AppRouter {
         return MaterialPageRoute(builder: (_) => const InventoryScreen());
       case AppRoutes.quickSale:
         return MaterialPageRoute(builder: (_) => const QuickSaleScreen());
+      case AppRoutes.rawMaterials:
+        return MaterialPageRoute(builder: (_) => const RawMaterialScreen());
+      case AppRoutes.productionBatches:
+        return MaterialPageRoute(builder: (_) => const ProductionBatchScreen());
+      case AppRoutes.productAnalytics:
+        return MaterialPageRoute(builder: (_) => const ProductAnalyticsScreen());
       default:
         return MaterialPageRoute(builder: (_) => const LoginScreen());
     }

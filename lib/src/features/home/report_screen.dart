@@ -1,5 +1,7 @@
 import 'package:cari_untung/src/shared/widgets/loading_dialog.dart';
+import 'package:cari_untung/src/shared/widgets/native_ad_card.dart';
 import 'package:flutter/material.dart';
+import 'package:google_mobile_ads/google_mobile_ads.dart' show TemplateType;
 import 'package:intl/intl.dart';
 
 import '../../core/formatters/idr_formatter.dart';
@@ -290,6 +292,15 @@ class _ReportScreenState extends State<ReportScreen> {
                     _BudgetSection(
                       budgets: appState.budgetsFor(_selectedDate),
                       appState: appState,
+                    ),
+                    const SizedBox(height: 12),
+                    Container(
+                      height: 70,
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(14),
+                      ),
+                      clipBehavior: Clip.hardEdge,
+                      child: const NativeAdCard(templateType: TemplateType.small),
                     ),
                   ],
 

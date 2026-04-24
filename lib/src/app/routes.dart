@@ -24,4 +24,7 @@ final class AppRoutes {
   static const recurring = '/recurring';
   static const inventory = '/inventory';
   static const quickSale = '/quick-sale';
+  static const rawMaterials = '/raw-materials';
+  static const productionBatches = '/production-batches';
+  static const productAnalytics = '/product-analytics';
 }

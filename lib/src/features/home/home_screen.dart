@@ -66,7 +66,9 @@ class _TotalBalanceCard extends StatelessWidget {
                         final bal = appState.balanceFor(w.id);
                         return Container(
                           padding: const EdgeInsets.symmetric(
-                              horizontal: 8, vertical: 3),
+                            horizontal: 8,
+                            vertical: 3,
+                          ),
                           decoration: BoxDecoration(
                             color: Colors.white.withValues(alpha: 0.15),
                             borderRadius: BorderRadius.circular(999),
@@ -74,7 +76,9 @@ class _TotalBalanceCard extends StatelessWidget {
                           child: Text(
                             '${w.name}: ${IdrFormatter.format(bal)}',
                             style: const TextStyle(
-                                color: Colors.white, fontSize: 11),
+                              color: Colors.white,
+                              fontSize: 11,
+                            ),
                           ),
                         );
                       }).toList(),
@@ -223,11 +227,12 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     final profile = context.appState.profile;
-    final displayName = profile.isBusinessMode && profile.businessName.isNotEmpty
+    final displayName =
+        profile.isBusinessMode && profile.businessName.isNotEmpty
         ? profile.businessName
         : profile.fullName.isNotEmpty
-            ? profile.fullName
-            : 'Kamu';
+        ? profile.fullName
+        : 'Kamu';
     final greeting = context.t('home.greeting', {'name': displayName});
     final dateLabel = _formatDate(DateTime.now());
 
@@ -279,8 +284,8 @@ class _HomeScreenState extends State<HomeScreen> {
                   profile.fullName.isNotEmpty
                       ? profile.fullName[0].toUpperCase()
                       : profile.businessName.isNotEmpty
-                          ? profile.businessName[0].toUpperCase()
-                          : '?',
+                      ? profile.businessName[0].toUpperCase()
+                      : '?',
                   style: const TextStyle(
                     fontSize: 15,
                     fontWeight: FontWeight.w800,
@@ -346,7 +351,9 @@ class _HomeScreenState extends State<HomeScreen> {
                     shape: BoxShape.circle,
                     color: _currentPage == index
                         ? AppColors.positive
-                        : context.appColors.textSecondary.withValues(alpha: 0.3),
+                        : context.appColors.textSecondary.withValues(
+                            alpha: 0.3,
+                          ),
                   ),
                 );
               }),
@@ -477,31 +484,41 @@ class _HomeScreenState extends State<HomeScreen> {
                         Navigator.of(context).pushNamed(AppRoutes.inventory),
                     child: Container(
                       padding: const EdgeInsets.symmetric(
-                          horizontal: 14, vertical: 10),
+                        horizontal: 14,
+                        vertical: 10,
+                      ),
                       decoration: BoxDecoration(
                         color: Colors.orange.withValues(alpha: 0.12),
                         borderRadius: BorderRadius.circular(12),
                         border: Border.all(
-                            color: Colors.orange.withValues(alpha: 0.4)),
+                          color: Colors.orange.withValues(alpha: 0.4),
+                        ),
                       ),
                       child: Row(
                         children: [
-                          const Icon(Icons.warning_amber_rounded,
-                              color: Colors.orange, size: 18),
+                          const Icon(
+                            Icons.warning_amber_rounded,
+                            color: Colors.orange,
+                            size: 18,
+                          ),
                           const SizedBox(width: 10),
                           Expanded(
                             child: Text(
-                              context.t('home.lowStockAlert',
-                                  {'count': '${lowStock.length}'}),
+                              context.t('home.lowStockAlert', {
+                                'count': '${lowStock.length}',
+                              }),
                               style: const TextStyle(
-                                  color: Colors.orange,
-                                  fontSize: 13,
-                                  fontWeight: FontWeight.w600),
+                                color: Colors.orange,
+                                fontSize: 13,
+                                fontWeight: FontWeight.w600,
+                              ),
                             ),
                           ),
-                          Icon(Icons.chevron_right,
-                              color: Colors.orange.withValues(alpha: 0.7),
-                              size: 18),
+                          Icon(
+                            Icons.chevron_right,
+                            color: Colors.orange.withValues(alpha: 0.7),
+                            size: 18,
+                          ),
                         ],
                       ),
                     ),

@@ -12,6 +12,8 @@ import '../../core/ui/app_gradient_scaffold.dart';
 import '../../core/utils/pdf_exporter.dart';
 import '../../shared/widgets/app_banner_ad.dart';
 import '../../shared/widgets/loading_dialog.dart';
+import '../../shared/widgets/native_ad_card.dart';
+import 'package:google_mobile_ads/google_mobile_ads.dart' show TemplateType;
 import '../transactions/add_expense/add_expense_screen.dart';
 import '../transactions/add_income/add_income_screen.dart';
 import 'widgets/history_filter_sheet.dart';
@@ -290,10 +292,12 @@ class _HistoryScreenState extends State<HistoryScreen> {
           ],
         ),
         centerTitle: true,
-        leading: IconButton(
-          onPressed: () => Navigator.of(context).pop(),
-          icon: const Icon(Icons.arrow_back_ios_new, size: 20),
-        ),
+        leading: Navigator.of(context).canPop()
+            ? IconButton(
+                onPressed: () => Navigator.of(context).pop(),
+                icon: const Icon(Icons.arrow_back_ios_new, size: 20),
+              )
+            : null,
         actions: [
           IconButton(
             icon: const Icon(Icons.picture_as_pdf_outlined),
@@ -370,22 +374,38 @@ class _HistoryScreenState extends State<HistoryScreen> {
           // List
           Expanded(
             child: filteredTxs.isEmpty
-                ? Center(
-                    child: Text(
-                      context.t('history.empty'),
-                      style: TextStyle(
-                        color: context.appColors.textSecondary.withValues(
-                          alpha: 0.5,
+                ? Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 20),
+                        child: _HistoryAdCard(),
+                      ),
+                      const SizedBox(height: 20),
+                      Text(
+                        context.t('history.empty'),
+                        style: TextStyle(
+                          color: context.appColors.textSecondary.withValues(
+                            alpha: 0.5,
+                          ),
                         ),
                       ),
-                    ),
+                    ],
                   )
                 : ListView.separated(
                     padding: const EdgeInsets.symmetric(horizontal: 20),
-                    itemCount: sortedDates.length,
+                    itemCount: sortedDates.length > 2
+                        ? sortedDates.length + 1
+                        : sortedDates.length,
                     separatorBuilder: (_, i) => const SizedBox(height: 24),
                     itemBuilder: (context, index) {
-                      final date = sortedDates[index];
+                      if (sortedDates.length > 2 && index == 3) {
+                        return _HistoryAdCard();
+                      }
+                      final dataIndex = sortedDates.length > 2 && index > 3
+                          ? index - 1
+                          : index;
+                      final date = sortedDates[dataIndex];
                       final txs = grouped[date]!;
                       return HistoryTransactionGroup(
                         date: date,
@@ -536,6 +556,18 @@ class _OutletDropdown extends StatelessWidget {
           ],
         ),
       ),
+    );
+  }
+}
+
+class _HistoryAdCard extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      height: 70,
+      decoration: BoxDecoration(borderRadius: BorderRadius.circular(14)),
+      clipBehavior: Clip.hardEdge,
+      child: const NativeAdCard(templateType: TemplateType.small),
     );
   }
 }

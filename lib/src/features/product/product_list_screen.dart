@@ -6,6 +6,7 @@ import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_dynamic_colors.dart';
 import '../../core/ui/app_gradient_scaffold.dart';
 import 'hpp_calculator_screen.dart';
+import 'product_analytics_screen.dart';
 
 class ProductListScreen extends StatefulWidget {
   const ProductListScreen({super.key});
@@ -26,7 +27,9 @@ class _ProductListScreenState extends State<ProductListScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final products = context.appState.products;
+    final appState = context.appState;
+    final rawMaterials = appState.rawMaterials;
+    final products = appState.products;
     final filteredProducts = products.where((p) {
       if (_searchQuery.isEmpty) return true;
       return p.name.toLowerCase().contains(_searchQuery.toLowerCase());
@@ -40,6 +43,17 @@ class _ProductListScreenState extends State<ProductListScreen> {
           context.t('product.list.title'),
           style: const TextStyle(fontWeight: FontWeight.bold),
         ),
+        actions: [
+          if (products.isNotEmpty)
+            IconButton(
+              icon: const Icon(Icons.bar_chart),
+              tooltip: 'Analitik',
+              onPressed: () => Navigator.of(context).push(
+                MaterialPageRoute(
+                    builder: (_) => const ProductAnalyticsScreen()),
+              ),
+            ),
+        ],
       ),
       body: Column(
         children: [
@@ -68,17 +82,46 @@ class _ProductListScreenState extends State<ProductListScreen> {
                     padding: const EdgeInsets.all(16),
                     itemBuilder: (context, index) {
                       final product = filteredProducts[index];
+                      final liveHpp =
+                          product.liveHppPerUnit(rawMaterials);
+                      final hpp =
+                          liveHpp > 0 ? liveHpp : product.hppPerUnit;
+                      final margin = product.sellingPrice > 0
+                          ? (product.sellingPrice - hpp) /
+                              product.sellingPrice *
+                              100
+                          : 0.0;
+                      final isLinked = product.ingredients
+                          .any((i) => i.rawMaterialId != null);
+
+                      Color marginColor;
+                      String marginLabel;
+                      if (margin >= 40) {
+                        marginColor = AppColors.brandGreen;
+                        marginLabel = 'SEHAT';
+                      } else if (margin >= 20) {
+                        marginColor = const Color(0xFFF59E0B);
+                        marginLabel = 'TIPIS';
+                      } else {
+                        marginColor = AppColors.negative;
+                        marginLabel = 'RUGI';
+                      }
+
                       return Card(
                         color: context.appColors.card,
                         margin: const EdgeInsets.only(bottom: 12),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(12),
+                          side: BorderSide(
+                              color: marginColor.withValues(alpha: 0.4),
+                              width: 1),
                         ),
                         child: InkWell(
                           onTap: () {
-                             Navigator.of(context).push(
+                            Navigator.of(context).push(
                               MaterialPageRoute(
-                                builder: (_) => HppCalculatorScreen(product: product),
+                                builder: (_) =>
+                                    HppCalculatorScreen(product: product),
                               ),
                             );
                           },
@@ -86,38 +129,73 @@ class _ProductListScreenState extends State<ProductListScreen> {
                           child: Padding(
                             padding: const EdgeInsets.all(16),
                             child: Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
                                 Expanded(
                                   child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
                                     children: [
                                       Text(
                                         product.name,
                                         style: TextStyle(
                                           fontSize: 16,
                                           fontWeight: FontWeight.bold,
-                                          color: context.appColors.textPrimary,
+                                          color:
+                                              context.appColors.textPrimary,
                                         ),
                                       ),
                                       const SizedBox(height: 4),
-                                      Text(
-                                        '${context.t('product.list.hppPrefix')}${IdrFormatter.format(product.hppPerUnit.round())}',
-                                        style: TextStyle(
-                                          color: context.appColors.textSecondary,
-                                          fontSize: 14,
-                                        ),
+                                      Row(
+                                        children: [
+                                          Text(
+                                            '${context.t('product.list.hppPrefix')}${IdrFormatter.format(hpp.round())}',
+                                            style: TextStyle(
+                                              color: context
+                                                  .appColors.textSecondary,
+                                              fontSize: 13,
+                                            ),
+                                          ),
+                                          if (isLinked) ...[
+                                            const SizedBox(width: 4),
+                                            const Text('⚡',
+                                                style: TextStyle(fontSize: 11)),
+                                          ],
+                                        ],
                                       ),
                                     ],
                                   ),
                                 ),
-                                Text(
-                                  IdrFormatter.format(product.sellingPrice.round()),
-                                  style: TextStyle(
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.bold,
-                                    color: context.appColors.textPrimary,
-                                  ),
+                                Column(
+                                  crossAxisAlignment: CrossAxisAlignment.end,
+                                  children: [
+                                    Text(
+                                      IdrFormatter.format(
+                                          product.sellingPrice.round()),
+                                      style: TextStyle(
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.bold,
+                                        color: context.appColors.textPrimary,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 4),
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(
+                                          horizontal: 8, vertical: 2),
+                                      decoration: BoxDecoration(
+                                        color: marginColor.withValues(alpha: 0.15),
+                                        borderRadius:
+                                            BorderRadius.circular(6),
+                                      ),
+                                      child: Text(
+                                        '$marginLabel ${margin.toStringAsFixed(0)}%',
+                                        style: TextStyle(
+                                          color: marginColor,
+                                          fontSize: 11,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
                                 ),
                               ],
                             ),

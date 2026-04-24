@@ -4,6 +4,7 @@ import '../../../core/formatters/currency_input_formatter.dart';
 import '../../../core/formatters/idr_formatter.dart';
 import '../../../core/localization/transalation_extansions.dart';
 import '../../../core/models/product_model.dart';
+import '../../../core/models/raw_material_model.dart';
 import '../../../core/theme/app_colors.dart';
 
 class AddItemSheet extends StatefulWidget {
@@ -23,6 +24,8 @@ class AddItemSheet extends StatefulWidget {
     required this.onSave,
     this.isCost = false,
     this.existingProducts,
+    this.rawMaterials,
+    this.onSaveRawMaterial,
   });
 
   final String title;
@@ -40,6 +43,10 @@ class AddItemSheet extends StatefulWidget {
       onSave;
   final bool isCost;
   final List<ProductModel>? existingProducts;
+  final List<RawMaterial>? rawMaterials;
+  /// Called instead of [onSave] when user picks a raw material as ingredient.
+  final void Function(String name, double qty, String unit, double price,
+      String note, String rawMaterialId)? onSaveRawMaterial;
 
   @override
   State<AddItemSheet> createState() => _AddItemSheetState();
@@ -51,10 +58,11 @@ class _AddItemSheetState extends State<AddItemSheet> {
   final _noteController = TextEditingController();
   final _priceController = TextEditingController();
   String _unit = 'Gram (gr)';
-  
-  // Varian Mode
-  bool _isManual = true;
+
+  // 0 = manual, 1 = from product, 2 = from raw material
+  int _mode = 0;
   ProductModel? _selectedProduct;
+  RawMaterial? _selectedRawMaterial;
 
   final List<String> _units = [
     'Gram (gr)',
@@ -68,9 +76,13 @@ class _AddItemSheetState extends State<AddItemSheet> {
     'Buah'
   ];
 
+  bool get _hasProducts =>
+      widget.existingProducts != null && widget.existingProducts!.isNotEmpty;
+  bool get _hasRawMaterials =>
+      widget.rawMaterials != null && widget.rawMaterials!.isNotEmpty;
+
   @override
   Widget build(BuildContext context) {
-    // Dark theme colors as per design
     final bgColor = const Color(0xFF0D1F16);
     final inputColor = const Color(0xFF1A2C22);
     final textColor = Colors.white;
@@ -78,7 +90,7 @@ class _AddItemSheetState extends State<AddItemSheet> {
     final accentColor = AppColors.brandGreen;
 
     final bottomInset = MediaQuery.of(context).viewInsets.bottom;
-    final hasProducts = widget.existingProducts != null && widget.existingProducts!.isNotEmpty;
+    final showTabs = !widget.isCost && (_hasProducts || _hasRawMaterials);
 
     return Container(
       padding: EdgeInsets.fromLTRB(20, 20, 20, bottomInset + 20),
@@ -110,8 +122,8 @@ class _AddItemSheetState extends State<AddItemSheet> {
           ),
           const SizedBox(height: 16),
 
-          // Toggle Mode (Only if not Cost and has products)
-          if (!widget.isCost && hasProducts) ...[
+          // Toggle Tabs
+          if (showTabs) ...[
             Container(
               padding: const EdgeInsets.all(4),
               decoration: BoxDecoration(
@@ -123,25 +135,141 @@ class _AddItemSheetState extends State<AddItemSheet> {
                   Expanded(
                     child: _buildToggleOption(
                       title: context.t('addItem.modeManual'),
-                      isSelected: _isManual,
-                      onTap: () => setState(() => _isManual = true),
+                      isSelected: _mode == 0,
+                      onTap: () => setState(() => _mode = 0),
                     ),
                   ),
-                  Expanded(
-                    child: _buildToggleOption(
-                      title: context.t('addItem.modeProduct'),
-                      isSelected: !_isManual,
-                      onTap: () => setState(() => _isManual = false),
+                  if (_hasProducts)
+                    Expanded(
+                      child: _buildToggleOption(
+                        title: context.t('addItem.modeProduct'),
+                        isSelected: _mode == 1,
+                        onTap: () => setState(() => _mode = 1),
+                      ),
                     ),
-                  ),
+                  if (_hasRawMaterials)
+                    Expanded(
+                      child: _buildToggleOption(
+                        title: 'Bahan Baku',
+                        isSelected: _mode == 2,
+                        onTap: () => setState(() => _mode = 2),
+                      ),
+                    ),
                 ],
               ),
             ),
             const SizedBox(height: 24),
           ],
 
-          if (!_isManual && !widget.isCost) ...[
-            // PRODUCT SELECTION MODE
+          // ── Raw Material Mode ─────────────────────────────────────────────
+          if (_mode == 2 && !widget.isCost) ...[
+            _buildLabel('Bahan Baku', hintColor),
+            const SizedBox(height: 8),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              decoration: BoxDecoration(
+                color: inputColor,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: Colors.white12),
+              ),
+              child: DropdownButtonHideUnderline(
+                child: DropdownButton<RawMaterial>(
+                  value: _selectedRawMaterial,
+                  hint: Text('Pilih bahan baku…',
+                      style: TextStyle(color: hintColor)),
+                  dropdownColor: inputColor,
+                  isExpanded: true,
+                  icon: Icon(Icons.keyboard_arrow_down, color: hintColor),
+                  style: TextStyle(color: textColor),
+                  items: widget.rawMaterials!.map((m) {
+                    return DropdownMenuItem<RawMaterial>(
+                      value: m,
+                      child: Text(
+                        '${m.name} — ${IdrFormatter.format(m.costPerUnit.round())}/${m.unit}',
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    );
+                  }).toList(),
+                  onChanged: (v) {
+                    setState(() {
+                      _selectedRawMaterial = v;
+                      _updateRawMaterialCalculation();
+                    });
+                  },
+                ),
+              ),
+            ),
+            const SizedBox(height: 16),
+            Row(
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      _buildLabel(
+                          context.t('addItem.usedAmount'), hintColor),
+                      const SizedBox(height: 8),
+                      _buildInput(
+                        controller: _qtyController,
+                        hint: '0',
+                        bgColor: inputColor,
+                        textColor: textColor,
+                        hintColor: hintColor,
+                        isNumber: true,
+                        onChanged: (_) => _updateRawMaterialCalculation(),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      _buildLabel(context.t('addItem.unit'), hintColor),
+                      const SizedBox(height: 8),
+                      Container(
+                        height: 50,
+                        alignment: Alignment.centerLeft,
+                        padding:
+                            const EdgeInsets.symmetric(horizontal: 16),
+                        decoration: BoxDecoration(
+                          color: inputColor.withValues(alpha: 0.5),
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: Colors.white12),
+                        ),
+                        child: Text(
+                          _selectedRawMaterial?.unit ??
+                              context.t('addItem.unitPlaceholder'),
+                          style: TextStyle(
+                              color: textColor.withValues(alpha: 0.7)),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+            _buildLabel(context.t('addItem.autoTotal'), hintColor),
+            const SizedBox(height: 8),
+            Container(
+              padding: const EdgeInsets.symmetric(vertical: 16),
+              child: Text(
+                _priceController.text.isEmpty
+                    ? 'Rp 0'
+                    : 'Rp ${_priceController.text}',
+                style: TextStyle(
+                  fontSize: 32,
+                  fontWeight: FontWeight.bold,
+                  color: accentColor,
+                ),
+              ),
+            ),
+          ]
+
+          // ── Product Mode ──────────────────────────────────────────────────
+          else if (_mode == 1 && !widget.isCost) ...[
             _buildLabel(context.t('addItem.modeVariant'), hintColor),
             const SizedBox(height: 8),
             Container(
@@ -154,12 +282,13 @@ class _AddItemSheetState extends State<AddItemSheet> {
               child: DropdownButtonHideUnderline(
                 child: DropdownButton<ProductModel>(
                   value: _selectedProduct,
-                  hint: Text(context.t('addItem.productHint'), style: TextStyle(color: hintColor)),
+                  hint: Text(context.t('addItem.productHint'),
+                      style: TextStyle(color: hintColor)),
                   dropdownColor: inputColor,
                   isExpanded: true,
                   icon: Icon(Icons.keyboard_arrow_down, color: hintColor),
                   style: TextStyle(color: textColor),
-                  items: widget.existingProducts!.map((ProductModel p) {
+                  items: widget.existingProducts!.map((p) {
                     return DropdownMenuItem<ProductModel>(
                       value: p,
                       child: Text(
@@ -168,9 +297,9 @@ class _AddItemSheetState extends State<AddItemSheet> {
                       ),
                     );
                   }).toList(),
-                  onChanged: (newValue) {
+                  onChanged: (v) {
                     setState(() {
-                      _selectedProduct = newValue;
+                      _selectedProduct = v;
                       _updateProductCalculation();
                     });
                   },
@@ -178,15 +307,14 @@ class _AddItemSheetState extends State<AddItemSheet> {
               ),
             ),
             const SizedBox(height: 16),
-
-            // Qty Input for Product
             Row(
               children: [
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      _buildLabel(context.t('addItem.usedAmount'), hintColor),
+                      _buildLabel(
+                          context.t('addItem.usedAmount'), hintColor),
                       const SizedBox(height: 8),
                       _buildInput(
                         controller: _qtyController,
@@ -210,15 +338,18 @@ class _AddItemSheetState extends State<AddItemSheet> {
                       Container(
                         height: 50,
                         alignment: Alignment.centerLeft,
-                        padding: const EdgeInsets.symmetric(horizontal: 16),
+                        padding:
+                            const EdgeInsets.symmetric(horizontal: 16),
                         decoration: BoxDecoration(
-                          color: inputColor.withOpacity(0.5),
+                          color: inputColor.withValues(alpha: 0.5),
                           borderRadius: BorderRadius.circular(12),
                           border: Border.all(color: Colors.white12),
                         ),
                         child: Text(
-                          _selectedProduct?.yieldUnit ?? context.t('addItem.unitPlaceholder'),
-                          style: TextStyle(color: textColor.withOpacity(0.7)),
+                          _selectedProduct?.yieldUnit ??
+                              context.t('addItem.unitPlaceholder'),
+                          style: TextStyle(
+                              color: textColor.withValues(alpha: 0.7)),
                         ),
                       ),
                     ],
@@ -227,14 +358,14 @@ class _AddItemSheetState extends State<AddItemSheet> {
               ],
             ),
             const SizedBox(height: 16),
-
-            // Auto-calculated Price Display
             _buildLabel(context.t('addItem.autoTotal'), hintColor),
             const SizedBox(height: 8),
             Container(
               padding: const EdgeInsets.symmetric(vertical: 16),
               child: Text(
-                _priceController.text.isEmpty ? 'Rp 0' : 'Rp ${_priceController.text}',
+                _priceController.text.isEmpty
+                    ? 'Rp 0'
+                    : 'Rp ${_priceController.text}',
                 style: TextStyle(
                   fontSize: 32,
                   fontWeight: FontWeight.bold,
@@ -242,9 +373,10 @@ class _AddItemSheetState extends State<AddItemSheet> {
                 ),
               ),
             ),
-          ] else ...[
-            // MANUAL INPUT MODE (Existing)
-            // Price Input (Big)
+          ]
+
+          // ── Manual Mode ───────────────────────────────────────────────────
+          else ...[
             Text(
               widget.priceLabel,
               style: TextStyle(
@@ -277,15 +409,13 @@ class _AddItemSheetState extends State<AddItemSheet> {
                 hintStyle: TextStyle(
                   fontSize: 48,
                   fontWeight: FontWeight.bold,
-                  color: textColor.withOpacity(0.3),
+                  color: textColor.withValues(alpha: 0.3),
                 ),
                 border: InputBorder.none,
                 contentPadding: EdgeInsets.zero,
               ),
             ),
             const SizedBox(height: 24),
-
-            // Name
             _buildLabel(widget.nameLabel, hintColor),
             const SizedBox(height: 8),
             _buildInput(
@@ -296,13 +426,10 @@ class _AddItemSheetState extends State<AddItemSheet> {
               hintColor: hintColor,
             ),
             const SizedBox(height: 16),
-
             if (!widget.isCost) ...[
-              // Qty & Unit
               Row(
                 children: [
                   Expanded(
-                    flex: 1,
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
@@ -321,15 +448,15 @@ class _AddItemSheetState extends State<AddItemSheet> {
                   ),
                   const SizedBox(width: 16),
                   Expanded(
-                    flex: 1,
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         _buildLabel(widget.unitLabel!, hintColor),
                         const SizedBox(height: 8),
                         Container(
-                          height: 50, // Match TextField height approx
-                          padding: const EdgeInsets.symmetric(horizontal: 12),
+                          height: 50,
+                          padding:
+                              const EdgeInsets.symmetric(horizontal: 12),
                           decoration: BoxDecoration(
                             color: inputColor,
                             borderRadius: BorderRadius.circular(12),
@@ -337,23 +464,21 @@ class _AddItemSheetState extends State<AddItemSheet> {
                           ),
                           child: DropdownButtonHideUnderline(
                             child: DropdownButton<String>(
-                              value:
-                                  _units.contains(_unit) ? _unit : _units.first,
+                              value: _units.contains(_unit)
+                                  ? _unit
+                                  : _units.first,
                               dropdownColor: inputColor,
                               icon: Icon(Icons.keyboard_arrow_down,
                                   color: hintColor),
                               style: TextStyle(color: textColor),
-                              items: _units.map((String value) {
+                              items: _units.map((v) {
                                 return DropdownMenuItem<String>(
-                                  value: value,
-                                  child: Text(value),
+                                  value: v,
+                                  child: Text(v),
                                 );
                               }).toList(),
-                              onChanged: (newValue) {
-                                setState(() {
-                                  _unit = newValue!;
-                                });
-                              },
+                              onChanged: (v) =>
+                                  setState(() => _unit = v!),
                             ),
                           ),
                         ),
@@ -366,9 +491,9 @@ class _AddItemSheetState extends State<AddItemSheet> {
             ],
           ],
 
-          // Note (Shared)
+          // Note — shared across all modes (not for cost)
           if (!widget.isCost) ...[
-             _buildLabel(widget.noteLabel!, hintColor),
+            _buildLabel(widget.noteLabel!, hintColor),
             const SizedBox(height: 8),
             _buildInput(
               controller: _noteController,
@@ -381,7 +506,7 @@ class _AddItemSheetState extends State<AddItemSheet> {
             const SizedBox(height: 24),
           ],
 
-          // Submit Button
+          // Submit
           SizedBox(
             width: double.infinity,
             height: 56,
@@ -389,7 +514,7 @@ class _AddItemSheetState extends State<AddItemSheet> {
               onPressed: _submit,
               style: ElevatedButton.styleFrom(
                 backgroundColor: accentColor,
-                foregroundColor: Colors.black, // Black text on green button
+                foregroundColor: Colors.black,
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(16),
                 ),
@@ -420,9 +545,14 @@ class _AddItemSheetState extends State<AddItemSheet> {
     if (_selectedProduct == null) return;
     final qty = double.tryParse(_qtyController.text) ?? 0;
     final total = qty * _selectedProduct!.hppPerUnit;
-    
-    // Update price controller just for storage/display logic
-    // We use a formatter to show it nicely
+    _priceController.text = CurrencyInputFormatter.formatVal(total.round());
+    setState(() {});
+  }
+
+  void _updateRawMaterialCalculation() {
+    if (_selectedRawMaterial == null) return;
+    final qty = double.tryParse(_qtyController.text) ?? 0;
+    final total = qty * _selectedRawMaterial!.costPerUnit;
     _priceController.text = CurrencyInputFormatter.formatVal(total.round());
     setState(() {});
   }
@@ -437,10 +567,14 @@ class _AddItemSheetState extends State<AddItemSheet> {
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 12),
         decoration: BoxDecoration(
-          color: isSelected ? const Color(0xFF0D1F16) : Colors.transparent,
+          color: isSelected
+              ? const Color(0xFF0D1F16)
+              : Colors.transparent,
           borderRadius: BorderRadius.circular(10),
           boxShadow: isSelected
-              ? [BoxShadow(color: Colors.black.withOpacity(0.1), blurRadius: 4)]
+              ? [BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.1),
+                  blurRadius: 4)]
               : null,
         ),
         child: Text(
@@ -449,7 +583,7 @@ class _AddItemSheetState extends State<AddItemSheet> {
           style: TextStyle(
             color: isSelected ? Colors.white : Colors.white54,
             fontWeight: FontWeight.bold,
-            fontSize: 14,
+            fontSize: 13,
           ),
         ),
       ),
@@ -457,33 +591,67 @@ class _AddItemSheetState extends State<AddItemSheet> {
   }
 
   void _submit() {
-    // Validation
-    if (!_isManual) {
-       if (_selectedProduct == null) return;
-       if (_qtyController.text.isEmpty) return;
+    if (_mode == 2) {
+      // Raw Material mode
+      if (_selectedRawMaterial == null) return;
+      if (_qtyController.text.isEmpty) return;
+      final priceText =
+          _priceController.text.replaceAll(RegExp(r'[^0-9]'), '');
+      final price = double.tryParse(priceText) ?? 0;
+      final qty = double.tryParse(_qtyController.text) ?? 1;
+      widget.onSaveRawMaterial?.call(
+        _selectedRawMaterial!.name,
+        qty,
+        _selectedRawMaterial!.unit,
+        price,
+        _noteController.text,
+        _selectedRawMaterial!.id,
+      );
+      // Fallback if no raw material callback provided
+      if (widget.onSaveRawMaterial == null) {
+        widget.onSave(
+          _selectedRawMaterial!.name,
+          qty,
+          _selectedRawMaterial!.unit,
+          price,
+          _noteController.text,
+        );
+      }
+      Navigator.pop(context);
+    } else if (_mode == 1) {
+      // Product mode
+      if (_selectedProduct == null) return;
+      if (_qtyController.text.isEmpty) return;
+      final priceText =
+          _priceController.text.replaceAll(RegExp(r'[^0-9]'), '');
+      final price = double.tryParse(priceText) ?? 0;
+      final qty = double.tryParse(_qtyController.text) ?? 1;
+      widget.onSave(
+        _selectedProduct!.name,
+        qty,
+        _selectedProduct!.yieldUnit,
+        price,
+        _noteController.text,
+      );
+      Navigator.pop(context);
     } else {
-       if (_nameController.text.isEmpty || _priceController.text.isEmpty) {
-         return;
-       }
+      // Manual mode
+      if (_nameController.text.isEmpty || _priceController.text.isEmpty) {
+        return;
+      }
+      final priceText =
+          _priceController.text.replaceAll(RegExp(r'[^0-9]'), '');
+      final price = double.tryParse(priceText) ?? 0;
+      final qty = double.tryParse(_qtyController.text) ?? 1;
+      widget.onSave(
+        _nameController.text,
+        qty,
+        _unit,
+        price,
+        _noteController.text,
+      );
+      Navigator.pop(context);
     }
-
-    final priceText =
-        _priceController.text.replaceAll(RegExp(r'[^0-9]'), '');
-    final price = double.tryParse(priceText) ?? 0;
-
-    final qty = double.tryParse(_qtyController.text) ?? 1;
-
-    String finalName = _isManual ? _nameController.text : _selectedProduct!.name;
-    String finalUnit = _isManual ? _unit : _selectedProduct!.yieldUnit;
-
-    widget.onSave(
-      finalName,
-      qty,
-      finalUnit,
-      price,
-      _noteController.text,
-    );
-    Navigator.pop(context);
   }
 
   Widget _buildLabel(String text, Color color) {
@@ -515,22 +683,23 @@ class _AddItemSheetState extends State<AddItemSheet> {
       onChanged: onChanged,
       decoration: InputDecoration(
         hintText: hint,
-        hintStyle: TextStyle(color: hintColor.withOpacity(0.5)),
+        hintStyle: TextStyle(color: hintColor.withValues(alpha: 0.5)),
         filled: true,
         fillColor: bgColor,
         contentPadding:
             const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: Colors.white12),
+          borderSide: const BorderSide(color: Colors.white12),
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: Colors.white12),
+          borderSide: const BorderSide(color: Colors.white12),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: AppColors.brandGreen.withOpacity(0.5)),
+          borderSide: BorderSide(
+              color: AppColors.brandGreen.withValues(alpha: 0.5)),
         ),
       ),
     );

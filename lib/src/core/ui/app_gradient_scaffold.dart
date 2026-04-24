@@ -18,6 +18,7 @@ class AppGradientScaffold extends StatelessWidget {
   final Widget? bottomNavigationBar;
   final Widget? floatingActionButton;
   final FloatingActionButtonLocation? floatingActionButtonLocation;
+
   /// Tampilkan banner iklan di bawah layar. Default: true.
   /// Set false untuk layar auth (login, register, ganti PIN).
   final bool showAd;
@@ -48,7 +49,7 @@ class AppGradientScaffold extends StatelessWidget {
             ? Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  const AppBannerAd(),
+                  // const AppBannerAd(),
                   if (bottomNavigationBar != null) bottomNavigationBar!,
                 ],
               )

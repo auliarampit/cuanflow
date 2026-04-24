@@ -148,12 +148,16 @@ class _ProfileScreenState extends State<ProfileScreen> {
               onTap: () => Navigator.of(context).pushNamed(AppRoutes.debt),
             ),
             const SizedBox(height: 8),
+
+            // ── Native Ad (styled as menu card) ───────────────────────────
+            _ProfileAdCard(),
+            const SizedBox(height: 8),
+
             _ProfileMenuItem(
               icon: Icons.repeat_outlined,
               title: context.t('profile.menu.recurring'),
               subtitle: context.t('profile.menu.recurringSubtitle'),
-              onTap: () =>
-                  Navigator.of(context).pushNamed(AppRoutes.recurring),
+              onTap: () => Navigator.of(context).pushNamed(AppRoutes.recurring),
             ),
             const SizedBox(height: 8),
             _ProfileMenuItem(
@@ -169,11 +173,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
               _ProfileMenuItem(
                 icon: Icons.store_outlined,
                 title: 'Kelola Outlet',
-                subtitle:
-                    '${context.appState.outlets.length} outlet terdaftar',
+                subtitle: '${context.appState.outlets.length} outlet terdaftar',
                 onTap: () => Navigator.of(context).push(
                   MaterialPageRoute(
-                      builder: (_) => const ManageOutletsScreen()),
+                    builder: (_) => const ManageOutletsScreen(),
+                  ),
                 ),
               ),
               const SizedBox(height: 8),
@@ -186,6 +190,33 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 onTap: () => Navigator.of(context).push(
                   MaterialPageRoute(builder: (_) => const ProductListScreen()),
                 ),
+              ),
+              const SizedBox(height: 8),
+              _ProfileMenuItem(
+                icon: Icons.science_outlined,
+                title: 'Bahan Baku',
+                subtitle:
+                    '${context.appState.rawMaterials.length} bahan terdaftar',
+                onTap: () =>
+                    Navigator.of(context).pushNamed(AppRoutes.rawMaterials),
+              ),
+              const SizedBox(height: 8),
+              _ProfileMenuItem(
+                icon: Icons.precision_manufacturing_outlined,
+                title: 'Batch Produksi',
+                subtitle:
+                    '${context.appState.productionBatches.length} batch tercatat',
+                onTap: () => Navigator.of(
+                  context,
+                ).pushNamed(AppRoutes.productionBatches),
+              ),
+              const SizedBox(height: 8),
+              _ProfileMenuItem(
+                icon: Icons.bar_chart,
+                title: 'Analitik Produk',
+                subtitle: 'Margin ranking & breakeven analysis',
+                onTap: () =>
+                    Navigator.of(context).pushNamed(AppRoutes.productAnalytics),
               ),
               const SizedBox(height: 8),
             ],
@@ -214,7 +245,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
               subtitle: 'Atur kategori pemasukan & pengeluaran',
               onTap: () => Navigator.of(context).push(
                 MaterialPageRoute(
-                    builder: (_) => const ManageCategoriesScreen()),
+                  builder: (_) => const ManageCategoriesScreen(),
+                ),
               ),
             ),
             const SizedBox(height: 8),
@@ -222,16 +254,16 @@ class _ProfileScreenState extends State<ProfileScreen> {
               icon: Icons.notifications_outlined,
               title: context.t('profile.menu.notifications'),
               subtitle: context.t('profile.menu.notificationsSubtitle'),
-              onTap: () => Navigator.of(context)
-                  .pushNamed(AppRoutes.notificationSettings),
+              onTap: () => Navigator.of(
+                context,
+              ).pushNamed(AppRoutes.notificationSettings),
             ),
             const SizedBox(height: 8),
             _ProfileMenuItem(
               icon: Icons.lock_outline,
               title: context.t('profile.menu.changePin'),
               subtitle: context.t('profile.menu.changePinSubtitle'),
-              onTap: () =>
-                  Navigator.of(context).pushNamed(AppRoutes.changePin),
+              onTap: () => Navigator.of(context).pushNamed(AppRoutes.changePin),
             ),
             const SizedBox(height: 8),
             _ProfileMenuItem(
@@ -241,10 +273,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
               onTap: () => Navigator.of(context).pushNamed(AppRoutes.settings),
             ),
             const SizedBox(height: 8),
-
-            // ── Native Ad (styled as menu card) ───────────────────────────
-            _ProfileAdCard(),
-            const SizedBox(height: 24),
 
             // ── Logout ────────────────────────────────────────────────────
             SizedBox(
@@ -316,9 +344,7 @@ class _ProfileMenuItem extends StatelessWidget {
                 children: [
                   Text(
                     title,
-                    style: const TextStyle(
-                      fontWeight: FontWeight.w700,
-                    ),
+                    style: const TextStyle(fontWeight: FontWeight.w700),
                   ),
                   const SizedBox(height: 4),
                   Text(
@@ -343,6 +369,7 @@ class _ProfileAdCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
+      height: 70,
       decoration: BoxDecoration(
         color: context.appColors.card,
         borderRadius: BorderRadius.circular(12),

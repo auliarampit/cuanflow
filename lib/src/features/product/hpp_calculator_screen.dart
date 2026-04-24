@@ -53,8 +53,9 @@ class _HppCalculatorScreenState extends State<HppCalculatorScreen> {
   }
 
   void _addIngredient() {
-    final products = context.appState.products;
-    // Filter out current product to avoid circular dependency
+    final appState = context.appState;
+    final products = appState.products;
+    final rawMaterials = appState.rawMaterials;
     final availableProducts = widget.product == null
         ? products
         : products.where((p) => p.id != widget.product!.id).toList();
@@ -75,7 +76,8 @@ class _HppCalculatorScreenState extends State<HppCalculatorScreen> {
         noteHint: context.t('product.addIngredient.noteHint'),
         priceLabel: context.t('product.addIngredient.totalPrice'),
         submitLabel: context.t('product.addIngredient.submit'),
-        existingProducts: availableProducts,
+        existingProducts: availableProducts.isEmpty ? null : availableProducts,
+        rawMaterials: rawMaterials.isEmpty ? null : rawMaterials,
         onSave: (name, qty, unit, price, note) {
           setState(() {
             _ingredients.add(ProductIngredient.create(
@@ -84,6 +86,18 @@ class _HppCalculatorScreenState extends State<HppCalculatorScreen> {
               unit: unit,
               totalPrice: price,
               note: note,
+            ));
+          });
+        },
+        onSaveRawMaterial: (name, qty, unit, price, note, rawMaterialId) {
+          setState(() {
+            _ingredients.add(ProductIngredient.create(
+              name: name,
+              quantity: qty,
+              unit: unit,
+              totalPrice: price,
+              note: note.isEmpty ? null : note,
+              rawMaterialId: rawMaterialId,
             ));
           });
         },
@@ -285,10 +299,10 @@ class _HppCalculatorScreenState extends State<HppCalculatorScreen> {
             decoration: BoxDecoration(
               color: const Color(0xFF0D1F16), // Dark background
               border:
-                  Border(top: BorderSide(color: Colors.white.withOpacity(0.1))),
+                  Border(top: BorderSide(color: Colors.white.withValues(alpha: 0.1))),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.3),
+                  color: Colors.black.withValues(alpha: 0.3),
                   blurRadius: 10,
                   offset: const Offset(0, -4),
                 ),
@@ -373,11 +387,11 @@ class _HppCalculatorScreenState extends State<HppCalculatorScreen> {
       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
       border: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12),
-        borderSide: BorderSide(color: Colors.white.withOpacity(0.1)),
+        borderSide: BorderSide(color: Colors.white.withValues(alpha: 0.1)),
       ),
       enabledBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12),
-        borderSide: BorderSide(color: Colors.white.withOpacity(0.1)),
+        borderSide: BorderSide(color: Colors.white.withValues(alpha: 0.1)),
       ),
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12),

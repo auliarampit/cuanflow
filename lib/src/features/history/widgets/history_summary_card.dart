@@ -25,10 +25,10 @@ class HistorySummaryCard extends StatelessWidget {
     final profitColor = isProfit ? AppColors.positive : AppColors.negative;
 
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
         color: context.appColors.cardSoft,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(12),
         border: Border.all(color: context.appColors.outline),
       ),
       child: Column(
@@ -63,10 +63,7 @@ class HistorySummaryCard extends StatelessWidget {
               ),
             ],
           ),
-          Divider(
-            height: 20,
-            color: context.appColors.outline,
-          ),
+          Divider(height: 20, color: context.appColors.outline),
           // Net profit row
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -85,7 +82,7 @@ class HistorySummaryCard extends StatelessWidget {
                           ? Icons.trending_up_rounded
                           : Icons.trending_down_rounded,
                       color: profitColor,
-                      size: 18,
+                      size: 16,
                     ),
                   ),
                   const SizedBox(width: 10),
@@ -93,12 +90,14 @@ class HistorySummaryCard extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        context.t(isBusinessMode
-                            ? 'history.summary.totalProfit'
-                            : 'history.summary.totalBalance'),
+                        context.t(
+                          isBusinessMode
+                              ? 'history.summary.totalProfit'
+                              : 'history.summary.totalBalance',
+                        ),
                         style: TextStyle(
                           color: context.appColors.textSecondary,
-                          fontSize: 11,
+                          fontSize: 10,
                           fontWeight: FontWeight.w600,
                           letterSpacing: 0.5,
                         ),
@@ -107,7 +106,7 @@ class HistorySummaryCard extends StatelessWidget {
                       Text(
                         IdrFormatter.format(totalProfit),
                         style: TextStyle(
-                          fontSize: 20,
+                          fontSize: 15,
                           fontWeight: FontWeight.w800,
                           color: profitColor,
                         ),
@@ -117,16 +116,26 @@ class HistorySummaryCard extends StatelessWidget {
                 ],
               ),
               Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 5,
+                ),
                 decoration: BoxDecoration(
                   color: profitColor.withValues(alpha: 0.12),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Text(
                   isBusinessMode
-                      ? context.t(isProfit ? 'history.badge.profit' : 'history.badge.loss')
-                      : context.t(isProfit ? 'history.badge.balance' : 'history.badge.deficit'),
+                      ? context.t(
+                          isProfit
+                              ? 'history.badge.profit'
+                              : 'history.badge.loss',
+                        )
+                      : context.t(
+                          isProfit
+                              ? 'history.badge.balance'
+                              : 'history.badge.deficit',
+                        ),
                   style: TextStyle(
                     fontSize: 12,
                     fontWeight: FontWeight.w700,
@@ -179,7 +188,9 @@ class _MiniStat extends StatelessWidget {
                 label,
                 style: TextStyle(
                   fontSize: 10,
-                  color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.5),
+                  color: Theme.of(
+                    context,
+                  ).colorScheme.onSurface.withValues(alpha: 0.5),
                   fontWeight: FontWeight.w600,
                   letterSpacing: 0.5,
                 ),

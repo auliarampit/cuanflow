@@ -12,6 +12,8 @@ import '../models/debt_model.dart';
 import '../models/money_transaction.dart';
 import '../models/outlet_model.dart';
 import '../models/product_model.dart';
+import '../models/raw_material_model.dart';
+import '../models/production_batch_model.dart';
 import '../models/inventory_item.dart';
 import '../models/quick_sale_preset.dart';
 import '../models/recurring_transaction_model.dart';
@@ -25,6 +27,8 @@ import '../services/debt_sync_service.dart';
 import '../services/recurring_sync_service.dart';
 import '../services/inventory_sync_service.dart';
 import '../services/quick_sale_sync_service.dart';
+import '../services/raw_material_sync_service.dart';
+import '../services/production_batch_sync_service.dart';
 import '../services/notification_service.dart';
 import '../services/outlet_service.dart';
 import '../services/profile_service.dart';
@@ -38,6 +42,8 @@ export '../models/recurring_transaction_model.dart';
 export '../models/summary.dart';
 export '../models/inventory_item.dart';
 export '../models/quick_sale_preset.dart';
+export '../models/raw_material_model.dart';
+export '../models/production_batch_model.dart';
 export '../models/wallet_model.dart';
 export 'app_state_scope.dart';
 
@@ -57,6 +63,8 @@ class AppState extends ChangeNotifier {
   late final _recurringSyncService = RecurringSyncService(supabase);
   late final _inventorySyncService = InventorySyncService(supabase);
   late final _quickSaleSyncService = QuickSaleSyncService(supabase);
+  late final _rawMaterialSyncService = RawMaterialSyncService(supabase);
+  late final _productionBatchSyncService = ProductionBatchSyncService(supabase);
 
   bool _initialized = false;
   bool _isSyncing = false;
@@ -71,6 +79,8 @@ class AppState extends ChangeNotifier {
   List<RecurringTransactionModel> _recurring = [];
   List<InventoryItem> _inventory = [];
   List<QuickSalePreset> _quickSalePresets = [];
+  List<RawMaterial> _rawMaterials = [];
+  List<ProductionBatch> _productionBatches = [];
   String? _selectedOutletId;
   UserProfile _profile = UserProfile.empty();
   AppSettings _settings = AppSettings.defaults();
@@ -91,8 +101,12 @@ class AppState extends ChangeNotifier {
   List<RecurringTransactionModel> get recurringTransactions => _recurring;
   List<InventoryItem> get inventoryItems => _inventory;
   List<QuickSalePreset> get quickSalePresets => _quickSalePresets;
+  List<RawMaterial> get rawMaterials => _rawMaterials;
+  List<ProductionBatch> get productionBatches => _productionBatches;
   List<InventoryItem> get lowStockItems =>
       _inventory.where((i) => i.isLowStock || i.isOutOfStock).toList();
+  List<RawMaterial> get lowStockRawMaterials =>
+      _rawMaterials.where((m) => m.isLowStock || m.isOutOfStock).toList();
   String? get selectedOutletId => _selectedOutletId;
 
   /// Saldo total kumulatif dari semua transaksi (atau per dompet jika ada).
@@ -161,8 +175,10 @@ class AppState extends ChangeNotifier {
     _wallets     = _parseList(raw['wallets'],       WalletModel.fromJson);
     _debts       = _parseList(raw['debts'],         DebtModel.fromJson);
     _recurring   = _parseList(raw['recurring'],     RecurringTransactionModel.fromJson);
-    _inventory        = _parseList(raw['inventory'],       InventoryItem.fromJson);
-    _quickSalePresets = _parseList(raw['quickSalePresets'], QuickSalePreset.fromJson);
+    _inventory          = _parseList(raw['inventory'],          InventoryItem.fromJson);
+    _quickSalePresets   = _parseList(raw['quickSalePresets'],   QuickSalePreset.fromJson);
+    _rawMaterials       = _parseList(raw['rawMaterials'],       RawMaterial.fromJson);
+    _productionBatches  = _parseList(raw['productionBatches'],  ProductionBatch.fromJson);
 
     final profileMap = raw['profile'];
     if (profileMap is Map<String, dynamic>) {
@@ -196,6 +212,8 @@ class AppState extends ChangeNotifier {
       unawaited(syncRecurring());
       unawaited(syncInventory());
       unawaited(syncQuickSalePresets());
+      unawaited(syncRawMaterials());
+      unawaited(syncProductionBatches());
     }
   }
 
@@ -836,6 +854,93 @@ class AppState extends ChangeNotifier {
     _quickSaleSyncService.delete(id).ignore();
   }
 
+  // ─── Raw Material CRUD ────────────────────────────────────────────────────────
+
+  Future<void> syncRawMaterials() async {
+    if (currentUser == null) return;
+    try {
+      final remote = await _rawMaterialSyncService.fetchAll();
+      if (remote.isNotEmpty) {
+        _rawMaterials = remote;
+        await _persist();
+        notifyListeners();
+      }
+    } catch (e) {
+      debugPrint('[RawMaterialSync] failed: $e');
+    }
+  }
+
+  Future<void> addRawMaterial(RawMaterial item) async {
+    _rawMaterials = [item, ..._rawMaterials];
+    await _persist();
+    notifyListeners();
+    _rawMaterialSyncService.upsert(item).ignore();
+  }
+
+  Future<void> updateRawMaterial(RawMaterial item) async {
+    final idx = _rawMaterials.indexWhere((m) => m.id == item.id);
+    if (idx == -1) return;
+    _rawMaterials[idx] = item;
+    await _persist();
+    notifyListeners();
+    _rawMaterialSyncService.upsert(item).ignore();
+  }
+
+  Future<void> deleteRawMaterial(String id) async {
+    _rawMaterials = _rawMaterials.where((m) => m.id != id).toList();
+    await _persist();
+    notifyListeners();
+    _rawMaterialSyncService.delete(id).ignore();
+  }
+
+  Future<void> adjustRawMaterialStock(String id, double delta) async {
+    final idx = _rawMaterials.indexWhere((m) => m.id == id);
+    if (idx == -1) return;
+    final updated = _rawMaterials[idx].copyWith(
+      currentStock:
+          (_rawMaterials[idx].currentStock + delta).clamp(0, double.infinity),
+    );
+    _rawMaterials[idx] = updated;
+    await _persist();
+    notifyListeners();
+    _rawMaterialSyncService.upsert(updated).ignore();
+  }
+
+  // ─── Production Batch CRUD ────────────────────────────────────────────────────
+
+  Future<void> syncProductionBatches() async {
+    if (currentUser == null) return;
+    try {
+      final remote = await _productionBatchSyncService.fetchAll();
+      if (remote.isNotEmpty) {
+        _productionBatches = remote;
+        await _persist();
+        notifyListeners();
+      }
+    } catch (e) {
+      debugPrint('[ProductionBatchSync] failed: $e');
+    }
+  }
+
+  /// Record a production batch and deduct raw material stocks accordingly.
+  Future<void> recordProduction(ProductionBatch batch) async {
+    _productionBatches = [batch, ..._productionBatches];
+    // Deduct raw material stocks
+    for (final m in batch.materialsUsed) {
+      await adjustRawMaterialStock(m.rawMaterialId, -m.quantity);
+    }
+    await _persist();
+    notifyListeners();
+    _productionBatchSyncService.upsert(batch).ignore();
+  }
+
+  Future<void> deleteProductionBatch(String id) async {
+    _productionBatches = _productionBatches.where((b) => b.id != id).toList();
+    await _persist();
+    notifyListeners();
+    _productionBatchSyncService.delete(id).ignore();
+  }
+
   /// Jalankan recurring transactions yang sudah jatuh tempo saat app dibuka.
   Future<void> _processRecurring() async {
     if (_recurring.isEmpty) return;
@@ -1015,6 +1120,8 @@ class AppState extends ChangeNotifier {
         'recurring': _recurring.map((e) => e.toJson()).toList(),
         'inventory': _inventory.map((e) => e.toJson()).toList(),
         'quickSalePresets': _quickSalePresets.map((e) => e.toJson()).toList(),
+        'rawMaterials': _rawMaterials.map((e) => e.toJson()).toList(),
+        'productionBatches': _productionBatches.map((e) => e.toJson()).toList(),
         'profile': _profile.toJson(),
         'settings': _settings.toJson(),
       });

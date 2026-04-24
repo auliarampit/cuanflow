@@ -24,10 +24,14 @@ class NativeAdCard extends StatefulWidget {
   State<NativeAdCard> createState() => _NativeAdCardState();
 }
 
-class _NativeAdCardState extends State<NativeAdCard> {
+class _NativeAdCardState extends State<NativeAdCard>
+    with AutomaticKeepAliveClientMixin {
   NativeAd? _ad;
   bool _adLoaded = false;
   bool _adRequested = false;
+
+  @override
+  bool get wantKeepAlive => true;
 
   // Test IDs (development only):
   //   Android: ca-app-pub-3940256099942544/2247696110
@@ -103,9 +107,10 @@ class _NativeAdCardState extends State<NativeAdCard> {
 
   @override
   Widget build(BuildContext context) {
+    super.build(context);
     if (!_adLoaded || _ad == null) return const SizedBox.shrink();
 
-    final height = widget.templateType == TemplateType.small ? 90.0 : 260.0;
+    final height = widget.templateType == TemplateType.small ? 70.0 : 260.0;
 
     return SizedBox(
       height: height,

@@ -1,4 +1,6 @@
+import 'package:cari_untung/src/shared/widgets/native_ad_card.dart';
 import 'package:flutter/material.dart';
+import 'package:google_mobile_ads/google_mobile_ads.dart';
 import 'package:intl/intl.dart';
 
 import '../../../core/formatters/idr_formatter.dart';
@@ -21,8 +23,10 @@ class HistoryTransactionGroup extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final dateString =
-        DateFormat('EEEE, d MMM yyyy', 'id_ID').format(date).toUpperCase();
+    final dateString = DateFormat(
+      'EEEE, d MMM yyyy',
+      'id_ID',
+    ).format(date).toUpperCase();
 
     // Calculate daily totals
     int dailyIncome = 0;
@@ -40,6 +44,8 @@ class HistoryTransactionGroup extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
+        _HistoryAdCard(),
+        const SizedBox(height: 8),
         // Date header with daily summary
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
@@ -76,7 +82,9 @@ class HistoryTransactionGroup extends StatelessWidget {
                     style: TextStyle(
                       fontSize: 12,
                       fontWeight: FontWeight.w700,
-                      color: isPositive ? AppColors.positive : AppColors.negative,
+                      color: isPositive
+                          ? AppColors.positive
+                          : AppColors.negative,
                     ),
                   ),
                 ],
@@ -99,6 +107,18 @@ class HistoryTransactionGroup extends StatelessWidget {
           },
         ),
       ],
+    );
+  }
+}
+
+class _HistoryAdCard extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      height: 70,
+      decoration: BoxDecoration(borderRadius: BorderRadius.circular(14)),
+      clipBehavior: Clip.hardEdge,
+      child: const NativeAdCard(templateType: TemplateType.small),
     );
   }
 }
