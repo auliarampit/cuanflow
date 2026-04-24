@@ -227,70 +227,106 @@ class _BudgetCard extends StatelessWidget {
             : 'budget.allExpense')
         : _resolveCategoryName(context, budget.categoryId!);
 
-    return GestureDetector(
-      onLongPress: () => _showOptions(context),
-      child: Container(
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: context.appColors.card,
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(
-            color: isOverBudget
-                ? AppColors.negative.withValues(alpha: 0.4)
-                : context.appColors.outline,
-          ),
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: context.appColors.card,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: isOverBudget
+              ? AppColors.negative.withValues(alpha: 0.4)
+              : context.appColors.outline,
         ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Container(
-                  width: 36,
-                  height: 36,
-                  decoration: BoxDecoration(
-                    color: _progressColor(ratio).withValues(alpha: 0.12),
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  child: Icon(
-                    isIncome
-                        ? Icons.trending_up_rounded
-                        : Icons.trending_down_rounded,
-                    size: 20,
-                    color: _progressColor(ratio),
-                  ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                width: 36,
+                height: 36,
+                decoration: BoxDecoration(
+                  color: _progressColor(ratio).withValues(alpha: 0.12),
+                  borderRadius: BorderRadius.circular(10),
                 ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        categoryName,
-                        style: const TextStyle(fontWeight: FontWeight.w700),
+                child: Icon(
+                  isIncome
+                      ? Icons.trending_up_rounded
+                      : Icons.trending_down_rounded,
+                  size: 20,
+                  color: _progressColor(ratio),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      categoryName,
+                      style: const TextStyle(fontWeight: FontWeight.w700),
+                    ),
+                    Text(
+                      context.t(isIncome
+                          ? 'budget.labelTarget'
+                          : 'budget.labelLimit'),
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: context.appColors.textSecondary,
                       ),
-                      Text(
-                        context.t(isIncome
-                            ? 'budget.labelTarget'
-                            : 'budget.labelLimit'),
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: context.appColors.textSecondary,
-                        ),
-                      ),
-                    ],
-                  ),
+                    ),
+                  ],
                 ),
-                Text(
-                  '$percent%',
-                  style: TextStyle(
-                    fontWeight: FontWeight.w800,
-                    fontSize: 18,
-                    color: _progressColor(ratio),
-                  ),
+              ),
+              Text(
+                '$percent%',
+                style: TextStyle(
+                  fontWeight: FontWeight.w800,
+                  fontSize: 18,
+                  color: _progressColor(ratio),
                 ),
-              ],
-            ),
+              ),
+              const SizedBox(width: 4),
+              PopupMenuButton<String>(
+                onSelected: (value) {
+                  if (value == 'edit') onEdit();
+                  if (value == 'delete') _confirmDelete(context);
+                },
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12)),
+                color: context.appColors.card,
+                icon: Icon(Icons.more_vert,
+                    size: 20, color: context.appColors.textSecondary),
+                itemBuilder: (_) => [
+                  PopupMenuItem(
+                    value: 'edit',
+                    child: Row(
+                      children: [
+                        const Icon(Icons.edit_outlined,
+                            size: 18, color: AppColors.brandBlue),
+                        const SizedBox(width: 10),
+                        Text(context.t('budget.edit')),
+                      ],
+                    ),
+                  ),
+                  PopupMenuItem(
+                    value: 'delete',
+                    child: Row(
+                      children: [
+                        const Icon(Icons.delete_outline,
+                            size: 18, color: AppColors.negative),
+                        const SizedBox(width: 10),
+                        Text(context.t('budget.delete'),
+                            style:
+                                const TextStyle(color: AppColors.negative)),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
             const SizedBox(height: 14),
             ClipRRect(
               borderRadius: BorderRadius.circular(4),
@@ -346,6 +382,31 @@ class _BudgetCard extends StatelessWidget {
             ],
           ],
         ),
+      );
+  }
+
+  void _confirmDelete(BuildContext context) {
+    showDialog<void>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text(context.t('budget.delete')),
+        content: Text(context.t('budget.deleteConfirm')),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: Text(context.t('common.cancel')),
+          ),
+          TextButton(
+            onPressed: () {
+              Navigator.pop(ctx);
+              onDelete();
+            },
+            child: Text(
+              context.t('budget.delete'),
+              style: const TextStyle(color: AppColors.negative),
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -362,43 +423,6 @@ class _BudgetCard extends StatelessWidget {
         .name;
   }
 
-  void _showOptions(BuildContext context) {
-    showModalBottomSheet<void>(
-      context: context,
-      backgroundColor: context.appColors.card,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      builder: (ctx) => SafeArea(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const SizedBox(height: 8),
-            ListTile(
-              leading: const Icon(Icons.edit_outlined,
-                  color: AppColors.brandBlue),
-              title: Text(context.t('budget.edit')),
-              onTap: () {
-                Navigator.pop(ctx);
-                onEdit();
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.delete_outline,
-                  color: AppColors.negative),
-              title: Text(context.t('budget.delete'),
-                  style: const TextStyle(color: AppColors.negative)),
-              onTap: () {
-                Navigator.pop(ctx);
-                onDelete();
-              },
-            ),
-            const SizedBox(height: 8),
-          ],
-        ),
-      ),
-    );
-  }
 }
 
 // ── Section Label ──────────────────────────────────────────────────────────────

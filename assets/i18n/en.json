@@ -254,6 +254,7 @@
   "budget.saveEdit": "Save Changes",
   "budget.edit": "Edit",
   "budget.delete": "Delete",
+  "budget.deleteConfirm": "Are you sure you want to delete this budget?",
   "settings.appTheme": "App Theme",
   "settings.themeSystem": "Follow System",
   "settings.themeLight": "Light",
@@ -337,6 +338,7 @@
   "report.outletTrend": "Income Trend per Outlet",
   "report.sharedExpense": "Shared Expenses",
   "report.outletOther": "Others",
+  "report.budgetSectionTitle": "This Month's Targets & Limits",
   "history.outletFilter": "Filter Outlet",
   "history.allOutlets": "All Outlets",
 

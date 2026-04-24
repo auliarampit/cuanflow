@@ -407,12 +407,27 @@ class AppState extends ChangeNotifier {
       int.parse(budget.monthYear.split('-')[0]),
       int.parse(budget.monthYear.split('-')[1]),
     ));
+
+    // tx.category menyimpan NAMA kategori, sedangkan budget.categoryId menyimpan
+    // ID kategori. Perlu di-resolve dulu ke nama sebelum dibandingkan.
+    String? budgetCategoryName;
+    if (budget.categoryId != null) {
+      for (final c in categoriesFor(budget.type)) {
+        if (c.id == budget.categoryId) {
+          budgetCategoryName = c.name;
+          break;
+        }
+      }
+      // Kategori sudah dihapus — tidak ada transaksi yang cocok
+      if (budgetCategoryName == null) return 0;
+    }
+
     var total = 0;
     for (final tx in _transactions) {
       final d = _stripTime(tx.effectiveDate);
       if (d.isBefore(range.start) || !d.isBefore(range.end)) continue;
       if (tx.type != budget.type) continue;
-      if (budget.categoryId != null && tx.category != budget.categoryId) continue;
+      if (budgetCategoryName != null && tx.category != budgetCategoryName) continue;
       total += tx.amount.abs();
     }
     return total;

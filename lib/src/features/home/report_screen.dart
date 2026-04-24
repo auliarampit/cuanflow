@@ -248,6 +248,15 @@ class _ReportScreenState extends State<ReportScreen> {
                     isPositive: netProfit >= 0,
                   ),
 
+                  // ── Budget bulan ini (hanya jika fitur aktif & ada budget) ─
+                  if (appState.profile.featureBudget) ...[
+                    const SizedBox(height: 16),
+                    _BudgetSection(
+                      budgets: appState.budgetsFor(_selectedDate),
+                      appState: appState,
+                    ),
+                  ],
+
                   const SizedBox(height: 16),
 
                   // ── Bar chart dengan toggle harian/mingguan/bulanan ──────
@@ -754,5 +763,159 @@ class _ReportRow extends StatelessWidget {
         ],
       ),
     );
+  }
+}
+
+// ─── Budget Section ───────────────────────────────────────────────────────────
+
+class _BudgetSection extends StatelessWidget {
+  const _BudgetSection({
+    required this.budgets,
+    required this.appState,
+  });
+
+  final List<BudgetModel> budgets;
+  final AppState appState;
+
+  @override
+  Widget build(BuildContext context) {
+    if (budgets.isEmpty) return const SizedBox.shrink();
+
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: context.appColors.card,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: context.appColors.outline),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Header
+          Row(
+            children: [
+              Container(
+                width: 4,
+                height: 16,
+                decoration: BoxDecoration(
+                  color: AppColors.brandBlue,
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+              const SizedBox(width: 8),
+              Text(
+                context.t('report.budgetSectionTitle'),
+                style: TextStyle(
+                  fontWeight: FontWeight.w700,
+                  fontSize: 14,
+                  color: context.appColors.textPrimary,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 14),
+
+          // Daftar budget
+          ...budgets.map((b) => _BudgetRow(budget: b, appState: appState)),
+        ],
+      ),
+    );
+  }
+}
+
+class _BudgetRow extends StatelessWidget {
+  const _BudgetRow({required this.budget, required this.appState});
+
+  final BudgetModel budget;
+  final AppState appState;
+
+  @override
+  Widget build(BuildContext context) {
+    final actual = appState.actualFor(budget);
+    final isIncome = budget.type == MoneyTransactionType.income;
+    final ratio = budget.targetAmount > 0
+        ? (actual / budget.targetAmount).clamp(0.0, 1.0)
+        : 0.0;
+    final percent = (ratio * 100).round();
+
+    final Color barColor;
+    if (isIncome) {
+      barColor = ratio >= 1.0 ? AppColors.positive : AppColors.brandBlue;
+    } else {
+      barColor = ratio >= 1.0
+          ? AppColors.negative
+          : ratio >= 0.8
+              ? Colors.orange
+              : AppColors.brandBlue;
+    }
+
+    final categoryName = budget.categoryId == null
+        ? context.t(isIncome ? 'budget.allIncome' : 'budget.allExpense')
+        : _resolveName(context);
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 14),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  categoryName,
+                  style: const TextStyle(
+                      fontWeight: FontWeight.w600, fontSize: 13),
+                ),
+              ),
+              Text(
+                '$percent%',
+                style: TextStyle(
+                  fontWeight: FontWeight.w800,
+                  fontSize: 13,
+                  color: barColor,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 6),
+          ClipRRect(
+            borderRadius: BorderRadius.circular(4),
+            child: LinearProgressIndicator(
+              value: ratio,
+              minHeight: 6,
+              backgroundColor: context.appColors.outline,
+              valueColor: AlwaysStoppedAnimation<Color>(barColor),
+            ),
+          ),
+          const SizedBox(height: 4),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                IdrFormatter.format(actual),
+                style: TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w700,
+                    color: barColor),
+              ),
+              Text(
+                '/ ${IdrFormatter.format(budget.targetAmount)}',
+                style: TextStyle(
+                    fontSize: 11,
+                    color: context.appColors.textSecondary),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  String _resolveName(BuildContext context) {
+    final cats = appState.categoriesFor(budget.type);
+    for (final c in cats) {
+      if (c.id == budget.categoryId) return c.name;
+    }
+    return budget.categoryId ?? '';
   }
 }

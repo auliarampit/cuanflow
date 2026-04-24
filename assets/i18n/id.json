@@ -254,6 +254,7 @@
   "budget.saveEdit": "Simpan Perubahan",
   "budget.edit": "Edit",
   "budget.delete": "Hapus",
+  "budget.deleteConfirm": "Yakin ingin menghapus budget ini?",
   "settings.appTheme": "Tema Aplikasi",
   "settings.themeSystem": "Ikuti Sistem",
   "settings.themeLight": "Terang",
@@ -337,6 +338,7 @@
   "report.outletTrend": "Tren Pendapatan per Outlet",
   "report.sharedExpense": "Biaya Bersama",
   "report.outletOther": "Lainnya",
+  "report.budgetSectionTitle": "Target & Batas Bulan Ini",
   "history.outletFilter": "Filter Outlet",
   "history.allOutlets": "Semua Outlet",
 
