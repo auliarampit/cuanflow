@@ -33,6 +33,10 @@ class ProfileService {
       'feature_product': profile.featureProduct,
       'feature_outlets': profile.featureOutlets,
       'feature_budget': profile.featureBudget,
+      'feature_production': profile.featureProduction,
+      'feature_quick_sale': profile.featureQuickSale,
+      'feature_top_categories': profile.featureTopCategories,
+      'feature_busiest_day': profile.featureBusiestDay,
       'onboarding_complete': profile.onboardingComplete,
     });
   }

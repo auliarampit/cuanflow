@@ -168,6 +168,18 @@ class _ProfileScreenState extends State<ProfileScreen> {
             ),
             const SizedBox(height: 8),
 
+            // ── Atur Fitur ────────────────────────────────────────────────
+            if (profile.isBusinessMode) ...[
+              _ProfileMenuItem(
+                icon: Icons.tune_outlined,
+                title: 'Atur Fitur',
+                subtitle: 'Aktifkan atau nonaktifkan fitur sesuai kebutuhan',
+                onTap: () =>
+                    Navigator.of(context).pushNamed(AppRoutes.manageFeatures),
+              ),
+              const SizedBox(height: 8),
+            ],
+
             // Business-only menus (each gated by its own feature flag)
             if (profile.featureOutlets) ...[
               _ProfileMenuItem(
@@ -193,6 +205,16 @@ class _ProfileScreenState extends State<ProfileScreen> {
               ),
               const SizedBox(height: 8),
               _ProfileMenuItem(
+                icon: Icons.bar_chart,
+                title: 'Analitik Produk',
+                subtitle: 'Margin ranking & breakeven analysis',
+                onTap: () =>
+                    Navigator.of(context).pushNamed(AppRoutes.productAnalytics),
+              ),
+              const SizedBox(height: 8),
+            ],
+            if (profile.featureProduction) ...[
+              _ProfileMenuItem(
                 icon: Icons.science_outlined,
                 title: 'Bahan Baku',
                 subtitle:
@@ -206,17 +228,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 title: 'Batch Produksi',
                 subtitle:
                     '${context.appState.productionBatches.length} batch tercatat',
-                onTap: () => Navigator.of(
-                  context,
-                ).pushNamed(AppRoutes.productionBatches),
-              ),
-              const SizedBox(height: 8),
-              _ProfileMenuItem(
-                icon: Icons.bar_chart,
-                title: 'Analitik Produk',
-                subtitle: 'Margin ranking & breakeven analysis',
                 onTap: () =>
-                    Navigator.of(context).pushNamed(AppRoutes.productAnalytics),
+                    Navigator.of(context).pushNamed(AppRoutes.productionBatches),
               ),
               const SizedBox(height: 8),
             ],
@@ -229,6 +242,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     Navigator.of(context).pushNamed(AppRoutes.inventory),
               ),
               const SizedBox(height: 8),
+            ],
+            if (profile.featureQuickSale) ...[
               _ProfileMenuItem(
                 icon: Icons.point_of_sale,
                 title: context.t('profile.menu.quickSale'),

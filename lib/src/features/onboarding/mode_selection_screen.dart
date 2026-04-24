@@ -16,21 +16,42 @@ class ModeSelectionScreen extends StatefulWidget {
 class _ModeSelectionScreenState extends State<ModeSelectionScreen> {
   String? _selected;
 
-  // Feature flags — hanya relevan jika mode bisnis dipilih
+  // Feature flags — bisnis
   bool _featureBudget = true;
   bool _featureOutlets = false;
   bool _featureProduct = false;
+  final bool _featureQuickSale = false;
+
+  // Feature flags — produksi (mode ke-3)
+  final bool _featureProduction = true;
+  bool _featureProductionBudget = true;
+  bool _featureProductionOutlets = false;
 
   bool get _isBusiness => _selected == 'business';
+  bool get _isProduction => _selected == 'production';
 
   Future<void> _confirm() async {
     if (_selected == null) return;
     final profile = context.appState.profile;
     await context.appState.updateProfile(
       profile.copyWith(
-        featureProduct: _isBusiness ? _featureProduct : false,
-        featureOutlets: _isBusiness ? _featureOutlets : false,
-        featureBudget: _isBusiness ? _featureBudget : false,
+        featureProduct: _isBusiness
+            ? _featureProduct
+            : _isProduction
+                ? true
+                : false,
+        featureOutlets: _isBusiness
+            ? _featureOutlets
+            : _isProduction
+                ? _featureProductionOutlets
+                : false,
+        featureBudget: _isBusiness
+            ? _featureBudget
+            : _isProduction
+                ? _featureProductionBudget
+                : false,
+        featureProduction: _isProduction ? _featureProduction : false,
+        featureQuickSale: _isBusiness ? _featureQuickSale : false,
         onboardingComplete: true,
       ),
     );
@@ -110,6 +131,40 @@ class _ModeSelectionScreenState extends State<ModeSelectionScreen> {
                               setState(() => _featureOutlets = v),
                           onProductChanged: (v) =>
                               setState(() => _featureProduct = v),
+                        ),
+                      )
+                    : const SizedBox.shrink(),
+              ),
+
+              const SizedBox(height: 16),
+              _ModeCard(
+                selected: _selected == 'production',
+                icon: Icons.precision_manufacturing_outlined,
+                title: 'Mode Produksi',
+                subtitle: 'Untuk usaha yang memproduksi barang sendiri',
+                features: [
+                  'HPP & kalkulasi harga pokok produksi',
+                  'Manajemen bahan baku & stok',
+                  'Pencatatan batch produksi',
+                  'Analitik margin & breakeven',
+                ],
+                onTap: () => setState(() => _selected = 'production'),
+              ),
+
+              // ── Feature selection — muncul saat produksi dipilih ──────────
+              AnimatedSize(
+                duration: const Duration(milliseconds: 250),
+                curve: Curves.easeInOut,
+                child: _isProduction
+                    ? Padding(
+                        padding: const EdgeInsets.only(top: 16),
+                        child: _ProductionFeatureSelector(
+                          featureBudget: _featureProductionBudget,
+                          featureOutlets: _featureProductionOutlets,
+                          onBudgetChanged: (v) =>
+                              setState(() => _featureProductionBudget = v),
+                          onOutletsChanged: (v) =>
+                              setState(() => _featureProductionOutlets = v),
                         ),
                       )
                     : const SizedBox.shrink(),
@@ -215,6 +270,65 @@ class _FeatureSelector extends StatelessWidget {
             subtitle: context.t('settings.featureProductSubtitle'),
             value: featureProduct,
             onChanged: onProductChanged,
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _ProductionFeatureSelector extends StatelessWidget {
+  const _ProductionFeatureSelector({
+    required this.featureBudget,
+    required this.featureOutlets,
+    required this.onBudgetChanged,
+    required this.onOutletsChanged,
+  });
+
+  final bool featureBudget;
+  final bool featureOutlets;
+  final ValueChanged<bool> onBudgetChanged;
+  final ValueChanged<bool> onOutletsChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: AppColors.brandGreen.withValues(alpha: 0.05),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppColors.brandGreen.withValues(alpha: 0.2)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'Fitur tambahan (opsional)',
+            style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700),
+          ),
+          const SizedBox(height: 2),
+          Text(
+            'HPP, Bahan Baku, dan Batch Produksi sudah aktif otomatis.',
+            style: TextStyle(
+              fontSize: 11,
+              color: context.appColors.textSecondary,
+            ),
+          ),
+          const SizedBox(height: 12),
+          _FeatureToggleRow(
+            icon: Icons.savings_outlined,
+            title: context.t('settings.featureBudget'),
+            subtitle: context.t('settings.featureBudgetSubtitle'),
+            value: featureBudget,
+            onChanged: onBudgetChanged,
+          ),
+          const SizedBox(height: 8),
+          _FeatureToggleRow(
+            icon: Icons.store_outlined,
+            title: context.t('settings.featureOutlets'),
+            subtitle: context.t('settings.featureOutletsSubtitle'),
+            value: featureOutlets,
+            onChanged: onOutletsChanged,
           ),
         ],
       ),

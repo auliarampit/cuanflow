@@ -25,6 +25,7 @@ import '../features/quick_sale/quick_sale_screen.dart';
 import '../features/product/raw_material_screen.dart';
 import '../features/product/production_batch_screen.dart';
 import '../features/product/product_analytics_screen.dart';
+import '../features/profile/manage_features_screen.dart';
 
 import 'routes.dart';
 
@@ -82,6 +83,8 @@ final class AppRouter {
         return MaterialPageRoute(builder: (_) => const ProductionBatchScreen());
       case AppRoutes.productAnalytics:
         return MaterialPageRoute(builder: (_) => const ProductAnalyticsScreen());
+      case AppRoutes.manageFeatures:
+        return MaterialPageRoute(builder: (_) => const ManageFeaturesScreen());
       default:
         return MaterialPageRoute(builder: (_) => const LoginScreen());
     }

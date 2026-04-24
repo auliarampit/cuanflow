@@ -313,9 +313,11 @@ class _ReportScreenState extends State<ReportScreen> {
                   ),
 
                   // ── Insight bisnis: Terlaris + Hari Tersibuk ─────────────
-                  if (appState.profile.isBusinessMode && history.isNotEmpty) ...[
+                  if (appState.profile.featureTopCategories && history.isNotEmpty) ...[
                     const SizedBox(height: 16),
                     _TopCategoriesCard(transactions: history),
+                  ],
+                  if (appState.profile.featureBusiestDay && history.isNotEmpty) ...[
                     const SizedBox(height: 12),
                     _BusiestDaysCard(transactions: history),
                   ],
