@@ -96,13 +96,15 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   : context.t('profile.ownerName'),
               style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w800),
             ),
-            const SizedBox(height: 4),
-            Text(
-              profile.businessName.isNotEmpty
-                  ? profile.businessName
-                  : context.t('profile.businessName'),
-              style: TextStyle(color: context.appColors.textSecondary),
-            ),
+            if (profile.isBusinessMode) ...[
+              const SizedBox(height: 4),
+              Text(
+                profile.businessName.isNotEmpty
+                    ? profile.businessName
+                    : context.t('profile.businessName'),
+                style: TextStyle(color: context.appColors.textSecondary),
+              ),
+            ],
             const SizedBox(height: 28),
 
             // ── Section label ─────────────────────────────────────────────

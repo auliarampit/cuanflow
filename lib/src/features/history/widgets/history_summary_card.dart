@@ -11,11 +11,13 @@ class HistorySummaryCard extends StatelessWidget {
     required this.totalIncome,
     required this.totalExpense,
     required this.totalProfit,
+    required this.isBusinessMode,
   });
 
   final int totalIncome;
   final int totalExpense;
   final int totalProfit;
+  final bool isBusinessMode;
 
   @override
   Widget build(BuildContext context) {
@@ -91,7 +93,9 @@ class HistorySummaryCard extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        context.t('history.summary.totalProfit'),
+                        context.t(isBusinessMode
+                            ? 'history.summary.totalProfit'
+                            : 'history.summary.totalBalance'),
                         style: TextStyle(
                           color: context.appColors.textSecondary,
                           fontSize: 11,
@@ -120,7 +124,9 @@ class HistorySummaryCard extends StatelessWidget {
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Text(
-                  isProfit ? 'Untung' : 'Rugi',
+                  isBusinessMode
+                      ? context.t(isProfit ? 'history.badge.profit' : 'history.badge.loss')
+                      : context.t(isProfit ? 'history.badge.balance' : 'history.badge.deficit'),
                   style: TextStyle(
                     fontSize: 12,
                     fontWeight: FontWeight.w700,

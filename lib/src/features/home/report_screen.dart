@@ -129,87 +129,117 @@ class _ReportScreenState extends State<ReportScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // ── Header ─────────────────────────────────────────────
-                  Center(
-                    child: Text(
-                      context.t('report.titleMonthly'),
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.w700,
-                        color: context.appColors.textPrimary,
+                  // ── Header: judul | bulan | export ─────────────────────
+                  Row(
+                    children: [
+                      // Judul + outlet badge
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              context.t('report.titleMonthly'),
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w800,
+                                color: context.appColors.textPrimary,
+                              ),
+                            ),
+                            if (selectedOutlet != null) ...[
+                              const SizedBox(height: 3),
+                              Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  const Icon(Icons.storefront_outlined,
+                                      size: 11, color: AppColors.brandBlue),
+                                  const SizedBox(width: 4),
+                                  Text(
+                                    selectedOutlet.name,
+                                    style: const TextStyle(
+                                      fontSize: 11,
+                                      color: AppColors.brandBlue,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ],
+                        ),
                       ),
-                    ),
-                  ),
-                  if (selectedOutlet != null) ...[
-                    const SizedBox(height: 6),
-                    Center(
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 12, vertical: 4),
+
+                      // Navigasi bulan
+                      Container(
                         decoration: BoxDecoration(
-                          color: AppColors.brandBlue.withValues(alpha: 0.12),
-                          borderRadius: BorderRadius.circular(999),
-                          border: Border.all(
-                              color:
-                                  AppColors.brandBlue.withValues(alpha: 0.3)),
+                          color: context.appColors.cardSoft,
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: context.appColors.outline),
                         ),
                         child: Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            const Icon(Icons.storefront_outlined,
-                                size: 14, color: AppColors.brandBlue),
-                            const SizedBox(width: 6),
+                            SizedBox(
+                              width: 32,
+                              height: 36,
+                              child: IconButton(
+                                onPressed: () => _changeMonth(-1),
+                                icon: Icon(Icons.chevron_left,
+                                    size: 18,
+                                    color: context.appColors.textSecondary),
+                                padding: EdgeInsets.zero,
+                                visualDensity: VisualDensity.compact,
+                              ),
+                            ),
                             Text(
-                              selectedOutlet.name,
-                              style: const TextStyle(
+                              _formatMonth(_selectedDate),
+                              style: TextStyle(
                                 fontSize: 12,
-                                color: AppColors.brandBlue,
-                                fontWeight: FontWeight.w600,
+                                fontWeight: FontWeight.w700,
+                                color: context.appColors.textPrimary,
+                              ),
+                            ),
+                            SizedBox(
+                              width: 32,
+                              height: 36,
+                              child: IconButton(
+                                onPressed: () => _changeMonth(1),
+                                icon: Icon(Icons.chevron_right,
+                                    size: 18,
+                                    color: context.appColors.textSecondary),
+                                padding: EdgeInsets.zero,
+                                visualDensity: VisualDensity.compact,
                               ),
                             ),
                           ],
                         ),
                       ),
-                    ),
-                  ],
 
-                  const SizedBox(height: 20),
+                      const SizedBox(width: 8),
 
-                  // ── Month navigation ────────────────────────────────────
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 8, vertical: 4),
-                    decoration: BoxDecoration(
-                      color: context.appColors.cardSoft,
-                      borderRadius: BorderRadius.circular(14),
-                      border:
-                          Border.all(color: context.appColors.outline),
-                    ),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        IconButton(
-                          onPressed: () => _changeMonth(-1),
-                          icon: Icon(Icons.chevron_left,
-                              color: context.appColors.textSecondary),
-                          visualDensity: VisualDensity.compact,
-                        ),
-                        Text(
-                          _formatMonth(_selectedDate),
-                          style: TextStyle(
-                            fontSize: 15,
-                            fontWeight: FontWeight.w700,
-                            color: context.appColors.textPrimary,
+                      // Tombol export PDF
+                      SizedBox(
+                        width: 36,
+                        height: 36,
+                        child: IconButton(
+                          onPressed: _exportPdf,
+                          tooltip: context.t('history.exportPdf'),
+                          padding: EdgeInsets.zero,
+                          style: IconButton.styleFrom(
+                            backgroundColor:
+                                AppColors.brandBlue.withValues(alpha: 0.1),
+                            foregroundColor: AppColors.brandBlue,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(10),
+                              side: BorderSide(
+                                  color:
+                                      AppColors.brandBlue.withValues(alpha: 0.3)),
+                            ),
                           ),
+                          icon: const Icon(Icons.picture_as_pdf_outlined,
+                              size: 18),
                         ),
-                        IconButton(
-                          onPressed: () => _changeMonth(1),
-                          icon: Icon(Icons.chevron_right,
-                              color: context.appColors.textSecondary),
-                          visualDensity: VisualDensity.compact,
-                        ),
-                      ],
-                    ),
+                      ),
+                    ],
                   ),
 
                   const SizedBox(height: 16),
@@ -245,6 +275,7 @@ class _ReportScreenState extends State<ReportScreen> {
                     amount: IdrFormatter.format(netProfit),
                     pctChange: profitPct,
                     isPositive: netProfit >= 0,
+                    isBusinessMode: appState.profile.isBusinessMode,
                   ),
 
                   // ── Rincian pengeluaran: operasional vs stok ─────────────
@@ -270,8 +301,10 @@ class _ReportScreenState extends State<ReportScreen> {
                     appState: appState,
                   ),
 
-                  // ── Outlet charts (hanya saat Semua Outlet + ≥2 outlet) ─
-                  if (selectedOutlet == null && appState.outlets.length >= 2) ...[
+                  // ── Outlet charts (hanya jika fitur outlet aktif, semua outlet dipilih, ≥2 outlet)
+                  if (appState.profile.featureOutlets &&
+                      selectedOutlet == null &&
+                      appState.outlets.length >= 2) ...[
                     const SizedBox(height: 12),
                     OutletTrendChart(
                       outlets: appState.outlets,
@@ -355,28 +388,6 @@ class _ReportScreenState extends State<ReportScreen> {
             ),
           ),
 
-          // ── Export button ───────────────────────────────────────────────
-          Padding(
-            padding: const EdgeInsets.fromLTRB(18, 8, 18, 12),
-            child: SizedBox(
-              width: double.infinity,
-              child: OutlinedButton.icon(
-                onPressed: _exportPdf,
-                style: OutlinedButton.styleFrom(
-                  foregroundColor: AppColors.brandBlue,
-                  padding: const EdgeInsets.symmetric(vertical: 14),
-                  side: BorderSide(
-                      color: AppColors.brandBlue.withValues(alpha: 0.5)),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(14),
-                  ),
-                ),
-                icon: const Icon(Icons.picture_as_pdf_outlined),
-                label: Text(context.t('history.exportPdf'),
-                    style: const TextStyle(fontWeight: FontWeight.w700)),
-              ),
-            ),
-          ),
         ],
       ),
     );
@@ -510,11 +521,13 @@ class _NetProfitCard extends StatelessWidget {
     required this.amount,
     required this.pctChange,
     required this.isPositive,
+    required this.isBusinessMode,
   });
 
   final String amount;
   final double? pctChange;
   final bool isPositive;
+  final bool isBusinessMode;
 
   @override
   Widget build(BuildContext context) {
@@ -558,7 +571,9 @@ class _NetProfitCard extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  context.t('report.netProfitTitle'),
+                  isBusinessMode
+                      ? context.t('report.netProfitTitle')
+                      : context.t('report.remainingMoneyTitle'),
                   style: TextStyle(
                     fontSize: 12,
                     color: context.appColors.textSecondary,

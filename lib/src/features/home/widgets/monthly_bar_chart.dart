@@ -96,6 +96,7 @@ class _MonthlyBarChartState extends State<MonthlyBarChart> {
   @override
   Widget build(BuildContext context) {
     final data = _buildData();
+    final hasStock = data.any((d) => d.stock > 0);
     final maxY = _maxY(data);
 
     return Container(
@@ -116,8 +117,9 @@ class _MonthlyBarChartState extends State<MonthlyBarChart> {
                   spacing: 10,
                   children: [
                     _LegendDot(color: AppColors.positive, label: 'Pemasukan'),
-                    _LegendDot(color: AppColors.negative, label: 'Operasional'),
-                    _LegendDot(color: _stockColor, label: 'Stok'),
+                    _LegendDot(color: AppColors.negative, label: hasStock ? 'Operasional' : 'Pengeluaran'),
+                    if (hasStock)
+                      _LegendDot(color: _stockColor, label: 'Stok'),
                   ],
                 ),
               ),
@@ -136,7 +138,7 @@ class _MonthlyBarChartState extends State<MonthlyBarChart> {
                 alignment: BarChartAlignment.spaceAround,
                 maxY: maxY,
                 minY: 0,
-                barGroups: _barGroups(data),
+                barGroups: _barGroups(data, hasStock: hasStock),
                 gridData: FlGridData(
                   drawVerticalLine: false,
                   horizontalInterval: maxY / 4,
@@ -243,7 +245,7 @@ class _MonthlyBarChartState extends State<MonthlyBarChart> {
     return 20000000;
   }
 
-  List<BarChartGroupData> _barGroups(List<_BarData> data) {
+  List<BarChartGroupData> _barGroups(List<_BarData> data, {required bool hasStock}) {
     return List.generate(data.length, (i) {
       return BarChartGroupData(
         x: i,
@@ -252,21 +254,22 @@ class _MonthlyBarChartState extends State<MonthlyBarChart> {
           BarChartRodData(
             toY: data[i].income,
             color: AppColors.positive,
-            width: 8,
+            width: hasStock ? 8 : 10,
             borderRadius: const BorderRadius.vertical(top: Radius.circular(3)),
           ),
           BarChartRodData(
-            toY: data[i].operating,
+            toY: hasStock ? data[i].operating : data[i].operating + data[i].stock,
             color: AppColors.negative,
-            width: 8,
+            width: hasStock ? 8 : 10,
             borderRadius: const BorderRadius.vertical(top: Radius.circular(3)),
           ),
-          BarChartRodData(
-            toY: data[i].stock,
-            color: _stockColor,
-            width: 8,
-            borderRadius: const BorderRadius.vertical(top: Radius.circular(3)),
-          ),
+          if (hasStock)
+            BarChartRodData(
+              toY: data[i].stock,
+              color: _stockColor,
+              width: 8,
+              borderRadius: const BorderRadius.vertical(top: Radius.circular(3)),
+            ),
         ],
       );
     });

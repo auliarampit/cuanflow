@@ -23,6 +23,9 @@ class UserProfile {
   final bool featureBudget;    // Budget & monthly targets
   final bool onboardingComplete;
 
+  /// True jika user memilih mode usaha saat onboarding (minimal 1 fitur aktif).
+  bool get isBusinessMode => featureOutlets || featureBudget || featureProduct;
+
   factory UserProfile.empty() {
     return UserProfile(
       fullName: '',

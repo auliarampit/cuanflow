@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 
 import '../../core/localization/transalation_extansions.dart';
-import '../../core/models/user_profile.dart';
 import '../../core/state/app_state.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_dynamic_colors.dart';
@@ -49,12 +48,12 @@ class _AccountSettingsScreenState extends State<AccountSettingsScreen> {
     if (_isSaving) return;
     setState(() => _isSaving = true);
 
-    final updatedProfile = UserProfile(
+    final current = context.appState.profile;
+    final updatedProfile = current.copyWith(
       fullName: _fullNameController.text.trim(),
       businessName: _businessNameController.text.trim(),
       whatsapp: _whatsappController.text.trim(),
       email: _emailController.text.trim(),
-      photoPath: context.appState.profile.photoPath,
     );
 
     try {
@@ -121,15 +120,17 @@ class _AccountSettingsScreenState extends State<AccountSettingsScreen> {
                             fontWeight: FontWeight.w700,
                           ),
                         ),
-                        const SizedBox(height: 4),
-                        Text(
-                          profile.businessName.isNotEmpty
-                              ? profile.businessName
-                              : context.t('profile.businessName'),
-                          style: TextStyle(
-                            color: context.appColors.textSecondary,
+                        if (profile.isBusinessMode) ...[
+                          const SizedBox(height: 4),
+                          Text(
+                            profile.businessName.isNotEmpty
+                                ? profile.businessName
+                                : context.t('profile.businessName'),
+                            style: TextStyle(
+                              color: context.appColors.textSecondary,
+                            ),
                           ),
-                        ),
+                        ],
                       ],
                     ),
                   ),
@@ -146,19 +147,21 @@ class _AccountSettingsScreenState extends State<AccountSettingsScreen> {
                       hintText: context.t('accountSettings.fullNameLabel'),
                     ),
                   ),
-                  const SizedBox(height: 16),
-                  Text(
-                    context.t('accountSettings.businessNameLabel'),
-                    style: const TextStyle(fontWeight: FontWeight.w700),
-                  ),
-                  const SizedBox(height: 6),
-                  TextField(
-                    controller: _businessNameController,
-                    textCapitalization: TextCapitalization.words,
-                    decoration: InputDecoration(
-                      hintText: context.t('accountSettings.businessNameLabel'),
+                  if (profile.isBusinessMode) ...[
+                    const SizedBox(height: 16),
+                    Text(
+                      context.t('accountSettings.businessNameLabel'),
+                      style: const TextStyle(fontWeight: FontWeight.w700),
                     ),
-                  ),
+                    const SizedBox(height: 6),
+                    TextField(
+                      controller: _businessNameController,
+                      textCapitalization: TextCapitalization.words,
+                      decoration: InputDecoration(
+                        hintText: context.t('accountSettings.businessNameLabel'),
+                      ),
+                    ),
+                  ],
                   const SizedBox(height: 16),
                   Text(
                     context.t('accountSettings.whatsappLabel'),

@@ -4,6 +4,7 @@ import 'package:intl/intl.dart';
 
 import '../../core/localization/transalation_extansions.dart';
 import '../../core/models/money_transaction.dart';
+import '../../core/models/outlet_model.dart';
 import '../../core/state/app_state.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_dynamic_colors.dart';
@@ -30,43 +31,46 @@ class _HistoryScreenState extends State<HistoryScreen> {
   String? _selectedOutletFilter; // null = semua outlet
 
   void _showFilterSheet() {
+    // Simpan screen context sebelum masuk builder — hindari shadowing
+    final screenCtx = context;
+
     showModalBottomSheet(
-      context: context,
+      context: screenCtx,
       backgroundColor: Colors.transparent,
       isScrollControlled: true,
-      builder: (context) => HistoryFilterSheet(
+      builder: (sheetCtx) => HistoryFilterSheet(
         selectedFilter: _selectedFilter,
         onSelect: (filter) async {
           if (filter == HistoryFilter.custom) {
-            final nav = Navigator.of(context);
+            // Tutup sheet DULU, baru buka date picker dengan screen context.
+            // Memanggil showDateRangePicker dari overlay sheet menyebabkan
+            // layar putih di release APK karena conflict overlay stack.
+            Navigator.pop(sheetCtx);
             final picked = await showDateRangePicker(
-              context: context,
+              context: screenCtx,
               firstDate: DateTime(2020),
               lastDate: DateTime.now(),
-              builder: (context, child) {
-                return Theme(
-                  data: Theme.of(context).copyWith(
-                    colorScheme: const ColorScheme.dark(
-                      primary: AppColors.brandBlue,
-                      onPrimary: Colors.white,
-                      surface: AppColors.card,
-                      onSurface: Colors.white,
-                    ),
+              builder: (ctx, child) => Theme(
+                data: Theme.of(ctx).copyWith(
+                  colorScheme: const ColorScheme.dark(
+                    primary: AppColors.brandBlue,
+                    onPrimary: Colors.white,
+                    surface: AppColors.card,
+                    onSurface: Colors.white,
                   ),
-                  child: child!,
-                );
-              },
+                ),
+                child: child!,
+              ),
             );
-            if (picked != null) {
+            if (picked != null && mounted) {
               setState(() {
                 _customRange = picked;
                 _selectedFilter = filter;
               });
-              nav.pop();
             }
           } else {
-            setState(() => _selectedFilter = filter);
-            Navigator.pop(context);
+            if (mounted) setState(() => _selectedFilter = filter);
+            Navigator.pop(sheetCtx);
           }
         },
       ),
@@ -116,14 +120,16 @@ class _HistoryScreenState extends State<HistoryScreen> {
       case HistoryFilter.custom:
         if (_customRange == null) return [];
         start = _customRange!.start;
-        end = _customRange!.end.add(const Duration(days: 1)); // Include end date
+        end = _customRange!.end.add(
+          const Duration(days: 1),
+        ); // Include end date
         break;
     }
 
     return allTxs.where((tx) {
       final txDate = tx.effectiveDate;
       return txDate.isAfter(start.subtract(const Duration(seconds: 1))) &&
-             txDate.isBefore(end);
+          txDate.isBefore(end);
     }).toList();
   }
 
@@ -166,7 +172,9 @@ class _HistoryScreenState extends State<HistoryScreen> {
                     context: screenContext,
                     builder: (dialogContext) => AlertDialog(
                       title: Text(dialogContext.t('history.delete.title')),
-                      content: Text(dialogContext.t('history.delete.confirmation')),
+                      content: Text(
+                        dialogContext.t('history.delete.confirmation'),
+                      ),
                       actions: [
                         TextButton(
                           onPressed: () => Navigator.pop(dialogContext),
@@ -177,7 +185,9 @@ class _HistoryScreenState extends State<HistoryScreen> {
                             Navigator.pop(dialogContext);
                             if (!screenContext.mounted) return;
                             LoadingDialog.show(screenContext);
-                            await screenContext.appState.deleteTransaction(item.id);
+                            await screenContext.appState.deleteTransaction(
+                              item.id,
+                            );
                             if (screenContext.mounted) {
                               LoadingDialog.hide(screenContext);
                             }
@@ -202,10 +212,12 @@ class _HistoryScreenState extends State<HistoryScreen> {
   Future<void> _exportPdf() async {
     final txs = _getFilteredTransactions();
     if (txs.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        content: Text(context.t('history.exportPdfEmpty')),
-        backgroundColor: AppColors.negative,
-      ));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(context.t('history.exportPdfEmpty')),
+          backgroundColor: AppColors.negative,
+        ),
+      );
       return;
     }
     LoadingDialog.show(context);
@@ -254,8 +266,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
     });
 
     // Sort groups by date descending
-    final sortedDates = grouped.keys.toList()
-      ..sort((a, b) => b.compareTo(a));
+    final sortedDates = grouped.keys.toList()..sort((a, b) => b.compareTo(a));
 
     return AppGradientScaffold(
       appBar: AppBar(
@@ -293,55 +304,63 @@ class _HistoryScreenState extends State<HistoryScreen> {
       ),
       body: Column(
         children: [
-          // Filter tanggal + outlet dalam satu baris
+          // Filter: tanggal (baris 1) + outlet (baris 2, jika relevan)
           Padding(
             padding: const EdgeInsets.fromLTRB(20, 0, 20, 12),
-            child: Row(
+            child: Column(
               children: [
-                // Tombol filter tanggal
-                Expanded(
-                  child: InkWell(
-                    onTap: _showFilterSheet,
-                    borderRadius: BorderRadius.circular(12),
-                    child: Container(
-                      height: 46,
-                      padding: const EdgeInsets.symmetric(horizontal: 12),
-                      decoration: BoxDecoration(
-                        color: context.appColors.cardSoft,
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: context.appColors.outline),
-                      ),
-                      child: Row(
-                        children: [
-                          Icon(Icons.calendar_today, size: 16, color: context.appColors.textPrimary),
-                          const SizedBox(width: 8),
-                          Expanded(
-                            child: Text(
-                              _getFilterLabel(),
-                              style: TextStyle(
-                                fontWeight: FontWeight.bold,
-                                fontSize: 13,
-                                color: context.appColors.textPrimary,
-                              ),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
+                // Baris 1 — filter tanggal (full width)
+                InkWell(
+                  onTap: _showFilterSheet,
+                  borderRadius: BorderRadius.circular(12),
+                  child: Container(
+                    height: 46,
+                    padding: const EdgeInsets.symmetric(horizontal: 12),
+                    decoration: BoxDecoration(
+                      color: context.appColors.cardSoft,
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: context.appColors.outline),
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(
+                          Icons.calendar_today,
+                          size: 16,
+                          color: context.appColors.textSecondary,
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            _getFilterLabel(),
+                            style: TextStyle(
+                              fontWeight: FontWeight.w700,
+                              fontSize: 13,
+                              color: context.appColors.textPrimary,
                             ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
                           ),
-                          Icon(Icons.keyboard_arrow_down, size: 18, color: context.appColors.textSecondary),
-                        ],
-                      ),
+                        ),
+                        Icon(
+                          Icons.keyboard_arrow_down,
+                          size: 18,
+                          color: context.appColors.textSecondary,
+                        ),
+                      ],
                     ),
                   ),
                 ),
 
-                // Dropdown outlet (hanya jika ada outlet)
-                if (context.appState.outlets.isNotEmpty) ...[
-                  const SizedBox(width: 8),
+                // Baris 2 — filter outlet (hanya jika fitur outlet aktif & ada ≥2 outlet)
+                if (context.appState.profile.featureOutlets &&
+                    context.appState.outlets.length >= 2) ...[
+                  const SizedBox(height: 8),
                   _OutletDropdown(
                     outlets: context.appState.outlets,
                     selectedOutletId: _selectedOutletFilter,
                     allLabel: context.t('history.allOutlets'),
-                    onSelect: (id) => setState(() => _selectedOutletFilter = id),
+                    onSelect: (id) =>
+                        setState(() => _selectedOutletFilter = id),
                   ),
                 ],
               ],
@@ -354,7 +373,11 @@ class _HistoryScreenState extends State<HistoryScreen> {
                 ? Center(
                     child: Text(
                       context.t('history.empty'),
-                      style: TextStyle(color: context.appColors.textSecondary.withValues(alpha: 0.5)),
+                      style: TextStyle(
+                        color: context.appColors.textSecondary.withValues(
+                          alpha: 0.5,
+                        ),
+                      ),
                     ),
                   )
                 : ListView.separated(
@@ -373,7 +396,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
                   ),
           ),
 
-          // Bottom summary + single banner ad
+          // Bottom summary
           Container(
             decoration: BoxDecoration(
               color: context.appColors.backgroundBottom,
@@ -382,7 +405,6 @@ class _HistoryScreenState extends State<HistoryScreen> {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                const AppBannerAd(),
                 Padding(
                   padding: const EdgeInsets.all(20),
                   child: SafeArea(
@@ -390,6 +412,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
                       totalIncome: totalIncome,
                       totalExpense: totalExpense,
                       totalProfit: totalProfit,
+                      isBusinessMode: context.appState.profile.isBusinessMode,
                     ),
                   ),
                 ),
@@ -412,18 +435,15 @@ class _OutletDropdown extends StatelessWidget {
     required this.onSelect,
   });
 
-  final List outlets;
+  final List<OutletModel> outlets;
   final String? selectedOutletId;
   final String allLabel;
   final ValueChanged<String?> onSelect;
 
   String _currentLabel() {
     if (selectedOutletId == null) return allLabel;
-    final outlet = outlets.firstWhere(
-      (o) => o.id == selectedOutletId,
-      orElse: () => null,
-    );
-    return outlet?.name as String? ?? allLabel;
+    return outlets.firstWhereOrNull((o) => o.id == selectedOutletId)?.name ??
+        allLabel;
   }
 
   @override
@@ -441,25 +461,31 @@ class _OutletDropdown extends StatelessWidget {
           child: Text(
             allLabel,
             style: TextStyle(
-              fontWeight: selectedOutletId == null ? FontWeight.w700 : FontWeight.normal,
+              fontWeight: selectedOutletId == null
+                  ? FontWeight.w700
+                  : FontWeight.normal,
               color: selectedOutletId == null
                   ? AppColors.brandBlue
                   : context.appColors.textPrimary,
             ),
           ),
         ),
-        ...outlets.map((outlet) => PopupMenuItem<String?>(
-              value: outlet.id as String,
-              child: Text(
-                outlet.name as String,
-                style: TextStyle(
-                  fontWeight: selectedOutletId == outlet.id ? FontWeight.w700 : FontWeight.normal,
-                  color: selectedOutletId == outlet.id
-                      ? AppColors.brandBlue
-                      : context.appColors.textPrimary,
-                ),
+        ...outlets.map(
+          (outlet) => PopupMenuItem<String?>(
+            value: outlet.id,
+            child: Text(
+              outlet.name,
+              style: TextStyle(
+                fontWeight: selectedOutletId == outlet.id
+                    ? FontWeight.w700
+                    : FontWeight.normal,
+                color: selectedOutletId == outlet.id
+                    ? AppColors.brandBlue
+                    : context.appColors.textPrimary,
               ),
-            )),
+            ),
+          ),
+        ),
       ],
       child: Container(
         height: 46,
@@ -479,7 +505,9 @@ class _OutletDropdown extends StatelessWidget {
             Icon(
               Icons.storefront_outlined,
               size: 16,
-              color: isFiltered ? AppColors.brandBlue : context.appColors.textSecondary,
+              color: isFiltered
+                  ? AppColors.brandBlue
+                  : context.appColors.textSecondary,
             ),
             const SizedBox(width: 4),
             ConstrainedBox(
@@ -489,7 +517,9 @@ class _OutletDropdown extends StatelessWidget {
                 style: TextStyle(
                   fontSize: 12,
                   fontWeight: FontWeight.w600,
-                  color: isFiltered ? AppColors.brandBlue : context.appColors.textPrimary,
+                  color: isFiltered
+                      ? AppColors.brandBlue
+                      : context.appColors.textPrimary,
                 ),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
@@ -499,7 +529,9 @@ class _OutletDropdown extends StatelessWidget {
             Icon(
               Icons.keyboard_arrow_down,
               size: 16,
-              color: isFiltered ? AppColors.brandBlue : context.appColors.textSecondary,
+              color: isFiltered
+                  ? AppColors.brandBlue
+                  : context.appColors.textSecondary,
             ),
           ],
         ),

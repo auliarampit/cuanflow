@@ -143,7 +143,7 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     final profile = context.appState.profile;
-    final displayName = profile.businessName.isNotEmpty
+    final displayName = profile.isBusinessMode && profile.businessName.isNotEmpty
         ? profile.businessName
         : profile.fullName.isNotEmpty
             ? profile.fullName
@@ -166,10 +166,11 @@ class _HomeScreenState extends State<HomeScreen> {
 
     final isTablet = context.isTablet;
 
+    final isBusiness = profile.isBusinessMode;
     final dailyCard = _buildProfitCard(
       title: dailySummary.netProfit < 0
-          ? context.t('home.todayLoss')
-          : context.t('home.todayProfit'),
+          ? context.t(isBusiness ? 'home.todayLoss' : 'home.todayDeficit')
+          : context.t(isBusiness ? 'home.todayProfit' : 'home.todayBalance'),
       currentProfit: dailySummary.netProfit,
       prevProfit: prevDailySummary.netProfit,
       comparisonLabel: 'vs ${context.t('home.yesterday')}',
@@ -177,8 +178,8 @@ class _HomeScreenState extends State<HomeScreen> {
 
     final weeklyCard = _buildProfitCard(
       title: weeklySummary.netProfit < 0
-          ? context.t('home.weeklyLoss')
-          : context.t('home.weeklyProfit'),
+          ? context.t(isBusiness ? 'home.weeklyLoss' : 'home.weeklyDeficit')
+          : context.t(isBusiness ? 'home.weeklyProfit' : 'home.weeklyBalance'),
       currentProfit: weeklySummary.netProfit,
       prevProfit: prevWeeklySummary.netProfit,
       comparisonLabel: 'vs ${context.t('home.lastWeek')}',

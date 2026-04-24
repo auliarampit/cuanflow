@@ -39,7 +39,9 @@ class ReportPdfService {
       'contact': isId ? 'Telp/WA' : 'Phone/WA',
       'income': isId ? 'Total Pemasukan' : 'Total Income',
       'expense': isId ? 'Total Pengeluaran' : 'Total Expense',
-      'net': isId ? 'Keuntungan Bersih' : 'Net Profit',
+      'net': profile.isBusinessMode
+          ? (isId ? 'Keuntungan Bersih' : 'Net Profit')
+          : (isId ? 'Sisa Uang' : 'Monthly Savings'),
       'detail': isId ? 'Detail Transaksi' : 'Transaction Details',
       'col_date': isId ? 'Tanggal' : 'Date',
       'col_cat': isId ? 'Kategori' : 'Category',
@@ -70,7 +72,7 @@ class ReportPdfService {
             pw.SizedBox(height: 20),
             showAllOutlets
                 ? _buildMultiOutletSummary(
-                    transactions, outlets, currencyFormat, labels)
+                    transactions, outlets, currencyFormat, labels, profile)
                 : _buildSingleSummary(summary, currencyFormat, labels),
             pw.SizedBox(height: 20),
             pw.Text(
@@ -125,9 +127,11 @@ class ReportPdfService {
               crossAxisAlignment: pw.CrossAxisAlignment.start,
               children: [
                 pw.Text(
-                  profile.businessName.isNotEmpty
-                      ? profile.businessName.toUpperCase()
-                      : 'BISNIS',
+                  profile.isBusinessMode
+                      ? (profile.businessName.isNotEmpty
+                          ? profile.businessName.toUpperCase()
+                          : 'BISNIS')
+                      : profile.fullName.toUpperCase(),
                   style: pw.TextStyle(
                     fontSize: 20,
                     fontWeight: pw.FontWeight.bold,
@@ -207,6 +211,7 @@ class ReportPdfService {
     List<OutletModel> outlets,
     NumberFormat currencyFormat,
     Map<String, String> labels,
+    UserProfile profile,
   ) {
     // Income per outlet
     final outletIncomes = <String, int>{};
@@ -353,7 +358,9 @@ class ReportPdfService {
                 ),
                 pw.Text(
                   currencyFormat.format(netProfit.abs()) +
-                      (netProfit < 0 ? ' (rugi)' : ''),
+                      (netProfit < 0
+                          ? (profile.isBusinessMode ? ' (rugi)' : ' (defisit)')
+                          : ''),
                   style: pw.TextStyle(
                     fontSize: 13,
                     fontWeight: pw.FontWeight.bold,

@@ -44,7 +44,7 @@ class PdfExporter {
         header: (_) => _buildHeader(profile, periodLabel),
         footer: (_) => _buildFooter(),
         build: (_) => [
-          _buildSummary(totalIncome, totalExpense, totalProfit),
+          _buildSummary(totalIncome, totalExpense, totalProfit, profile),
           pw.SizedBox(height: 20),
           ..._buildGroups(grouped, sortedDates, outletNames,
               showOutletCol: selectedOutletId == null && outlets.isNotEmpty),
@@ -119,8 +119,14 @@ class PdfExporter {
 
   // ── Summary box ──────────────────────────────────────────────────────────
 
-  static pw.Widget _buildSummary(int income, int expense, int profit) {
+  static pw.Widget _buildSummary(int income, int expense, int profit, UserProfile profile) {
     final isProfit = profit >= 0;
+    final String netLabel;
+    if (profile.isBusinessMode) {
+      netLabel = isProfit ? 'Laba Bersih' : 'Rugi Bersih';
+    } else {
+      netLabel = isProfit ? 'Sisa Uang' : 'Defisit';
+    }
     return pw.Container(
       padding: const pw.EdgeInsets.all(14),
       decoration: pw.BoxDecoration(
@@ -136,7 +142,7 @@ class PdfExporter {
           pw.Divider(color: PdfColors.grey400),
           pw.SizedBox(height: 8),
           _sumRow(
-            isProfit ? 'Laba Bersih' : 'Rugi Bersih',
+            netLabel,
             profit.abs(),
             isProfit ? PdfColors.green800 : PdfColors.red800,
             bold: true,
