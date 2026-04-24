@@ -353,8 +353,8 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
           ],
           const SizedBox(height: 14),
-          _TotalBalanceCard(),
-          const SizedBox(height: 14),
+          if (!isBusiness) _TotalBalanceCard(),
+          if (!isBusiness) const SizedBox(height: 14),
           Row(
             children: [
               Expanded(
@@ -464,6 +464,52 @@ class _HomeScreenState extends State<HomeScreen> {
             child: const NativeAdCard(templateType: TemplateType.small),
           ),
           const SizedBox(height: 14),
+          // ── Low-stock alert (business only) ──────────────────────────
+          if (isBusiness) ...[
+            Builder(
+              builder: (context) {
+                final lowStock = context.appState.lowStockItems;
+                if (lowStock.isEmpty) return const SizedBox.shrink();
+                return Padding(
+                  padding: const EdgeInsets.only(bottom: 10),
+                  child: GestureDetector(
+                    onTap: () =>
+                        Navigator.of(context).pushNamed(AppRoutes.inventory),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 14, vertical: 10),
+                      decoration: BoxDecoration(
+                        color: Colors.orange.withValues(alpha: 0.12),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(
+                            color: Colors.orange.withValues(alpha: 0.4)),
+                      ),
+                      child: Row(
+                        children: [
+                          const Icon(Icons.warning_amber_rounded,
+                              color: Colors.orange, size: 18),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: Text(
+                              context.t('home.lowStockAlert',
+                                  {'count': '${lowStock.length}'}),
+                              style: const TextStyle(
+                                  color: Colors.orange,
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w600),
+                            ),
+                          ),
+                          Icon(Icons.chevron_right,
+                              color: Colors.orange.withValues(alpha: 0.7),
+                              size: 18),
+                        ],
+                      ),
+                    ),
+                  ),
+                );
+              },
+            ),
+          ],
           SizedBox(
             width: double.infinity,
             child: ElevatedButton.icon(
@@ -489,6 +535,23 @@ class _HomeScreenState extends State<HomeScreen> {
               label: Text(context.t('home.addExpense')),
             ),
           ),
+          // ── Quick sale shortcut (business only) ──────────────────────
+          if (isBusiness) ...[
+            const SizedBox(height: 10),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton.icon(
+                onPressed: () =>
+                    Navigator.of(context).pushNamed(AppRoutes.quickSale),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.brandBlue,
+                  foregroundColor: Colors.white,
+                ),
+                icon: const Icon(Icons.point_of_sale),
+                label: Text(context.t('home.quickSale')),
+              ),
+            ),
+          ],
         ],
       ),
     );

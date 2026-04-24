@@ -281,7 +281,8 @@ class _AddIncomeScreenState extends State<AddIncomeScreen> {
                   onChanged: (id) => setState(() => _selectedOutletId = id),
                 ),
               ],
-              if (context.appState.wallets.isNotEmpty) ...[
+              if (!context.appState.profile.isBusinessMode &&
+                  context.appState.wallets.isNotEmpty) ...[
                 const SizedBox(height: 16),
                 _WalletSelectorBlock(
                   selectedWalletId: _selectedWalletId,

@@ -20,6 +20,8 @@ import '../features/splash/splash_screen.dart';
 import '../features/wallet/manage_wallets_screen.dart';
 import '../features/debt/debt_screen.dart';
 import '../features/recurring/recurring_screen.dart';
+import '../features/inventory/inventory_screen.dart';
+import '../features/quick_sale/quick_sale_screen.dart';
 
 
 
@@ -69,6 +71,10 @@ final class AppRouter {
         return MaterialPageRoute(builder: (_) => const DebtScreen());
       case AppRoutes.recurring:
         return MaterialPageRoute(builder: (_) => const RecurringScreen());
+      case AppRoutes.inventory:
+        return MaterialPageRoute(builder: (_) => const InventoryScreen());
+      case AppRoutes.quickSale:
+        return MaterialPageRoute(builder: (_) => const QuickSaleScreen());
       default:
         return MaterialPageRoute(builder: (_) => const LoginScreen());
     }

@@ -131,14 +131,16 @@ class _ProfileScreenState extends State<ProfileScreen> {
             ),
             const SizedBox(height: 8),
 
-            // Personal menus (always visible)
-            _ProfileMenuItem(
-              icon: Icons.account_balance_wallet_outlined,
-              title: context.t('profile.menu.wallets'),
-              subtitle: context.t('profile.menu.walletsSubtitle'),
-              onTap: () => Navigator.of(context).pushNamed(AppRoutes.wallets),
-            ),
-            const SizedBox(height: 8),
+            // Dompet — hanya untuk personal (bisnis: tidak perlu)
+            if (!profile.isBusinessMode) ...[
+              _ProfileMenuItem(
+                icon: Icons.account_balance_wallet_outlined,
+                title: context.t('profile.menu.wallets'),
+                subtitle: context.t('profile.menu.walletsSubtitle'),
+                onTap: () => Navigator.of(context).pushNamed(AppRoutes.wallets),
+              ),
+              const SizedBox(height: 8),
+            ],
             _ProfileMenuItem(
               icon: Icons.handshake_outlined,
               title: context.t('profile.menu.debt'),
@@ -184,6 +186,24 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 onTap: () => Navigator.of(context).push(
                   MaterialPageRoute(builder: (_) => const ProductListScreen()),
                 ),
+              ),
+              const SizedBox(height: 8),
+            ],
+            if (profile.isBusinessMode) ...[
+              _ProfileMenuItem(
+                icon: Icons.warehouse_outlined,
+                title: context.t('profile.menu.inventory'),
+                subtitle: context.t('profile.menu.inventorySubtitle'),
+                onTap: () =>
+                    Navigator.of(context).pushNamed(AppRoutes.inventory),
+              ),
+              const SizedBox(height: 8),
+              _ProfileMenuItem(
+                icon: Icons.point_of_sale,
+                title: context.t('profile.menu.quickSale'),
+                subtitle: context.t('profile.menu.quickSaleSubtitle'),
+                onTap: () =>
+                    Navigator.of(context).pushNamed(AppRoutes.quickSale),
               ),
               const SizedBox(height: 8),
             ],

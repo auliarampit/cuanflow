@@ -12,6 +12,8 @@ import '../models/debt_model.dart';
 import '../models/money_transaction.dart';
 import '../models/outlet_model.dart';
 import '../models/product_model.dart';
+import '../models/inventory_item.dart';
+import '../models/quick_sale_preset.dart';
 import '../models/recurring_transaction_model.dart';
 import '../models/summary.dart';
 import '../models/user_category.dart';
@@ -21,6 +23,8 @@ import '../services/budget_sync_service.dart';
 import '../services/category_sync_service.dart';
 import '../services/debt_sync_service.dart';
 import '../services/recurring_sync_service.dart';
+import '../services/inventory_sync_service.dart';
+import '../services/quick_sale_sync_service.dart';
 import '../services/notification_service.dart';
 import '../services/outlet_service.dart';
 import '../services/profile_service.dart';
@@ -32,6 +36,8 @@ export '../models/budget_model.dart';
 export '../models/debt_model.dart';
 export '../models/recurring_transaction_model.dart';
 export '../models/summary.dart';
+export '../models/inventory_item.dart';
+export '../models/quick_sale_preset.dart';
 export '../models/wallet_model.dart';
 export 'app_state_scope.dart';
 
@@ -49,6 +55,8 @@ class AppState extends ChangeNotifier {
   late final _walletSyncService = WalletSyncService(supabase);
   late final _debtSyncService = DebtSyncService(supabase);
   late final _recurringSyncService = RecurringSyncService(supabase);
+  late final _inventorySyncService = InventorySyncService(supabase);
+  late final _quickSaleSyncService = QuickSaleSyncService(supabase);
 
   bool _initialized = false;
   bool _isSyncing = false;
@@ -61,6 +69,8 @@ class AppState extends ChangeNotifier {
   List<WalletModel> _wallets = [];
   List<DebtModel> _debts = [];
   List<RecurringTransactionModel> _recurring = [];
+  List<InventoryItem> _inventory = [];
+  List<QuickSalePreset> _quickSalePresets = [];
   String? _selectedOutletId;
   UserProfile _profile = UserProfile.empty();
   AppSettings _settings = AppSettings.defaults();
@@ -79,6 +89,10 @@ class AppState extends ChangeNotifier {
   List<WalletModel> get wallets => _wallets;
   List<DebtModel> get debts => _debts;
   List<RecurringTransactionModel> get recurringTransactions => _recurring;
+  List<InventoryItem> get inventoryItems => _inventory;
+  List<QuickSalePreset> get quickSalePresets => _quickSalePresets;
+  List<InventoryItem> get lowStockItems =>
+      _inventory.where((i) => i.isLowStock || i.isOutOfStock).toList();
   String? get selectedOutletId => _selectedOutletId;
 
   /// Saldo total kumulatif dari semua transaksi (atau per dompet jika ada).
@@ -147,6 +161,8 @@ class AppState extends ChangeNotifier {
     _wallets     = _parseList(raw['wallets'],       WalletModel.fromJson);
     _debts       = _parseList(raw['debts'],         DebtModel.fromJson);
     _recurring   = _parseList(raw['recurring'],     RecurringTransactionModel.fromJson);
+    _inventory        = _parseList(raw['inventory'],       InventoryItem.fromJson);
+    _quickSalePresets = _parseList(raw['quickSalePresets'], QuickSalePreset.fromJson);
 
     final profileMap = raw['profile'];
     if (profileMap is Map<String, dynamic>) {
@@ -178,6 +194,8 @@ class AppState extends ChangeNotifier {
       unawaited(syncWallets());
       unawaited(syncDebts());
       unawaited(syncRecurring());
+      unawaited(syncInventory());
+      unawaited(syncQuickSalePresets());
     }
   }
 
@@ -728,6 +746,96 @@ class AppState extends ChangeNotifier {
     _recurringSyncService.delete(id).ignore();
   }
 
+  // ─── Inventory CRUD ───────────────────────────────────────────────────────────
+
+  Future<void> syncInventory() async {
+    if (currentUser == null) return;
+    try {
+      final remote = await _inventorySyncService.fetchAll();
+      if (remote.isNotEmpty) {
+        _inventory = remote;
+        await _persist();
+        notifyListeners();
+      }
+    } catch (e) {
+      debugPrint('[InventorySync] failed: $e');
+    }
+  }
+
+  Future<void> addInventoryItem(InventoryItem item) async {
+    _inventory = [item, ..._inventory];
+    await _persist();
+    notifyListeners();
+    _inventorySyncService.upsert(item).ignore();
+  }
+
+  Future<void> updateInventoryItem(InventoryItem item) async {
+    final idx = _inventory.indexWhere((i) => i.id == item.id);
+    if (idx == -1) return;
+    _inventory[idx] = item;
+    await _persist();
+    notifyListeners();
+    _inventorySyncService.upsert(item).ignore();
+  }
+
+  Future<void> deleteInventoryItem(String id) async {
+    _inventory = _inventory.where((i) => i.id != id).toList();
+    await _persist();
+    notifyListeners();
+    _inventorySyncService.delete(id).ignore();
+  }
+
+  Future<void> adjustStock(String id, double delta) async {
+    final idx = _inventory.indexWhere((i) => i.id == id);
+    if (idx == -1) return;
+    final item = _inventory[idx].copyWith(
+      currentStock: (_inventory[idx].currentStock + delta).clamp(0, double.infinity),
+    );
+    _inventory[idx] = item;
+    await _persist();
+    notifyListeners();
+    _inventorySyncService.upsert(item).ignore();
+  }
+
+  // ─── Quick Sale Preset CRUD ───────────────────────────────────────────────────
+
+  Future<void> syncQuickSalePresets() async {
+    if (currentUser == null) return;
+    try {
+      final remote = await _quickSaleSyncService.fetchAll();
+      if (remote.isNotEmpty) {
+        _quickSalePresets = remote;
+        await _persist();
+        notifyListeners();
+      }
+    } catch (e) {
+      debugPrint('[QuickSaleSync] failed: $e');
+    }
+  }
+
+  Future<void> addQuickSalePreset(QuickSalePreset preset) async {
+    _quickSalePresets = [..._quickSalePresets, preset];
+    await _persist();
+    notifyListeners();
+    _quickSaleSyncService.upsert(preset).ignore();
+  }
+
+  Future<void> updateQuickSalePreset(QuickSalePreset preset) async {
+    final idx = _quickSalePresets.indexWhere((p) => p.id == preset.id);
+    if (idx == -1) return;
+    _quickSalePresets[idx] = preset;
+    await _persist();
+    notifyListeners();
+    _quickSaleSyncService.upsert(preset).ignore();
+  }
+
+  Future<void> deleteQuickSalePreset(String id) async {
+    _quickSalePresets = _quickSalePresets.where((p) => p.id != id).toList();
+    await _persist();
+    notifyListeners();
+    _quickSaleSyncService.delete(id).ignore();
+  }
+
   /// Jalankan recurring transactions yang sudah jatuh tempo saat app dibuka.
   Future<void> _processRecurring() async {
     if (_recurring.isEmpty) return;
@@ -905,6 +1013,8 @@ class AppState extends ChangeNotifier {
         'wallets': _wallets.map((e) => e.toJson()).toList(),
         'debts': _debts.map((e) => e.toJson()).toList(),
         'recurring': _recurring.map((e) => e.toJson()).toList(),
+        'inventory': _inventory.map((e) => e.toJson()).toList(),
+        'quickSalePresets': _quickSalePresets.map((e) => e.toJson()).toList(),
         'profile': _profile.toJson(),
         'settings': _settings.toJson(),
       });

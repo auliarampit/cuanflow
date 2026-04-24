@@ -22,4 +22,6 @@ final class AppRoutes {
   static const wallets = '/wallets';
   static const debt = '/debt';
   static const recurring = '/recurring';
+  static const inventory = '/inventory';
+  static const quickSale = '/quick-sale';
 }

@@ -301,6 +301,14 @@ class _ReportScreenState extends State<ReportScreen> {
                     appState: appState,
                   ),
 
+                  // ── Insight bisnis: Terlaris + Hari Tersibuk ─────────────
+                  if (appState.profile.isBusinessMode && history.isNotEmpty) ...[
+                    const SizedBox(height: 16),
+                    _TopCategoriesCard(transactions: history),
+                    const SizedBox(height: 12),
+                    _BusiestDaysCard(transactions: history),
+                  ],
+
                   // ── Outlet charts (hanya jika fitur outlet aktif, semua outlet dipilih, ≥2 outlet)
                   if (appState.profile.featureOutlets &&
                       selectedOutlet == null &&
@@ -1091,5 +1099,300 @@ class _BudgetRow extends StatelessWidget {
       if (c.id == budget.categoryId) return c.name;
     }
     return budget.categoryId ?? '';
+  }
+}
+
+// ─── Top Categories Card (Produk/Kategori Terlaris) ───────────────────────────
+class _TopCategoriesCard extends StatelessWidget {
+  const _TopCategoriesCard({required this.transactions});
+
+  final List<MoneyTransaction> transactions;
+
+  @override
+  Widget build(BuildContext context) {
+    // Hitung total amount per kategori dari transaksi income
+    final Map<String, int> totals = {};
+    final Map<String, int> counts = {};
+    for (final tx in transactions) {
+      if (!tx.isIncome) continue;
+      final cat = tx.category?.isNotEmpty == true ? tx.category! : 'Lainnya';
+      totals[cat] = (totals[cat] ?? 0) + tx.amount;
+      counts[cat] = (counts[cat] ?? 0) + 1;
+    }
+    if (totals.isEmpty) return const SizedBox.shrink();
+
+    final sorted = totals.entries.toList()
+      ..sort((a, b) => b.value.compareTo(a.value));
+    final top = sorted.take(5).toList();
+    final maxVal = top.first.value;
+
+    final colors = [
+      AppColors.positive,
+      AppColors.brandBlue,
+      const Color(0xFF9C27B0),
+      const Color(0xFFFF9F00),
+      const Color(0xFF00BCD4),
+    ];
+
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: context.appColors.card,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: context.appColors.outline),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                width: 4,
+                height: 16,
+                decoration: BoxDecoration(
+                  color: AppColors.positive,
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+              const SizedBox(width: 8),
+              Text(
+                context.t('report.topCategoriesTitle'),
+                style: TextStyle(
+                  fontWeight: FontWeight.w700,
+                  fontSize: 14,
+                  color: context.appColors.textPrimary,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 14),
+          ...top.asMap().entries.map((entry) {
+            final idx = entry.key;
+            final cat = entry.value.key;
+            final amount = entry.value.value;
+            final count = counts[cat] ?? 0;
+            final ratio = maxVal > 0 ? amount / maxVal : 0.0;
+            final color = colors[idx % colors.length];
+
+            return Padding(
+              padding: const EdgeInsets.only(bottom: 12),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Container(
+                        width: 8,
+                        height: 8,
+                        decoration: BoxDecoration(
+                          color: color,
+                          borderRadius: BorderRadius.circular(2),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          cat,
+                          style: TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w600,
+                            color: context.appColors.textPrimary,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                      Text(
+                        IdrFormatter.format(amount),
+                        style: TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w700,
+                          color: context.appColors.textPrimary,
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Text(
+                        context.t('report.txCount', {'count': '$count'}),
+                        style: TextStyle(
+                          fontSize: 11,
+                          color: context.appColors.textSecondary,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 5),
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(4),
+                    child: LinearProgressIndicator(
+                      value: ratio.clamp(0.0, 1.0),
+                      minHeight: 5,
+                      backgroundColor: color.withValues(alpha: 0.12),
+                      valueColor: AlwaysStoppedAnimation<Color>(color),
+                    ),
+                  ),
+                ],
+              ),
+            );
+          }),
+        ],
+      ),
+    );
+  }
+}
+
+// ─── Busiest Days Card (Hari Tersibuk) ────────────────────────────────────────
+class _BusiestDaysCard extends StatelessWidget {
+  const _BusiestDaysCard({required this.transactions});
+
+  final List<MoneyTransaction> transactions;
+
+  static const _dayNames = ['Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab', 'Min'];
+
+  @override
+  Widget build(BuildContext context) {
+    // Hitung jumlah transaksi income per hari dalam seminggu (1=Mon..7=Sun)
+    final Map<int, int> dayCounts = {1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0, 7: 0};
+    final Map<int, int> dayAmounts = {1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0, 7: 0};
+    for (final tx in transactions) {
+      if (!tx.isIncome) continue;
+      final wd = tx.effectiveDate.weekday;
+      dayCounts[wd] = (dayCounts[wd] ?? 0) + 1;
+      dayAmounts[wd] = (dayAmounts[wd] ?? 0) + tx.amount;
+    }
+
+    final maxCount = dayCounts.values.reduce((a, b) => a > b ? a : b);
+    if (maxCount == 0) return const SizedBox.shrink();
+
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: context.appColors.card,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: context.appColors.outline),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                width: 4,
+                height: 16,
+                decoration: BoxDecoration(
+                  color: AppColors.brandBlue,
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+              const SizedBox(width: 8),
+              Text(
+                context.t('report.busiestDaysTitle'),
+                style: TextStyle(
+                  fontWeight: FontWeight.w700,
+                  fontSize: 14,
+                  color: context.appColors.textPrimary,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: List.generate(7, (i) {
+              final wd = i + 1;
+              final count = dayCounts[wd] ?? 0;
+              final ratio = maxCount > 0 ? count / maxCount : 0.0;
+              final isBusiest = count == maxCount && count > 0;
+              final barColor =
+                  isBusiest ? AppColors.brandBlue : AppColors.brandBlue.withValues(alpha: 0.35);
+
+              return Expanded(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 3),
+                  child: Column(
+                    children: [
+                      if (isBusiest)
+                        Padding(
+                          padding: const EdgeInsets.only(bottom: 3),
+                          child: Icon(Icons.star_rounded,
+                              size: 12, color: AppColors.brandBlue),
+                        )
+                      else
+                        const SizedBox(height: 15),
+                      // Bar
+                      Container(
+                        height: 80 * ratio.clamp(0.05, 1.0),
+                        decoration: BoxDecoration(
+                          color: barColor,
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                      ),
+                      const SizedBox(height: 5),
+                      Text(
+                        _dayNames[i],
+                        style: TextStyle(
+                          fontSize: 11,
+                          fontWeight: isBusiest
+                              ? FontWeight.w800
+                              : FontWeight.w500,
+                          color: isBusiest
+                              ? AppColors.brandBlue
+                              : context.appColors.textSecondary,
+                        ),
+                      ),
+                      Text(
+                        '$count',
+                        style: TextStyle(
+                          fontSize: 10,
+                          fontWeight: FontWeight.w600,
+                          color: context.appColors.textSecondary,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              );
+            }),
+          ),
+          const SizedBox(height: 10),
+          // Legend: hari tersibuk & total transaksinya
+          () {
+            final busiestWd = dayCounts.entries
+                .reduce((a, b) => a.value >= b.value ? a : b)
+                .key;
+            final busiestAmount = dayAmounts[busiestWd] ?? 0;
+            final busiestCount = dayCounts[busiestWd] ?? 0;
+            return Container(
+              padding:
+                  const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              decoration: BoxDecoration(
+                color: AppColors.brandBlue.withValues(alpha: 0.07),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Row(
+                children: [
+                  Icon(Icons.insights_rounded,
+                      size: 15, color: AppColors.brandBlue),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      context.t('report.busiestDaySummary', {
+                        'day': _dayNames[busiestWd - 1],
+                        'count': '$busiestCount',
+                        'amount': IdrFormatter.format(busiestAmount),
+                      }),
+                      style: const TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.brandBlue,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            );
+          }(),
+        ],
+      ),
+    );
   }
 }

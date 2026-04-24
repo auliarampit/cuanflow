@@ -389,7 +389,8 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
                   onChanged: (id) => setState(() => _selectedOutletId = id),
                 ),
               ],
-              if (context.appState.wallets.isNotEmpty) ...[
+              if (!context.appState.profile.isBusinessMode &&
+                  context.appState.wallets.isNotEmpty) ...[
                 const SizedBox(height: 18),
                 _WalletSelectorBlock(
                   selectedWalletId: _selectedWalletId,
