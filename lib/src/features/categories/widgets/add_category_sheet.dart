@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../../core/localization/transalation_extansions.dart';
 import '../../../core/models/money_transaction.dart';
+import '../../../core/state/app_state.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_dynamic_colors.dart';
 
@@ -88,7 +89,7 @@ class _AddCategorySheetState extends State<AddCategorySheet> {
               ),
             ),
           ),
-          if (_isExpense) ...[
+          if (_isExpense && context.appState.profile.isBusinessMode) ...[
             const SizedBox(height: 12),
             InkWell(
               onTap: () => setState(() => _isStockPurchase = !_isStockPurchase),

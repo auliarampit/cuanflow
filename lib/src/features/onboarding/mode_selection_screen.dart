@@ -16,15 +16,21 @@ class ModeSelectionScreen extends StatefulWidget {
 class _ModeSelectionScreenState extends State<ModeSelectionScreen> {
   String? _selected;
 
+  // Feature flags — hanya relevan jika mode bisnis dipilih
+  bool _featureBudget = true;
+  bool _featureOutlets = false;
+  bool _featureProduct = false;
+
+  bool get _isBusiness => _selected == 'business';
+
   Future<void> _confirm() async {
     if (_selected == null) return;
-    final isBusiness = _selected == 'business';
     final profile = context.appState.profile;
     await context.appState.updateProfile(
       profile.copyWith(
-        featureProduct: isBusiness,
-        featureOutlets: isBusiness,
-        featureBudget: isBusiness,
+        featureProduct: _isBusiness ? _featureProduct : false,
+        featureOutlets: _isBusiness ? _featureOutlets : false,
+        featureBudget: _isBusiness ? _featureBudget : false,
         onboardingComplete: true,
       ),
     );
@@ -86,6 +92,29 @@ class _ModeSelectionScreenState extends State<ModeSelectionScreen> {
                 ],
                 onTap: () => setState(() => _selected = 'business'),
               ),
+
+              // ── Feature selection — muncul saat bisnis dipilih ─────────────
+              AnimatedSize(
+                duration: const Duration(milliseconds: 250),
+                curve: Curves.easeInOut,
+                child: _isBusiness
+                    ? Padding(
+                        padding: const EdgeInsets.only(top: 16),
+                        child: _FeatureSelector(
+                          featureBudget: _featureBudget,
+                          featureOutlets: _featureOutlets,
+                          featureProduct: _featureProduct,
+                          onBudgetChanged: (v) =>
+                              setState(() => _featureBudget = v),
+                          onOutletsChanged: (v) =>
+                              setState(() => _featureOutlets = v),
+                          onProductChanged: (v) =>
+                              setState(() => _featureProduct = v),
+                        ),
+                      )
+                    : const SizedBox.shrink(),
+              ),
+
               const SizedBox(height: 40),
               SizedBox(
                 width: double.infinity,
@@ -103,7 +132,8 @@ class _ModeSelectionScreenState extends State<ModeSelectionScreen> {
                   ),
                   child: Text(
                     context.t('onboarding.start'),
-                    style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
+                    style: const TextStyle(
+                        fontSize: 16, fontWeight: FontWeight.w700),
                   ),
                 ),
               ),
@@ -114,6 +144,164 @@ class _ModeSelectionScreenState extends State<ModeSelectionScreen> {
     );
   }
 }
+
+// ── Feature selector — ditampilkan saat mode bisnis dipilih ──────────────────
+
+class _FeatureSelector extends StatelessWidget {
+  const _FeatureSelector({
+    required this.featureBudget,
+    required this.featureOutlets,
+    required this.featureProduct,
+    required this.onBudgetChanged,
+    required this.onOutletsChanged,
+    required this.onProductChanged,
+  });
+
+  final bool featureBudget;
+  final bool featureOutlets;
+  final bool featureProduct;
+  final ValueChanged<bool> onBudgetChanged;
+  final ValueChanged<bool> onOutletsChanged;
+  final ValueChanged<bool> onProductChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: AppColors.brandBlue.withValues(alpha: 0.05),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+            color: AppColors.brandBlue.withValues(alpha: 0.2)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            context.t('onboarding.featureSelectTitle'),
+            style: const TextStyle(
+              fontSize: 13,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+          const SizedBox(height: 2),
+          Text(
+            context.t('onboarding.featureSelectHint'),
+            style: TextStyle(
+              fontSize: 11,
+              color: context.appColors.textSecondary,
+            ),
+          ),
+          const SizedBox(height: 12),
+          _FeatureToggleRow(
+            icon: Icons.savings_outlined,
+            title: context.t('settings.featureBudget'),
+            subtitle: context.t('settings.featureBudgetSubtitle'),
+            value: featureBudget,
+            onChanged: onBudgetChanged,
+          ),
+          const SizedBox(height: 8),
+          _FeatureToggleRow(
+            icon: Icons.store_outlined,
+            title: context.t('settings.featureOutlets'),
+            subtitle: context.t('settings.featureOutletsSubtitle'),
+            value: featureOutlets,
+            onChanged: onOutletsChanged,
+          ),
+          const SizedBox(height: 8),
+          _FeatureToggleRow(
+            icon: Icons.inventory_2_outlined,
+            title: context.t('settings.featureProduct'),
+            subtitle: context.t('settings.featureProductSubtitle'),
+            value: featureProduct,
+            onChanged: onProductChanged,
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _FeatureToggleRow extends StatelessWidget {
+  const _FeatureToggleRow({
+    required this.icon,
+    required this.title,
+    required this.subtitle,
+    required this.value,
+    required this.onChanged,
+  });
+
+  final IconData icon;
+  final String title;
+  final String subtitle;
+  final bool value;
+  final ValueChanged<bool> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      borderRadius: BorderRadius.circular(10),
+      onTap: () => onChanged(!value),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+        decoration: BoxDecoration(
+          color: value
+              ? AppColors.brandBlue.withValues(alpha: 0.08)
+              : context.appColors.card,
+          borderRadius: BorderRadius.circular(10),
+          border: Border.all(
+            color: value
+                ? AppColors.brandBlue.withValues(alpha: 0.35)
+                : context.appColors.outline,
+          ),
+        ),
+        child: Row(
+          children: [
+            Icon(
+              icon,
+              size: 20,
+              color:
+                  value ? AppColors.brandBlue : context.appColors.textSecondary,
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                      color: value
+                          ? AppColors.brandBlue
+                          : context.appColors.textPrimary,
+                    ),
+                  ),
+                  Text(
+                    subtitle,
+                    style: TextStyle(
+                      fontSize: 11,
+                      color: context.appColors.textSecondary,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Switch(
+              value: value,
+              onChanged: onChanged,
+              activeThumbColor: AppColors.brandBlue,
+              materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// ── Mode card ─────────────────────────────────────────────────────────────────
 
 class _ModeCard extends StatelessWidget {
   const _ModeCard({

@@ -205,6 +205,7 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
   Widget build(BuildContext context) {
     final categories = _buildCategories(context);
     final featureOutlets = context.appState.profile.featureOutlets;
+    final isBusinessMode = context.appState.profile.isBusinessMode;
 
     return AppGradientScaffold(
       appBar: AppBar(
@@ -385,7 +386,7 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
                 accentColor: AppColors.negative,
                 onChanged: (cat) => setState(() => _selectedCategory = cat),
               ),
-              if (_selectedCategory?.isStockPurchase == true) ...[
+              if (isBusinessMode && _selectedCategory?.isStockPurchase == true) ...[
                 const SizedBox(height: 8),
                 _StockInfoBanner(),
               ],
@@ -943,7 +944,7 @@ class _ItemTile extends StatelessWidget {
                           fontSize: 12,
                           color: context.appColors.textSecondary),
                     ),
-                    if (item.isStockPurchase) ...[
+                    if (context.appState.profile.isBusinessMode && item.isStockPurchase) ...[
                       const SizedBox(width: 5),
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),

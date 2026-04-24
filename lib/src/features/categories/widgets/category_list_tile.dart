@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../../core/localization/transalation_extansions.dart';
 import '../../../core/models/user_category.dart';
+import '../../../core/state/app_state.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_dynamic_colors.dart';
 
@@ -62,7 +63,7 @@ class CategoryListTile extends StatelessWidget {
                     color: context.appColors.textPrimary,
                   ),
                 ),
-                if (category.isStockPurchase) ...[
+                if (category.isStockPurchase && context.appState.profile.isBusinessMode) ...[
                   const SizedBox(height: 2),
                   Row(
                     mainAxisSize: MainAxisSize.min,

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../core/models/user_category.dart';
+import '../../core/state/app_state.dart';
 import '../../core/theme/app_dynamic_colors.dart';
 
 const _stockColor = Color(0xFFFF9F00);
@@ -53,7 +54,7 @@ class CategoryDropdown extends StatelessWidget {
                         overflow: TextOverflow.ellipsis,
                       ),
                     ),
-                    if (cat.isStockPurchase) ...[
+                    if (cat.isStockPurchase && context.appState.profile.isBusinessMode) ...[
                       const SizedBox(width: 6),
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
@@ -89,7 +90,7 @@ class CategoryDropdown extends StatelessWidget {
                         ),
                       ),
                     ),
-                    if (cat.isStockPurchase)
+                    if (cat.isStockPurchase && context.appState.profile.isBusinessMode)
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                         decoration: BoxDecoration(

@@ -162,7 +162,7 @@ class _CategoryTab extends StatelessWidget {
                 category: cat,
                 accentColor: accentColor,
                 onDelete: cat.isDefault ? null : () => onDelete(cat),
-                onToggleStock: isExpense && !cat.isDefault
+                onToggleStock: isExpense && !cat.isDefault && context.appState.profile.isBusinessMode
                     ? (isStock) => context.appState.updateCategoryStockFlag(cat.id, isStock: isStock)
                     : null,
               );
