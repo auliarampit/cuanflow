@@ -11,6 +11,86 @@ import 'package:google_mobile_ads/google_mobile_ads.dart';
 
 import '../../shared/widgets/native_ad_card.dart';
 
+class _TotalBalanceCard extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    final appState = context.appState;
+    final total = appState.totalBalance;
+    final wallets = appState.wallets;
+    final isNeg = total < 0;
+    final color = isNeg ? AppColors.negative : AppColors.brandBlue;
+    final label = wallets.isEmpty
+        ? context.t('home.noWalletBalance')
+        : context.t('home.totalBalance');
+
+    return GestureDetector(
+      onTap: () => Navigator.of(context).pushNamed(AppRoutes.wallets),
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            colors: [
+              color.withValues(alpha: 0.75),
+              color.withValues(alpha: 0.45),
+            ],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+          borderRadius: BorderRadius.circular(18),
+        ),
+        child: Row(
+          children: [
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    label,
+                    style: const TextStyle(color: Colors.white70, fontSize: 12),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    IdrFormatter.format(total),
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 24,
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                  if (wallets.isNotEmpty) ...[
+                    const SizedBox(height: 6),
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 4,
+                      children: wallets.take(3).map((w) {
+                        final bal = appState.balanceFor(w.id);
+                        return Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 8, vertical: 3),
+                          decoration: BoxDecoration(
+                            color: Colors.white.withValues(alpha: 0.15),
+                            borderRadius: BorderRadius.circular(999),
+                          ),
+                          child: Text(
+                            '${w.name}: ${IdrFormatter.format(bal)}',
+                            style: const TextStyle(
+                                color: Colors.white, fontSize: 11),
+                          ),
+                        );
+                      }).toList(),
+                    ),
+                  ],
+                ],
+              ),
+            ),
+            Icon(Icons.chevron_right, color: Colors.white70),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
 
@@ -272,6 +352,8 @@ class _HomeScreenState extends State<HomeScreen> {
               }),
             ),
           ],
+          const SizedBox(height: 14),
+          _TotalBalanceCard(),
           const SizedBox(height: 14),
           Row(
             children: [

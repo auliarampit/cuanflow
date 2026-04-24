@@ -12,6 +12,7 @@ class MoneyTransaction {
     this.note,
     this.category,
     this.outletId,
+    this.walletId,
   });
 
   final String id;
@@ -20,6 +21,7 @@ class MoneyTransaction {
   final String? note;
   final String? category;
   final String? outletId;
+  final String? walletId;
   final DateTime effectiveDate;
   final DateTime createdAt;
 
@@ -32,6 +34,7 @@ class MoneyTransaction {
     String? note,
     String? category,
     String? outletId,
+    String? walletId,
     DateTime? effectiveDate,
     DateTime? createdAt,
   }) {
@@ -42,6 +45,7 @@ class MoneyTransaction {
       note: note ?? this.note,
       category: category ?? this.category,
       outletId: outletId ?? this.outletId,
+      walletId: walletId ?? this.walletId,
       effectiveDate: effectiveDate ?? this.effectiveDate,
       createdAt: createdAt ?? this.createdAt,
     );
@@ -55,6 +59,7 @@ class MoneyTransaction {
       'note': note,
       'category': category,
       'outletId': outletId,
+      'walletId': walletId,
       'effectiveDate': effectiveDate.toIso8601String(),
       'createdAt': createdAt.toIso8601String(),
     };
@@ -73,6 +78,7 @@ class MoneyTransaction {
       note: jsonMap['note'] as String?,
       category: jsonMap['category'] as String?,
       outletId: jsonMap['outletId'] as String? ?? jsonMap['outlet_id'] as String?,
+      walletId: jsonMap['walletId'] as String? ?? jsonMap['wallet_id'] as String?,
       effectiveDate: DateTime.parse(
         jsonMap['effectiveDate'] as String? ??
             jsonMap['effective_date'] as String? ??

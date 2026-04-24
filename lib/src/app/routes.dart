@@ -19,4 +19,7 @@ final class AppRoutes {
   static const changePin = '/auth/change-pin';
   static const notificationSettings = '/notifications';
   static const budget = '/budget';
+  static const wallets = '/wallets';
+  static const debt = '/debt';
+  static const recurring = '/recurring';
 }

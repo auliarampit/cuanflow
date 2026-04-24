@@ -4,24 +4,35 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import 'package:collection/collection.dart';
+
 import '../models/app_settings.dart';
 import '../models/budget_model.dart';
+import '../models/debt_model.dart';
 import '../models/money_transaction.dart';
 import '../models/outlet_model.dart';
 import '../models/product_model.dart';
+import '../models/recurring_transaction_model.dart';
 import '../models/summary.dart';
 import '../models/user_category.dart';
 import '../models/user_profile.dart';
+import '../models/wallet_model.dart';
 import '../services/budget_sync_service.dart';
 import '../services/category_sync_service.dart';
+import '../services/debt_sync_service.dart';
+import '../services/recurring_sync_service.dart';
 import '../services/notification_service.dart';
 import '../services/outlet_service.dart';
 import '../services/profile_service.dart';
 import '../services/transaction_sync_service.dart';
+import '../services/wallet_sync_service.dart';
 import '../storage/local_database.dart';
 
 export '../models/budget_model.dart';
+export '../models/debt_model.dart';
+export '../models/recurring_transaction_model.dart';
 export '../models/summary.dart';
+export '../models/wallet_model.dart';
 export 'app_state_scope.dart';
 
 class AppState extends ChangeNotifier {
@@ -35,6 +46,9 @@ class AppState extends ChangeNotifier {
   late final _profileService = ProfileService(supabase);
   late final _categoryService = CategorySyncService(supabase);
   late final _budgetSyncService = BudgetSyncService(supabase);
+  late final _walletSyncService = WalletSyncService(supabase);
+  late final _debtSyncService = DebtSyncService(supabase);
+  late final _recurringSyncService = RecurringSyncService(supabase);
 
   bool _initialized = false;
   bool _isSyncing = false;
@@ -44,6 +58,9 @@ class AppState extends ChangeNotifier {
   List<OutletModel> _outlets = [];
   List<UserCategory> _categories = [];
   List<BudgetModel> _budgets = [];
+  List<WalletModel> _wallets = [];
+  List<DebtModel> _debts = [];
+  List<RecurringTransactionModel> _recurring = [];
   String? _selectedOutletId;
   UserProfile _profile = UserProfile.empty();
   AppSettings _settings = AppSettings.defaults();
@@ -59,7 +76,34 @@ class AppState extends ChangeNotifier {
   List<OutletModel> get outlets => _outlets;
   List<UserCategory> get categories => _categories;
   List<BudgetModel> get budgets => _budgets;
+  List<WalletModel> get wallets => _wallets;
+  List<DebtModel> get debts => _debts;
+  List<RecurringTransactionModel> get recurringTransactions => _recurring;
   String? get selectedOutletId => _selectedOutletId;
+
+  /// Saldo total kumulatif dari semua transaksi (atau per dompet jika ada).
+  int get totalBalance {
+    if (_wallets.isEmpty) {
+      return _transactions.fold(
+          0, (s, tx) => s + (tx.isIncome ? tx.amount : -tx.amount));
+    }
+    return _wallets.fold(0, (s, w) => s + balanceFor(w.id));
+  }
+
+  /// Saldo satu dompet = saldo awal + pemasukan - pengeluaran dari dompet tsb.
+  int balanceFor(String walletId) {
+    final wallet = _wallets.firstWhereOrNull((w) => w.id == walletId);
+    if (wallet == null) return 0;
+    final txBalance = _transactions
+        .where((tx) => tx.walletId == walletId)
+        .fold(0, (s, tx) => s + (tx.isIncome ? tx.amount : -tx.amount));
+    return wallet.initialBalance + txBalance;
+  }
+
+  /// Jumlah utang yang belum lunas berdasarkan tipe.
+  int totalDebt(DebtType type) => _debts
+      .where((d) => d.type == type && !d.isPaid)
+      .fold(0, (s, d) => s + d.amount);
 
   /// Semua kategori untuk tipe tertentu (default + custom), tanpa duplikat nama.
   List<UserCategory> categoriesFor(MoneyTransactionType type) {
@@ -96,10 +140,13 @@ class AppState extends ChangeNotifier {
 
     final raw = await _database.read();
     _transactions = _parseList(raw['transactions'], MoneyTransaction.fromJson);
-    _products = _parseList(raw['products'], ProductModel.fromJson);
-    _outlets = _parseList(raw['outlets'], OutletModel.fromJson);
-    _categories = _parseList(raw['categories'], UserCategory.fromJson);
-    _budgets = _parseList(raw['budgets'], BudgetModel.fromJson);
+    _products    = _parseList(raw['products'],     ProductModel.fromJson);
+    _outlets     = _parseList(raw['outlets'],      OutletModel.fromJson);
+    _categories  = _parseList(raw['categories'],   UserCategory.fromJson);
+    _budgets     = _parseList(raw['budgets'],       BudgetModel.fromJson);
+    _wallets     = _parseList(raw['wallets'],       WalletModel.fromJson);
+    _debts       = _parseList(raw['debts'],         DebtModel.fromJson);
+    _recurring   = _parseList(raw['recurring'],     RecurringTransactionModel.fromJson);
 
     final profileMap = raw['profile'];
     if (profileMap is Map<String, dynamic>) {
@@ -110,7 +157,6 @@ class AppState extends ChangeNotifier {
       _settings = AppSettings.fromJson(settingsMap);
     }
 
-    // Jadwalkan notifikasi harian jika diaktifkan (termasuk default baru = true)
     if (_settings.dailyNotification) {
       unawaited(NotificationService.schedule(
         hour: _settings.notificationHour,
@@ -119,6 +165,7 @@ class AppState extends ChangeNotifier {
     }
 
     _transactions = _syncService.migrateOldIds(_transactions);
+    await _processRecurring();
 
     _initialized = true;
     notifyListeners();
@@ -128,6 +175,9 @@ class AppState extends ChangeNotifier {
       unawaited(fetchProfile());
       unawaited(syncCategories());
       unawaited(syncBudgets());
+      unawaited(syncWallets());
+      unawaited(syncDebts());
+      unawaited(syncRecurring());
     }
   }
 
@@ -493,6 +543,7 @@ class AppState extends ChangeNotifier {
     String? note,
     String? category,
     String? outletId,
+    String? walletId,
     DateTime? effectiveDate,
   }) =>
       _addTransaction(
@@ -501,6 +552,7 @@ class AppState extends ChangeNotifier {
         note: note,
         category: category,
         outletId: outletId,
+        walletId: walletId,
         effectiveDate: effectiveDate,
       );
 
@@ -509,6 +561,7 @@ class AppState extends ChangeNotifier {
     String? note,
     String? category,
     String? outletId,
+    String? walletId,
     DateTime? effectiveDate,
   }) =>
       _addTransaction(
@@ -517,6 +570,7 @@ class AppState extends ChangeNotifier {
         note: note,
         category: category,
         outletId: outletId,
+        walletId: walletId,
         effectiveDate: effectiveDate,
       );
 
@@ -526,6 +580,7 @@ class AppState extends ChangeNotifier {
     String? note,
     String? category,
     String? outletId,
+    String? walletId,
     DateTime? effectiveDate,
   }) async {
     final now = DateTime.now();
@@ -536,6 +591,7 @@ class AppState extends ChangeNotifier {
       note: note,
       category: category,
       outletId: outletId,
+      walletId: walletId,
       effectiveDate: effectiveDate != null ? _stripTime(effectiveDate) : _stripTime(now),
       createdAt: now,
     );
@@ -543,6 +599,177 @@ class AppState extends ChangeNotifier {
     await _persist();
     notifyListeners();
     unawaited(syncTransactions());
+  }
+
+  // ─── Wallet CRUD ──────────────────────────────────────────────────────────────
+
+  Future<void> syncWallets() async {
+    if (currentUser == null) return;
+    try {
+      final remote = await _walletSyncService.fetchWallets();
+      if (remote.isNotEmpty) {
+        _wallets = remote;
+        await _persist();
+        notifyListeners();
+      }
+    } catch (e) {
+      debugPrint('[WalletSync] failed: $e');
+    }
+  }
+
+  Future<void> addWallet(WalletModel wallet) async {
+    if (currentUser != null) {
+      try {
+        final confirmed = await _walletSyncService.insertWallet(wallet);
+        if (confirmed != null) {
+          _wallets = [..._wallets, confirmed];
+          await _persist();
+          notifyListeners();
+          return;
+        }
+      } catch (e) {
+        debugPrint('[WalletSync] addWallet failed: $e');
+      }
+    }
+    _wallets = [..._wallets, wallet];
+    await _persist();
+    notifyListeners();
+  }
+
+  Future<void> updateWallet(WalletModel wallet) async {
+    final idx = _wallets.indexWhere((w) => w.id == wallet.id);
+    if (idx == -1) return;
+    _wallets[idx] = wallet;
+    await _persist();
+    notifyListeners();
+    _walletSyncService.updateWallet(wallet).ignore();
+  }
+
+  Future<void> deleteWallet(String id) async {
+    _wallets = _wallets.where((w) => w.id != id).toList();
+    await _persist();
+    notifyListeners();
+    _walletSyncService.deleteWallet(id).ignore();
+  }
+
+  // ─── Debt CRUD ────────────────────────────────────────────────────────────────
+
+  Future<void> syncDebts() async {
+    if (currentUser == null) return;
+    try {
+      final remote = await _debtSyncService.fetchDebts();
+      _debts = remote;
+      await _persist();
+      notifyListeners();
+    } catch (e) {
+      debugPrint('[DebtSync] failed: $e');
+    }
+  }
+
+  Future<void> addDebt(DebtModel debt) async {
+    _debts = [debt, ..._debts];
+    await _persist();
+    notifyListeners();
+    _debtSyncService.upsertDebt(debt).ignore();
+  }
+
+  Future<void> updateDebt(DebtModel debt) async {
+    final idx = _debts.indexWhere((d) => d.id == debt.id);
+    if (idx == -1) return;
+    _debts[idx] = debt;
+    await _persist();
+    notifyListeners();
+    _debtSyncService.upsertDebt(debt).ignore();
+  }
+
+  Future<void> deleteDebt(String id) async {
+    _debts = _debts.where((d) => d.id != id).toList();
+    await _persist();
+    notifyListeners();
+    _debtSyncService.deleteDebt(id).ignore();
+  }
+
+  // ─── Recurring CRUD ───────────────────────────────────────────────────────────
+
+  Future<void> syncRecurring() async {
+    if (currentUser == null) return;
+    try {
+      final remote = await _recurringSyncService.fetchAll();
+      if (remote.isNotEmpty) {
+        _recurring = remote;
+        await _persist();
+        notifyListeners();
+      }
+    } catch (e) {
+      debugPrint('[RecurringSync] failed: $e');
+    }
+  }
+
+  Future<void> addRecurring(RecurringTransactionModel r) async {
+    _recurring = [r, ..._recurring];
+    await _persist();
+    notifyListeners();
+    _recurringSyncService.upsert(r).ignore();
+  }
+
+  Future<void> updateRecurring(RecurringTransactionModel r) async {
+    final idx = _recurring.indexWhere((e) => e.id == r.id);
+    if (idx == -1) return;
+    _recurring[idx] = r;
+    await _persist();
+    notifyListeners();
+    _recurringSyncService.upsert(r).ignore();
+  }
+
+  Future<void> deleteRecurring(String id) async {
+    _recurring = _recurring.where((r) => r.id != id).toList();
+    await _persist();
+    notifyListeners();
+    _recurringSyncService.delete(id).ignore();
+  }
+
+  /// Jalankan recurring transactions yang sudah jatuh tempo saat app dibuka.
+  Future<void> _processRecurring() async {
+    if (_recurring.isEmpty) return;
+    final now = DateTime.now();
+    final today = _stripTime(now);
+    var changed = false;
+    final updated = <RecurringTransactionModel>[];
+
+    for (final r in _recurring) {
+      if (!r.isActive) { updated.add(r); continue; }
+
+      final nextExec = _stripTime(r.nextExecute ?? r.createdAt);
+      if (nextExec.isAfter(today)) { updated.add(r); continue; }
+
+      // Buat transaksi untuk hari yang jatuh tempo
+      final tx = MoneyTransaction(
+        id: 'tx_${now.microsecondsSinceEpoch}_${r.id.hashCode.abs()}',
+        type: r.type,
+        amount: r.amount,
+        note: r.name,
+        category: r.category,
+        walletId: r.walletId,
+        effectiveDate: nextExec,
+        createdAt: now,
+      );
+      _transactions = [tx, ..._transactions];
+      updated.add(r.copyWith(
+        lastExecuted: nextExec,
+        nextExecute: r.computeNextExecute(nextExec),
+      ));
+      changed = true;
+    }
+
+    _recurring = updated;
+    if (changed) {
+      await _persist();
+      unawaited(syncTransactions());
+      // Push updated nextExecute / lastExecuted ke Supabase
+      for (final r in updated) {
+        _recurringSyncService.upsert(r).ignore();
+      }
+    }
   }
 
   Future<void> deleteTransaction(String id) async {
@@ -675,6 +902,9 @@ class AppState extends ChangeNotifier {
         'outlets': _outlets.map((e) => e.toJson()).toList(),
         'categories': _categories.map((e) => e.toJson()).toList(),
         'budgets': _budgets.map((e) => e.toJson()).toList(),
+        'wallets': _wallets.map((e) => e.toJson()).toList(),
+        'debts': _debts.map((e) => e.toJson()).toList(),
+        'recurring': _recurring.map((e) => e.toJson()).toList(),
         'profile': _profile.toJson(),
         'settings': _settings.toJson(),
       });

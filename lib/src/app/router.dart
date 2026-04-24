@@ -17,6 +17,9 @@ import '../features/budget/budget_screen.dart';
 import '../features/notifications/notification_settings_screen.dart';
 import '../features/onboarding/mode_selection_screen.dart';
 import '../features/splash/splash_screen.dart';
+import '../features/wallet/manage_wallets_screen.dart';
+import '../features/debt/debt_screen.dart';
+import '../features/recurring/recurring_screen.dart';
 
 
 
@@ -60,6 +63,12 @@ final class AppRouter {
             builder: (_) => const NotificationSettingsScreen());
       case AppRoutes.budget:
         return MaterialPageRoute(builder: (_) => const BudgetScreen());
+      case AppRoutes.wallets:
+        return MaterialPageRoute(builder: (_) => const ManageWalletsScreen());
+      case AppRoutes.debt:
+        return MaterialPageRoute(builder: (_) => const DebtScreen());
+      case AppRoutes.recurring:
+        return MaterialPageRoute(builder: (_) => const RecurringScreen());
       default:
         return MaterialPageRoute(builder: (_) => const LoginScreen());
     }

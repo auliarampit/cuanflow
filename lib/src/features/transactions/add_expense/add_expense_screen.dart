@@ -19,12 +19,14 @@ class _BulkItem {
     required this.category,
     this.note,
     this.outletId,
+    this.walletId,
     this.isStockPurchase = false,
   });
   final int amount;
   final String category;
   final String? note;
   final String? outletId;
+  final String? walletId;
   final bool isStockPurchase;
 }
 
@@ -44,6 +46,7 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
 
   UserCategory? _selectedCategory;
   String? _selectedOutletId;
+  String? _selectedWalletId;
   DateTime _selectedDate = DateTime.now();
   bool _didInit = false;
 
@@ -60,6 +63,7 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
       _amountController.text = CurrencyInputFormatter.formatVal(tx.amount);
       _noteController.text = tx.note ?? '';
       _selectedOutletId = tx.outletId;
+      _selectedWalletId = tx.walletId;
       _selectedDate = tx.effectiveDate;
     }
   }
@@ -70,8 +74,11 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
     if (_didInit) return;
     _didInit = true;
 
-    // Expenses default to null (shared/business-level), not the active outlet.
-    // User can explicitly assign an outlet via the selector if needed.
+    final wallets = context.appState.wallets;
+    if (_selectedWalletId == null && wallets.isNotEmpty) {
+      final def = wallets.where((w) => w.isDefault).firstOrNull ?? wallets.first;
+      _selectedWalletId = def.id;
+    }
 
     if (widget.transaction?.category != null) {
       final cats = _buildCategories(context);
@@ -125,6 +132,7 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
         category: _selectedCategory!.label,
         note: _noteController.text.trim(),
         outletId: _selectedOutletId,
+        walletId: _selectedWalletId,
         isStockPurchase: _selectedCategory!.isStockPurchase,
       ));
       _amountController.clear();
@@ -151,6 +159,7 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
         note: item.note,
         category: item.category,
         outletId: item.outletId,
+        walletId: item.walletId,
         effectiveDate: _selectedDate,
       );
     }
@@ -190,6 +199,7 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
       note: _noteController.text.trim(),
       category: _selectedCategory!.label,
       outletId: _selectedOutletId,
+      walletId: _selectedWalletId,
       effectiveDate: _selectedDate,
     ));
 
@@ -379,6 +389,13 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
                   onChanged: (id) => setState(() => _selectedOutletId = id),
                 ),
               ],
+              if (context.appState.wallets.isNotEmpty) ...[
+                const SizedBox(height: 18),
+                _WalletSelectorBlock(
+                  selectedWalletId: _selectedWalletId,
+                  onChanged: (id) => setState(() => _selectedWalletId = id),
+                ),
+              ],
               const SizedBox(height: 18),
               CategoryDropdown(
                 categories: categories,
@@ -523,6 +540,16 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
                           accentColor: AppColors.negative,
                           onChanged: (id) =>
                               setState(() => _selectedOutletId = id),
+                        ),
+                      ],
+                      // Wallet selector (when user has wallets set up)
+                      if (context.appState.wallets.isNotEmpty) ...[
+                        const SizedBox(height: 14),
+                        _WalletPill(
+                          selectedWalletId: _selectedWalletId,
+                          accentColor: AppColors.negative,
+                          onChanged: (id) =>
+                              setState(() => _selectedWalletId = id),
                         ),
                       ],
                     ],
@@ -1171,6 +1198,233 @@ class _OutletSelectorBlock extends StatelessWidget {
           ),
         ),
       ],
+    );
+  }
+}
+
+// ─── Wallet selector block (edit mode) ──────────────────────────────────────
+class _WalletSelectorBlock extends StatelessWidget {
+  const _WalletSelectorBlock({
+    required this.selectedWalletId,
+    required this.onChanged,
+  });
+
+  final String? selectedWalletId;
+  final ValueChanged<String?> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    final wallets = context.appState.wallets;
+    final selectedName = selectedWalletId == null
+        ? context.t('wallet.noWallet')
+        : wallets.firstWhereOrNull((w) => w.id == selectedWalletId)?.name ??
+            context.t('wallet.selector');
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(context.t('wallet.selector'),
+            style: const TextStyle(fontWeight: FontWeight.w700)),
+        const SizedBox(height: 10),
+        InkWell(
+          onTap: () => _showSheet(context, wallets),
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+            decoration: BoxDecoration(
+              color: context.appColors.cardSoft,
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(color: context.appColors.outline),
+            ),
+            child: Row(
+              children: [
+                const Icon(Icons.account_balance_wallet_outlined,
+                    color: AppColors.negative),
+                const SizedBox(width: 10),
+                Expanded(child: Text(selectedName)),
+                Icon(Icons.expand_more,
+                    color: context.appColors.textSecondary),
+              ],
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  void _showSheet(BuildContext context, List<WalletModel> wallets) {
+    showModalBottomSheet<void>(
+      context: context,
+      backgroundColor: context.appColors.card,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (ctx) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(20, 20, 20, 8),
+              child: Align(
+                alignment: Alignment.centerLeft,
+                child: Text(
+                  context.t('wallet.selector'),
+                  style: const TextStyle(
+                      fontWeight: FontWeight.w800, fontSize: 16),
+                ),
+              ),
+            ),
+            ListTile(
+              leading: const Icon(Icons.wallet_outlined),
+              title: Text(context.t('wallet.noWallet')),
+              trailing: selectedWalletId == null
+                  ? const Icon(Icons.check, color: AppColors.brandBlue)
+                  : null,
+              onTap: () {
+                onChanged(null);
+                Navigator.pop(ctx);
+              },
+            ),
+            const Divider(height: 1),
+            for (final w in wallets)
+              ListTile(
+                leading: const Icon(Icons.account_balance_wallet_outlined),
+                title: Text(w.name),
+                subtitle: Text(w.type.displayName),
+                trailing: selectedWalletId == w.id
+                    ? const Icon(Icons.check, color: AppColors.brandBlue)
+                    : null,
+                onTap: () {
+                  onChanged(w.id);
+                  Navigator.pop(ctx);
+                },
+              ),
+            const SizedBox(height: 8),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// ─── Wallet pill (compact, for inside form card) ─────────────────────────────
+class _WalletPill extends StatelessWidget {
+  const _WalletPill({
+    required this.selectedWalletId,
+    required this.accentColor,
+    required this.onChanged,
+  });
+
+  final String? selectedWalletId;
+  final Color accentColor;
+  final ValueChanged<String?> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    final wallets = context.appState.wallets;
+    final walletName = selectedWalletId == null
+        ? context.t('wallet.noWallet')
+        : wallets.firstWhereOrNull((w) => w.id == selectedWalletId)?.name ??
+            context.t('wallet.selector');
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          context.t('wallet.selector').toUpperCase(),
+          style: TextStyle(
+            fontSize: 11,
+            letterSpacing: 2,
+            fontWeight: FontWeight.w700,
+            color: context.appColors.textSecondary,
+          ),
+        ),
+        const SizedBox(height: 8),
+        InkWell(
+          onTap: () => _showSheet(context, wallets),
+          borderRadius: BorderRadius.circular(999),
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            decoration: BoxDecoration(
+              color: accentColor.withValues(alpha: 0.08),
+              borderRadius: BorderRadius.circular(999),
+              border: Border.all(color: accentColor.withValues(alpha: 0.4)),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(Icons.account_balance_wallet_outlined,
+                    size: 16, color: accentColor),
+                const SizedBox(width: 6),
+                Text(
+                  walletName,
+                  style: TextStyle(
+                    color: accentColor,
+                    fontWeight: FontWeight.w700,
+                    fontSize: 13,
+                  ),
+                ),
+                const SizedBox(width: 4),
+                Icon(Icons.expand_more,
+                    size: 16, color: context.appColors.textSecondary),
+              ],
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  void _showSheet(BuildContext context, List<WalletModel> wallets) {
+    showModalBottomSheet<void>(
+      context: context,
+      backgroundColor: context.appColors.card,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (ctx) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(20, 20, 20, 8),
+              child: Align(
+                alignment: Alignment.centerLeft,
+                child: Text(
+                  context.t('wallet.selector'),
+                  style: const TextStyle(
+                      fontWeight: FontWeight.w800, fontSize: 16),
+                ),
+              ),
+            ),
+            ListTile(
+              leading: const Icon(Icons.wallet_outlined),
+              title: Text(context.t('wallet.noWallet')),
+              trailing: selectedWalletId == null
+                  ? const Icon(Icons.check, color: AppColors.brandBlue)
+                  : null,
+              onTap: () {
+                onChanged(null);
+                Navigator.pop(ctx);
+              },
+            ),
+            const Divider(height: 1),
+            for (final w in wallets)
+              ListTile(
+                leading: const Icon(Icons.account_balance_wallet_outlined),
+                title: Text(w.name),
+                subtitle: Text(w.type.displayName),
+                trailing: selectedWalletId == w.id
+                    ? const Icon(Icons.check, color: AppColors.brandBlue)
+                    : null,
+                onTap: () {
+                  onChanged(w.id);
+                  Navigator.pop(ctx);
+                },
+              ),
+            const SizedBox(height: 8),
+          ],
+        ),
+      ),
     );
   }
 }
