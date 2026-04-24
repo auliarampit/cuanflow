@@ -107,7 +107,6 @@ class _ReportScreenState extends State<ReportScreen> {
     }
 
     final incomePct = pctChange(totalIncome, prevSummary.totalIncome);
-    final expensePct = pctChange(totalExpense, prevSummary.totalExpense);
     final profitPct = pctChange(netProfit, prevSummary.netProfit);
 
     final history = appState.historyForDate(DateRangeType.month, _selectedDate);
@@ -232,8 +231,8 @@ class _ReportScreenState extends State<ReportScreen> {
                         child: _SummaryCard(
                           title: context.t('report.totalExpenseTitle'),
                           amount: IdrFormatter.format(totalExpense),
-                          pctChange: expensePct != null
-                              ? -expensePct
+                          ratioLabel: totalIncome > 0
+                              ? '${((totalExpense / totalIncome) * 100).toStringAsFixed(1)}% ${context.t('report.ofIncome')}'
                               : null,
                           accentColor: AppColors.negative,
                           icon: Icons.arrow_downward_rounded,
@@ -383,14 +382,16 @@ class _SummaryCard extends StatelessWidget {
   const _SummaryCard({
     required this.title,
     required this.amount,
-    required this.pctChange,
     required this.accentColor,
     required this.icon,
+    this.pctChange,
+    this.ratioLabel,
   });
 
   final String title;
   final String amount;
   final double? pctChange;
+  final String? ratioLabel;
   final Color accentColor;
   final IconData icon;
 
@@ -453,7 +454,17 @@ class _SummaryCard extends StatelessWidget {
                         color: context.appColors.textPrimary,
                       ),
                     ),
-                    if (pctChange != null) ...[
+                    if (ratioLabel != null) ...[
+                      const SizedBox(height: 6),
+                      Text(
+                        ratioLabel!,
+                        style: TextStyle(
+                          fontSize: 10,
+                          color: context.appColors.textSecondary,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ] else if (pctChange != null) ...[
                       const SizedBox(height: 6),
                       Row(
                         children: [

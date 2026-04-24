@@ -329,6 +329,7 @@
   "category.add.submit": "Tambahkan",
 
   "report.vsLastMonth": "vs bulan lalu",
+  "report.ofIncome": "dari pemasukan",
   "report.transactionCount": "{count} transaksi",
   "report.emptyMonth": "Belum ada transaksi bulan ini",
   "report.exportLangId": "Bahasa Indonesia",
