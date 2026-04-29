@@ -11,13 +11,13 @@ class HistorySummaryCard extends StatelessWidget {
     required this.totalIncome,
     required this.totalExpense,
     required this.totalProfit,
-    required this.isBusinessMode,
+    required this.isProductionMode,
   });
 
   final int totalIncome;
   final int totalExpense;
   final int totalProfit;
-  final bool isBusinessMode;
+  final bool isProductionMode;
 
   @override
   Widget build(BuildContext context) {
@@ -91,7 +91,7 @@ class HistorySummaryCard extends StatelessWidget {
                     children: [
                       Text(
                         context.t(
-                          isBusinessMode
+                          isProductionMode
                               ? 'history.summary.totalProfit'
                               : 'history.summary.totalBalance',
                         ),
@@ -125,7 +125,7 @@ class HistorySummaryCard extends StatelessWidget {
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Text(
-                  isBusinessMode
+                  isProductionMode
                       ? context.t(
                           isProfit
                               ? 'history.badge.profit'

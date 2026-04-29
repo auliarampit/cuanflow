@@ -1,3 +1,4 @@
+import 'package:cari_untung/src/core/config/feature_config.dart';
 import 'package:flutter/material.dart';
 
 import '../../core/localization/transalation_extansions.dart';
@@ -120,7 +121,7 @@ class _AccountSettingsScreenState extends State<AccountSettingsScreen> {
                             fontWeight: FontWeight.w700,
                           ),
                         ),
-                        if (profile.isBusinessMode) ...[
+                        if (useFeature(Feature.production, profile)) ...[
                           const SizedBox(height: 4),
                           Text(
                             profile.businessName.isNotEmpty
@@ -147,7 +148,7 @@ class _AccountSettingsScreenState extends State<AccountSettingsScreen> {
                       hintText: context.t('accountSettings.fullNameLabel'),
                     ),
                   ),
-                  if (profile.isBusinessMode) ...[
+                  if (useFeature(Feature.production, profile)) ...[
                     const SizedBox(height: 16),
                     Text(
                       context.t('accountSettings.businessNameLabel'),
@@ -158,7 +159,9 @@ class _AccountSettingsScreenState extends State<AccountSettingsScreen> {
                       controller: _businessNameController,
                       textCapitalization: TextCapitalization.words,
                       decoration: InputDecoration(
-                        hintText: context.t('accountSettings.businessNameLabel'),
+                        hintText: context.t(
+                          'accountSettings.businessNameLabel',
+                        ),
                       ),
                     ),
                   ],
@@ -195,8 +198,9 @@ class _AccountSettingsScreenState extends State<AccountSettingsScreen> {
                       onPressed: _isSaving ? null : _save,
                       style: ElevatedButton.styleFrom(
                         backgroundColor: AppColors.positive,
-                        disabledBackgroundColor:
-                            AppColors.positive.withValues(alpha: 0.4),
+                        disabledBackgroundColor: AppColors.positive.withValues(
+                          alpha: 0.4,
+                        ),
                         foregroundColor: Colors.black,
                       ),
                       child: _isSaving

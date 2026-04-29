@@ -1,3 +1,4 @@
+import 'package:cari_untung/src/core/config/feature_config.dart';
 import 'package:intl/intl.dart';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
@@ -39,7 +40,7 @@ class ReportPdfService {
       'contact': isId ? 'Telp/WA' : 'Phone/WA',
       'income': isId ? 'Total Pemasukan' : 'Total Income',
       'expense': isId ? 'Total Pengeluaran' : 'Total Expense',
-      'net': profile.isBusinessMode
+      'net': useFeature(Feature.production, profile)
           ? (isId ? 'Keuntungan Bersih' : 'Net Profit')
           : (isId ? 'Sisa Uang' : 'Monthly Savings'),
       'detail': isId ? 'Detail Transaksi' : 'Transaction Details',
@@ -66,19 +67,27 @@ class ReportPdfService {
         pageFormat: PdfPageFormat.a4,
         build: (pw.Context context) {
           return [
-            _buildHeader(monthName, profile, labels,
-                selectedOutletId: selectedOutletId,
-                outletNames: outletNames),
+            _buildHeader(
+              monthName,
+              profile,
+              labels,
+              selectedOutletId: selectedOutletId,
+              outletNames: outletNames,
+            ),
             pw.SizedBox(height: 20),
             showAllOutlets
                 ? _buildMultiOutletSummary(
-                    transactions, outlets, currencyFormat, labels, profile)
+                    transactions,
+                    outlets,
+                    currencyFormat,
+                    labels,
+                    profile,
+                  )
                 : _buildSingleSummary(summary, currencyFormat, labels),
             pw.SizedBox(height: 20),
             pw.Text(
               labels['detail']!,
-              style: pw.TextStyle(
-                  fontSize: 18, fontWeight: pw.FontWeight.bold),
+              style: pw.TextStyle(fontSize: 18, fontWeight: pw.FontWeight.bold),
             ),
             pw.SizedBox(height: 10),
             _buildTransactionTable(
@@ -127,10 +136,10 @@ class ReportPdfService {
               crossAxisAlignment: pw.CrossAxisAlignment.start,
               children: [
                 pw.Text(
-                  profile.isBusinessMode
+                  useFeature(Feature.production, profile)
                       ? (profile.businessName.isNotEmpty
-                          ? profile.businessName.toUpperCase()
-                          : 'BISNIS')
+                            ? profile.businessName.toUpperCase()
+                            : 'BISNIS')
                       : profile.fullName.toUpperCase(),
                   style: pw.TextStyle(
                     fontSize: 20,
@@ -143,7 +152,9 @@ class ReportPdfService {
                   pw.Text(
                     '${labels['owner']}: ${profile.fullName}',
                     style: const pw.TextStyle(
-                        fontSize: 10, color: PdfColors.grey700),
+                      fontSize: 10,
+                      color: PdfColors.grey700,
+                    ),
                   ),
                 ],
                 if (profile.whatsapp.isNotEmpty) ...[
@@ -151,24 +162,31 @@ class ReportPdfService {
                   pw.Text(
                     '${labels['contact']}: ${profile.whatsapp}',
                     style: const pw.TextStyle(
-                        fontSize: 10, color: PdfColors.grey700),
+                      fontSize: 10,
+                      color: PdfColors.grey700,
+                    ),
                   ),
                 ],
                 if (outletLabel != null) ...[
                   pw.SizedBox(height: 4),
                   pw.Container(
                     padding: const pw.EdgeInsets.symmetric(
-                        horizontal: 8, vertical: 3),
+                      horizontal: 8,
+                      vertical: 3,
+                    ),
                     decoration: pw.BoxDecoration(
                       color: PdfColors.blue50,
-                      borderRadius:
-                          const pw.BorderRadius.all(pw.Radius.circular(4)),
+                      borderRadius: const pw.BorderRadius.all(
+                        pw.Radius.circular(4),
+                      ),
                       border: pw.Border.all(color: PdfColors.blue200),
                     ),
                     child: pw.Text(
                       '${labels['outlet_label']}: $outletLabel',
                       style: const pw.TextStyle(
-                          fontSize: 9, color: PdfColors.blue900),
+                        fontSize: 9,
+                        color: PdfColors.blue900,
+                      ),
                     ),
                   ),
                 ],
@@ -222,10 +240,15 @@ class ReportPdfService {
     }
     // Income tanpa outlet (online/lainnya)
     final otherIncome = transactions
-        .where((t) => t.isIncome && (t.outletId == null || !outlets.any((o) => o.id == t.outletId)))
+        .where(
+          (t) =>
+              t.isIncome &&
+              (t.outletId == null || !outlets.any((o) => o.id == t.outletId)),
+        )
         .fold(0, (sum, t) => sum + t.amount);
 
-    final totalIncome = outletIncomes.values.fold(0, (a, b) => a + b) + otherIncome;
+    final totalIncome =
+        outletIncomes.values.fold(0, (a, b) => a + b) + otherIncome;
 
     // Expenses (semua sebagai biaya bersama)
     final expenseByCategory = <String, int>{};
@@ -267,12 +290,14 @@ class ReportPdfService {
             padding: const pw.EdgeInsets.fromLTRB(12, 6, 12, 6),
             child: pw.Column(
               children: [
-                ...outlets.map((o) => _summaryRowSmall(
-                      o.name,
-                      outletIncomes[o.id] ?? 0,
-                      PdfColors.green700,
-                      currencyFormat,
-                    )),
+                ...outlets.map(
+                  (o) => _summaryRowSmall(
+                    o.name,
+                    outletIncomes[o.id] ?? 0,
+                    PdfColors.green700,
+                    currencyFormat,
+                  ),
+                ),
                 if (otherIncome > 0)
                   _summaryRowSmall(
                     labels['other']!,
@@ -295,8 +320,7 @@ class ReportPdfService {
           // Biaya bersama
           pw.Container(
             padding: const pw.EdgeInsets.fromLTRB(12, 8, 12, 6),
-            decoration:
-                const pw.BoxDecoration(color: PdfColors.red50),
+            decoration: const pw.BoxDecoration(color: PdfColors.red50),
             child: pw.Column(
               crossAxisAlignment: pw.CrossAxisAlignment.start,
               children: [
@@ -312,7 +336,9 @@ class ReportPdfService {
                 pw.Text(
                   labels['shared_note']!,
                   style: const pw.TextStyle(
-                      fontSize: 8, color: PdfColors.grey600),
+                    fontSize: 8,
+                    color: PdfColors.grey600,
+                  ),
                 ),
               ],
             ),
@@ -321,8 +347,7 @@ class ReportPdfService {
             padding: const pw.EdgeInsets.fromLTRB(12, 6, 12, 6),
             child: pw.Column(
               children: [
-                ..._buildExpenseCategoryRows(
-                    expenseByCategory, currencyFormat),
+                ..._buildExpenseCategoryRows(expenseByCategory, currencyFormat),
                 pw.Divider(color: PdfColors.grey300),
                 _summaryRowSmall(
                   labels['expense']!,
@@ -359,12 +384,16 @@ class ReportPdfService {
                 pw.Text(
                   currencyFormat.format(netProfit.abs()) +
                       (netProfit < 0
-                          ? (profile.isBusinessMode ? ' (rugi)' : ' (defisit)')
+                          ? (useFeature(Feature.production, profile)
+                                ? ' (rugi)'
+                                : ' (defisit)')
                           : ''),
                   style: pw.TextStyle(
                     fontSize: 13,
                     fontWeight: pw.FontWeight.bold,
-                    color: netProfit >= 0 ? PdfColors.blue900 : PdfColors.red800,
+                    color: netProfit >= 0
+                        ? PdfColors.blue900
+                        : PdfColors.red800,
                   ),
                 ),
               ],
@@ -391,8 +420,9 @@ class ReportPdfService {
       ..sort((a, b) => b.value.compareTo(a.value));
     for (final entry in sorted) {
       final label = categoryLabels[entry.key] ?? entry.key;
-      rows.add(_summaryRowSmall(
-          label, entry.value, PdfColors.red700, currencyFormat));
+      rows.add(
+        _summaryRowSmall(label, entry.value, PdfColors.red700, currencyFormat),
+      );
     }
     return rows;
   }
@@ -409,18 +439,20 @@ class ReportPdfService {
       child: pw.Row(
         mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
         children: [
-          pw.Text(label,
-              style: bold
-                  ? pw.TextStyle(
-                      fontWeight: pw.FontWeight.bold, fontSize: 11)
-                  : const pw.TextStyle(fontSize: 10)),
+          pw.Text(
+            label,
+            style: bold
+                ? pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 11)
+                : const pw.TextStyle(fontSize: 10),
+          ),
           pw.Text(
             currencyFormat.format(amount),
             style: bold
                 ? pw.TextStyle(
                     fontWeight: pw.FontWeight.bold,
                     fontSize: 11,
-                    color: color)
+                    color: color,
+                  )
                 : pw.TextStyle(fontSize: 10, color: color),
           ),
         ],
@@ -444,12 +476,18 @@ class ReportPdfService {
       child: pw.Column(
         children: [
           _buildSummaryRow(
-              labels['income']!, summary.totalIncome,
-              PdfColors.green, currencyFormat),
+            labels['income']!,
+            summary.totalIncome,
+            PdfColors.green,
+            currencyFormat,
+          ),
           pw.SizedBox(height: 5),
           _buildSummaryRow(
-              labels['expense']!, summary.totalExpense,
-              PdfColors.red, currencyFormat),
+            labels['expense']!,
+            summary.totalExpense,
+            PdfColors.red,
+            currencyFormat,
+          ),
           pw.Divider(),
           _buildSummaryRow(
             labels['net']!,
@@ -473,16 +511,17 @@ class ReportPdfService {
     return pw.Row(
       mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
       children: [
-        pw.Text(label,
-            style: pw.TextStyle(
-                fontWeight:
-                    isBold ? pw.FontWeight.bold : pw.FontWeight.normal)),
+        pw.Text(
+          label,
+          style: pw.TextStyle(
+            fontWeight: isBold ? pw.FontWeight.bold : pw.FontWeight.normal,
+          ),
+        ),
         pw.Text(
           currencyFormat.format(amount),
           style: pw.TextStyle(
             color: color,
-            fontWeight:
-                isBold ? pw.FontWeight.bold : pw.FontWeight.normal,
+            fontWeight: isBold ? pw.FontWeight.bold : pw.FontWeight.normal,
           ),
         ),
       ],
@@ -552,16 +591,16 @@ class ReportPdfService {
       headers: headers,
       data: data,
       headerStyle: pw.TextStyle(
-          fontWeight: pw.FontWeight.bold, color: PdfColors.white),
-      headerDecoration:
-          const pw.BoxDecoration(color: PdfColors.blue900),
+        fontWeight: pw.FontWeight.bold,
+        color: PdfColors.white,
+      ),
+      headerDecoration: const pw.BoxDecoration(color: PdfColors.blue900),
       rowDecoration: const pw.BoxDecoration(
         border: pw.Border(
           bottom: pw.BorderSide(color: PdfColors.grey300, width: 0.5),
         ),
       ),
-      oddRowDecoration:
-          const pw.BoxDecoration(color: PdfColors.grey100),
+      oddRowDecoration: const pw.BoxDecoration(color: PdfColors.grey100),
       cellAlignments: alignments,
     );
   }

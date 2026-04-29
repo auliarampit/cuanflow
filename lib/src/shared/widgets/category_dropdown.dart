@@ -1,3 +1,4 @@
+import 'package:cari_untung/src/core/config/feature_config.dart';
 import 'package:flutter/material.dart';
 
 import '../../core/models/user_category.dart';
@@ -32,91 +33,117 @@ class CategoryDropdown extends StatelessWidget {
       decoration: InputDecoration(
         prefixIcon: Icon(Icons.category_outlined, color: accentColor, size: 20),
         hintText: hint,
-        contentPadding: const EdgeInsets.symmetric(vertical: 14, horizontal: 12),
+        contentPadding: const EdgeInsets.symmetric(
+          vertical: 14,
+          horizontal: 12,
+        ),
       ),
       dropdownColor: context.appColors.card,
       borderRadius: BorderRadius.circular(14),
-      icon: Icon(Icons.keyboard_arrow_down_rounded,
-          color: context.appColors.textSecondary),
+      icon: Icon(
+        Icons.keyboard_arrow_down_rounded,
+        color: context.appColors.textSecondary,
+      ),
       selectedItemBuilder: (context) => categories
-          .map((cat) => Align(
-                alignment: Alignment.centerLeft,
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Flexible(
-                      child: Text(
-                        cat.name,
+          .map(
+            (cat) => Align(
+              alignment: Alignment.centerLeft,
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Flexible(
+                    child: Text(
+                      cat.name,
+                      style: TextStyle(
+                        fontWeight: FontWeight.w700,
+                        color: accentColor,
+                      ),
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                  if (cat.isStockPurchase &&
+                      useFeature(
+                        Feature.production,
+                        context.appState.profile,
+                      )) ...[
+                    const SizedBox(width: 6),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 6,
+                        vertical: 2,
+                      ),
+                      decoration: BoxDecoration(
+                        color: _stockColor.withValues(alpha: 0.15),
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                      child: const Text(
+                        '📦 Stok',
                         style: TextStyle(
+                          fontSize: 10,
                           fontWeight: FontWeight.w700,
-                          color: accentColor,
+                          color: _stockColor,
                         ),
-                        overflow: TextOverflow.ellipsis,
                       ),
                     ),
-                    if (cat.isStockPurchase && context.appState.profile.isBusinessMode) ...[
-                      const SizedBox(width: 6),
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                        decoration: BoxDecoration(
-                          color: _stockColor.withValues(alpha: 0.15),
-                          borderRadius: BorderRadius.circular(4),
-                        ),
-                        child: const Text(
-                          '📦 Stok',
-                          style: TextStyle(
-                            fontSize: 10,
-                            fontWeight: FontWeight.w700,
-                            color: _stockColor,
-                          ),
-                        ),
-                      ),
-                    ],
                   ],
-                ),
-              ))
+                ],
+              ),
+            ),
+          )
           .toList(),
       items: categories
-          .map((cat) => DropdownMenuItem<UserCategory>(
-                value: cat,
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: Text(
-                        cat.name,
-                        style: TextStyle(
-                          fontWeight: FontWeight.w600,
-                          color: context.appColors.textPrimary,
-                        ),
+          .map(
+            (cat) => DropdownMenuItem<UserCategory>(
+              value: cat,
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      cat.name,
+                      style: TextStyle(
+                        fontWeight: FontWeight.w600,
+                        color: context.appColors.textPrimary,
                       ),
                     ),
-                    if (cat.isStockPurchase && context.appState.profile.isBusinessMode)
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                        decoration: BoxDecoration(
-                          color: _stockColor.withValues(alpha: 0.15),
-                          borderRadius: BorderRadius.circular(4),
-                          border: Border.all(color: _stockColor.withValues(alpha: 0.3)),
-                        ),
-                        child: const Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Icon(Icons.inventory_2_outlined, size: 10, color: _stockColor),
-                            SizedBox(width: 3),
-                            Text(
-                              'Stok',
-                              style: TextStyle(
-                                fontSize: 10,
-                                fontWeight: FontWeight.w700,
-                                color: _stockColor,
-                              ),
-                            ),
-                          ],
+                  ),
+                  if (cat.isStockPurchase &&
+                      useFeature(Feature.production, context.appState.profile))
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 6,
+                        vertical: 2,
+                      ),
+                      decoration: BoxDecoration(
+                        color: _stockColor.withValues(alpha: 0.15),
+                        borderRadius: BorderRadius.circular(4),
+                        border: Border.all(
+                          color: _stockColor.withValues(alpha: 0.3),
                         ),
                       ),
-                  ],
-                ),
-              ))
+                      child: const Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            Icons.inventory_2_outlined,
+                            size: 10,
+                            color: _stockColor,
+                          ),
+                          SizedBox(width: 3),
+                          Text(
+                            'Stok',
+                            style: TextStyle(
+                              fontSize: 10,
+                              fontWeight: FontWeight.w700,
+                              color: _stockColor,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                ],
+              ),
+            ),
+          )
           .toList(),
       onChanged: onChanged,
     );

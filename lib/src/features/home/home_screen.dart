@@ -5,6 +5,7 @@ import 'package:cari_untung/src/core/ui/responsive_utils.dart';
 import 'package:flutter/material.dart';
 
 import '../../core/state/app_state.dart';
+import 'package:cari_untung/src/core/config/feature_config.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_dynamic_colors.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
@@ -251,11 +252,11 @@ class _HomeScreenState extends State<HomeScreen> {
 
     final isTablet = context.isTablet;
 
-    final isBusiness = profile.isBusinessMode;
+    final isFastSaleEnabled = useFeature(Feature.quickSale, profile);
     final dailyCard = _buildProfitCard(
       title: dailySummary.netProfit < 0
-          ? context.t(isBusiness ? 'home.todayLoss' : 'home.todayDeficit')
-          : context.t(isBusiness ? 'home.todayProfit' : 'home.todayBalance'),
+          ? context.t(useFeature(Feature.stock, profile) ? 'home.todayLoss' : 'home.todayDeficit')
+          : context.t(useFeature(Feature.stock, profile) ? 'home.todayProfit' : 'home.todayBalance'),
       currentProfit: dailySummary.netProfit,
       prevProfit: prevDailySummary.netProfit,
       comparisonLabel: 'vs ${context.t('home.yesterday')}',
@@ -263,8 +264,8 @@ class _HomeScreenState extends State<HomeScreen> {
 
     final weeklyCard = _buildProfitCard(
       title: weeklySummary.netProfit < 0
-          ? context.t(isBusiness ? 'home.weeklyLoss' : 'home.weeklyDeficit')
-          : context.t(isBusiness ? 'home.weeklyProfit' : 'home.weeklyBalance'),
+          ? context.t(useFeature(Feature.stock, profile) ? 'home.weeklyLoss' : 'home.weeklyDeficit')
+          : context.t(useFeature(Feature.stock, profile) ? 'home.weeklyProfit' : 'home.weeklyBalance'),
       currentProfit: weeklySummary.netProfit,
       prevProfit: prevWeeklySummary.netProfit,
       comparisonLabel: 'vs ${context.t('home.lastWeek')}',
@@ -360,8 +361,8 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
           ],
           const SizedBox(height: 14),
-          if (!isBusiness) _TotalBalanceCard(),
-          if (!isBusiness) const SizedBox(height: 14),
+          if (!useFeature(Feature.stock, profile)) _TotalBalanceCard(),
+          if (!useFeature(Feature.stock, profile)) const SizedBox(height: 14),
           Row(
             children: [
               Expanded(
@@ -472,7 +473,7 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
           const SizedBox(height: 14),
           // ── Low-stock alert (business only) ──────────────────────────
-          if (isBusiness) ...[
+          if (useFeature(Feature.stock, profile)) ...[
             Builder(
               builder: (context) {
                 final lowStock = context.appState.lowStockItems;
@@ -552,8 +553,8 @@ class _HomeScreenState extends State<HomeScreen> {
               label: Text(context.t('home.addExpense')),
             ),
           ),
-          // ── Quick sale shortcut (business only) ──────────────────────
-          if (isBusiness) ...[
+          // ── Quick sale shortcut (feature flag) ──────────────────────
+          if (isFastSaleEnabled) ...[
             const SizedBox(height: 10),
             SizedBox(
               width: double.infinity,

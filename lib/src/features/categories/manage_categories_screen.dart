@@ -1,3 +1,4 @@
+import 'package:cari_untung/src/core/config/feature_config.dart';
 import 'package:flutter/material.dart';
 
 import '../../core/localization/transalation_extansions.dart';
@@ -59,7 +60,9 @@ class _ManageCategoriesScreenState extends State<ManageCategoriesScreen>
       context: context,
       builder: (ctx) => AlertDialog(
         title: Text(ctx.t('category.delete.title')),
-        content: Text(ctx.t('category.delete.content', {'name': category.name})),
+        content: Text(
+          ctx.t('category.delete.content', {'name': category.name}),
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
@@ -70,7 +73,10 @@ class _ManageCategoriesScreenState extends State<ManageCategoriesScreen>
               Navigator.pop(ctx);
               context.appState.deleteCategory(category.id);
             },
-            child: Text(ctx.t('history.menu.delete'), style: const TextStyle(color: AppColors.negative)),
+            child: Text(
+              ctx.t('history.menu.delete'),
+              style: const TextStyle(color: AppColors.negative),
+            ),
           ),
         ],
       ),
@@ -79,10 +85,12 @@ class _ManageCategoriesScreenState extends State<ManageCategoriesScreen>
 
   @override
   Widget build(BuildContext context) {
-    final incomeList = context.appState
-        .categoriesFor(MoneyTransactionType.income);
-    final expenseList = context.appState
-        .categoriesFor(MoneyTransactionType.expense);
+    final incomeList = context.appState.categoriesFor(
+      MoneyTransactionType.income,
+    );
+    final expenseList = context.appState.categoriesFor(
+      MoneyTransactionType.expense,
+    );
 
     return AppGradientScaffold(
       appBar: AppBar(
@@ -162,8 +170,14 @@ class _CategoryTab extends StatelessWidget {
                 category: cat,
                 accentColor: accentColor,
                 onDelete: cat.isDefault ? null : () => onDelete(cat),
-                onToggleStock: isExpense && !cat.isDefault && context.appState.profile.isBusinessMode
-                    ? (isStock) => context.appState.updateCategoryStockFlag(cat.id, isStock: isStock)
+                onToggleStock:
+                    isExpense &&
+                        !cat.isDefault &&
+                        useFeature(Feature.production, context.appState.profile)
+                    ? (isStock) => context.appState.updateCategoryStockFlag(
+                        cat.id,
+                        isStock: isStock,
+                      )
                     : null,
               );
             },

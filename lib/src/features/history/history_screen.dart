@@ -431,7 +431,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
                       totalIncome: totalIncome,
                       totalExpense: totalExpense,
                       totalProfit: totalProfit,
-                      isBusinessMode: context.appState.profile.isBusinessMode,
+                      isProductionMode: context.appState.profile.isBusinessMode,
                     ),
                   ),
                 ),

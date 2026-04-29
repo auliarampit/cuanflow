@@ -1,5 +1,4 @@
 import 'package:cari_untung/src/core/theme/app_colors.dart';
-import 'package:cari_untung/src/shared/widgets/app_banner_ad.dart';
 import 'package:flutter/material.dart';
 
 class AppGradientScaffold extends StatelessWidget {

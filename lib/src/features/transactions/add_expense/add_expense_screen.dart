@@ -1,3 +1,4 @@
+import 'package:cari_untung/src/core/config/feature_config.dart';
 import 'package:collection/collection.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -76,7 +77,8 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
 
     final wallets = context.appState.wallets;
     if (_selectedWalletId == null && wallets.isNotEmpty) {
-      final def = wallets.where((w) => w.isDefault).firstOrNull ?? wallets.first;
+      final def =
+          wallets.where((w) => w.isDefault).firstOrNull ?? wallets.first;
       _selectedWalletId = def.id;
     }
 
@@ -105,36 +107,44 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
     final amount = int.tryParse(rawAmount) ?? 0;
 
     if (amount <= 0) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        content: Text(context.t('bulk.validation.amountRequired')),
-        backgroundColor: AppColors.negative,
-      ));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(context.t('bulk.validation.amountRequired')),
+          backgroundColor: AppColors.negative,
+        ),
+      );
       return;
     }
     if (_selectedCategory == null) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        content: Text(context.t('common.validation.mandatory')),
-        backgroundColor: AppColors.negative,
-      ));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(context.t('common.validation.mandatory')),
+          backgroundColor: AppColors.negative,
+        ),
+      );
       return;
     }
     if (_noteController.text.trim().isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        content: Text(context.t('common.validation.mandatory')),
-        backgroundColor: AppColors.negative,
-      ));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(context.t('common.validation.mandatory')),
+          backgroundColor: AppColors.negative,
+        ),
+      );
       return;
     }
 
     setState(() {
-      _items.add(_BulkItem(
-        amount: amount,
-        category: _selectedCategory!.label,
-        note: _noteController.text.trim(),
-        outletId: _selectedOutletId,
-        walletId: _selectedWalletId,
-        isStockPurchase: _selectedCategory!.isStockPurchase,
-      ));
+      _items.add(
+        _BulkItem(
+          amount: amount,
+          category: _selectedCategory!.label,
+          note: _noteController.text.trim(),
+          outletId: _selectedOutletId,
+          walletId: _selectedWalletId,
+          isStockPurchase: _selectedCategory!.isStockPurchase,
+        ),
+      );
       _amountController.clear();
       _noteController.clear();
       _selectedCategory = null;
@@ -146,10 +156,12 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
 
   void _saveAll() {
     if (_items.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        content: Text(context.t('bulk.validation.emptyList')),
-        backgroundColor: AppColors.negative,
-      ));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(context.t('bulk.validation.emptyList')),
+          backgroundColor: AppColors.negative,
+        ),
+      );
       return;
     }
 
@@ -164,12 +176,14 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
       );
     }
 
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-      content: Text(
-        context.t('bulk.saveSuccess', {'count': _items.length.toString()}),
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          context.t('bulk.saveSuccess', {'count': _items.length.toString()}),
+        ),
+        backgroundColor: AppColors.positive,
       ),
-      backgroundColor: AppColors.positive,
-    ));
+    );
 
     Navigator.of(context).pop();
   }
@@ -180,33 +194,41 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
     if (amount <= 0) return;
 
     if (_selectedCategory == null) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        content: Text(context.t('common.validation.mandatory')),
-        backgroundColor: AppColors.negative,
-      ));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(context.t('common.validation.mandatory')),
+          backgroundColor: AppColors.negative,
+        ),
+      );
       return;
     }
     if (_noteController.text.trim().isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        content: Text(context.t('common.validation.mandatory')),
-        backgroundColor: AppColors.negative,
-      ));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(context.t('common.validation.mandatory')),
+          backgroundColor: AppColors.negative,
+        ),
+      );
       return;
     }
 
-    context.appState.updateTransaction(widget.transaction!.copyWith(
-      amount: amount,
-      note: _noteController.text.trim(),
-      category: _selectedCategory!.label,
-      outletId: _selectedOutletId,
-      walletId: _selectedWalletId,
-      effectiveDate: _selectedDate,
-    ));
+    context.appState.updateTransaction(
+      widget.transaction!.copyWith(
+        amount: amount,
+        note: _noteController.text.trim(),
+        category: _selectedCategory!.label,
+        outletId: _selectedOutletId,
+        walletId: _selectedWalletId,
+        effectiveDate: _selectedDate,
+      ),
+    );
 
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-      content: Text(context.t('common.validation.success')),
-      backgroundColor: AppColors.positive,
-    ));
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(context.t('common.validation.success')),
+        backgroundColor: AppColors.positive,
+      ),
+    );
 
     Navigator.of(context).pop();
   }
@@ -215,7 +237,10 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
   Widget build(BuildContext context) {
     final categories = _buildCategories(context);
     final featureOutlets = context.appState.profile.featureOutlets;
-    final isBusinessMode = context.appState.profile.isBusinessMode;
+    final isBusinessMode = useFeature(
+      Feature.production,
+      context.appState.profile,
+    );
 
     return AppGradientScaffold(
       appBar: AppBar(
@@ -235,8 +260,9 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
           icon: const Icon(Icons.close),
         ),
       ),
-      bottomNavigationBar:
-          _isEditMode ? null : _BottomBar(items: _items, onSave: _saveAll),
+      bottomNavigationBar: _isEditMode
+          ? null
+          : _BottomBar(items: _items, onSave: _saveAll),
       body: SingleChildScrollView(
         padding: EdgeInsets.fromLTRB(
           18,
@@ -266,7 +292,9 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
                   borderRadius: BorderRadius.circular(999),
                   child: Container(
                     padding: const EdgeInsets.symmetric(
-                        horizontal: 18, vertical: 10),
+                      horizontal: 18,
+                      vertical: 10,
+                    ),
                     decoration: BoxDecoration(
                       color: context.appColors.cardSoft,
                       borderRadius: BorderRadius.circular(999),
@@ -275,8 +303,11 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        Icon(Icons.calendar_today_outlined,
-                            size: 18, color: context.appColors.textSecondary),
+                        Icon(
+                          Icons.calendar_today_outlined,
+                          size: 18,
+                          color: context.appColors.textSecondary,
+                        ),
                         const SizedBox(width: 10),
                         Text(
                           '${_selectedDate.day}/${_selectedDate.month}/${_selectedDate.year}',
@@ -316,8 +347,10 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
                         borderRadius: BorderRadius.circular(999),
                       ),
                       alignment: Alignment.center,
-                      child: const Icon(Icons.remove,
-                          color: AppColors.negative),
+                      child: const Icon(
+                        Icons.remove,
+                        color: AppColors.negative,
+                      ),
                     ),
                     const SizedBox(width: 14),
                     Expanded(
@@ -348,8 +381,9 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
                               hintStyle: TextStyle(
                                 fontSize: 44,
                                 fontWeight: FontWeight.w900,
-                                color: context.appColors.textPrimary
-                                    .withValues(alpha: 0.3),
+                                color: context.appColors.textPrimary.withValues(
+                                  alpha: 0.3,
+                                ),
                               ),
                               border: InputBorder.none,
                               isDense: true,
@@ -359,8 +393,10 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
                         ],
                       ),
                     ),
-                    Icon(Icons.unfold_more,
-                        color: context.appColors.textSecondary),
+                    Icon(
+                      Icons.unfold_more,
+                      color: context.appColors.textSecondary,
+                    ),
                   ],
                 ),
               ),
@@ -389,7 +425,7 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
                   onChanged: (id) => setState(() => _selectedOutletId = id),
                 ),
               ],
-              if (!context.appState.profile.isBusinessMode &&
+              if (!useFeature(Feature.production, context.appState.profile) &&
                   context.appState.wallets.isNotEmpty) ...[
                 const SizedBox(height: 18),
                 _WalletSelectorBlock(
@@ -404,7 +440,8 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
                 accentColor: AppColors.negative,
                 onChanged: (cat) => setState(() => _selectedCategory = cat),
               ),
-              if (isBusinessMode && _selectedCategory?.isStockPurchase == true) ...[
+              if (isBusinessMode &&
+                  _selectedCategory?.isStockPurchase == true) ...[
                 const SizedBox(height: 8),
                 _StockInfoBanner(),
               ],
@@ -447,13 +484,14 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
                       // Amount
                       Container(
                         padding: const EdgeInsets.symmetric(
-                            horizontal: 14, vertical: 10),
+                          horizontal: 14,
+                          vertical: 10,
+                        ),
                         decoration: BoxDecoration(
                           color: AppColors.negative.withValues(alpha: 0.06),
                           borderRadius: BorderRadius.circular(14),
                           border: Border.all(
-                            color:
-                                AppColors.negative.withValues(alpha: 0.4),
+                            color: AppColors.negative.withValues(alpha: 0.4),
                             width: 1.5,
                           ),
                         ),
@@ -463,13 +501,17 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
                               width: 40,
                               height: 40,
                               decoration: BoxDecoration(
-                                color: AppColors.negative
-                                    .withValues(alpha: 0.15),
+                                color: AppColors.negative.withValues(
+                                  alpha: 0.15,
+                                ),
                                 shape: BoxShape.circle,
                               ),
                               alignment: Alignment.center,
-                              child: const Icon(Icons.remove,
-                                  color: AppColors.negative, size: 20),
+                              child: const Icon(
+                                Icons.remove,
+                                color: AppColors.negative,
+                                size: 20,
+                              ),
                             ),
                             const SizedBox(width: 12),
                             Expanded(
@@ -566,7 +608,9 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
                   onPressed: _addToList,
                   style: OutlinedButton.styleFrom(
                     side: const BorderSide(
-                        color: AppColors.negative, width: 1.5),
+                      color: AppColors.negative,
+                      width: 1.5,
+                    ),
                     foregroundColor: AppColors.negative,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(14),
@@ -576,7 +620,9 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
                   label: Text(
                     context.t('bulk.addToList'),
                     style: const TextStyle(
-                        fontWeight: FontWeight.w800, letterSpacing: 1),
+                      fontWeight: FontWeight.w800,
+                      letterSpacing: 1,
+                    ),
                   ),
                 ),
               ),
@@ -609,7 +655,9 @@ class _StockInfoBanner extends StatelessWidget {
       decoration: BoxDecoration(
         color: const Color(0xFFFF9F00).withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: const Color(0xFFFF9F00).withValues(alpha: 0.3)),
+        border: Border.all(
+          color: const Color(0xFFFF9F00).withValues(alpha: 0.3),
+        ),
       ),
       child: const Row(
         children: [
@@ -645,8 +693,18 @@ class _DateRowPicker extends StatelessWidget {
 
   String _formatDate(DateTime d) {
     const months = [
-      'Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun',
-      'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des',
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'Mei',
+      'Jun',
+      'Jul',
+      'Agu',
+      'Sep',
+      'Okt',
+      'Nov',
+      'Des',
     ];
     return '${d.day} ${months[d.month - 1]} ${d.year}';
   }
@@ -681,8 +739,11 @@ class _DateRowPicker extends StatelessWidget {
                 borderRadius: BorderRadius.circular(10),
               ),
               alignment: Alignment.center,
-              child: Icon(Icons.calendar_month_outlined,
-                  color: accentColor, size: 20),
+              child: Icon(
+                Icons.calendar_month_outlined,
+                color: accentColor,
+                size: 20,
+              ),
             ),
             const SizedBox(width: 12),
             Expanded(
@@ -696,8 +757,7 @@ class _DateRowPicker extends StatelessWidget {
               ),
             ),
             Container(
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
               decoration: BoxDecoration(
                 color: context.appColors.card,
                 borderRadius: BorderRadius.circular(999),
@@ -715,8 +775,11 @@ class _DateRowPicker extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(width: 4),
-                  Icon(Icons.keyboard_arrow_down_rounded,
-                      size: 16, color: context.appColors.textSecondary),
+                  Icon(
+                    Icons.keyboard_arrow_down_rounded,
+                    size: 16,
+                    color: context.appColors.textSecondary,
+                  ),
                 ],
               ),
             ),
@@ -747,7 +810,7 @@ class _OutletPill extends StatelessWidget {
     final outletName = selectedOutletId == null
         ? context.t('outlet.allOutlets')
         : outlets.firstWhereOrNull((o) => o.id == selectedOutletId)?.name ??
-            context.t('outlet.selectOutlet');
+              context.t('outlet.selectOutlet');
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -766,19 +829,16 @@ class _OutletPill extends StatelessWidget {
           onTap: () => _showSheet(context, outlets),
           borderRadius: BorderRadius.circular(999),
           child: Container(
-            padding:
-                const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
             decoration: BoxDecoration(
               color: accentColor.withValues(alpha: 0.08),
               borderRadius: BorderRadius.circular(999),
-              border:
-                  Border.all(color: accentColor.withValues(alpha: 0.4)),
+              border: Border.all(color: accentColor.withValues(alpha: 0.4)),
             ),
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Icon(Icons.storefront_outlined,
-                    size: 16, color: accentColor),
+                Icon(Icons.storefront_outlined, size: 16, color: accentColor),
                 const SizedBox(width: 6),
                 Text(
                   outletName,
@@ -789,8 +849,11 @@ class _OutletPill extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(width: 4),
-                Icon(Icons.expand_more,
-                    size: 16, color: context.appColors.textSecondary),
+                Icon(
+                  Icons.expand_more,
+                  size: 16,
+                  color: context.appColors.textSecondary,
+                ),
               ],
             ),
           ),
@@ -817,7 +880,9 @@ class _OutletPill extends StatelessWidget {
                 child: Text(
                   context.t('outlet.selectOutlet'),
                   style: const TextStyle(
-                      fontWeight: FontWeight.w800, fontSize: 16),
+                    fontWeight: FontWeight.w800,
+                    fontSize: 16,
+                  ),
                 ),
               ),
             ),
@@ -875,8 +940,7 @@ class _ItemListCard extends StatelessWidget {
           children: [
             Row(
               children: [
-                Icon(Icons.list_alt_outlined,
-                    size: 18, color: accentColor),
+                Icon(Icons.list_alt_outlined, size: 18, color: accentColor),
                 const SizedBox(width: 8),
                 Text(
                   context.t('bulk.itemList', {'count': '${items.length}'}),
@@ -890,13 +954,13 @@ class _ItemListCard extends StatelessWidget {
             ),
             const SizedBox(height: 10),
             for (int i = 0; i < items.length; i++) ...[
-              if (i > 0)
-                Divider(height: 1, color: context.appColors.outline),
+              if (i > 0) Divider(height: 1, color: context.appColors.outline),
               _ItemTile(
-                  item: items[i],
-                  index: i,
-                  accentColor: accentColor,
-                  onDelete: onDelete),
+                item: items[i],
+                index: i,
+                accentColor: accentColor,
+                onDelete: onDelete,
+              ),
             ],
           ],
         ),
@@ -923,8 +987,8 @@ class _ItemTile extends StatelessWidget {
     final outletName = item.outletId == null
         ? null
         : context.appState.outlets
-            .firstWhereOrNull((o) => o.id == item.outletId)
-            ?.name;
+              .firstWhereOrNull((o) => o.id == item.outletId)
+              ?.name;
 
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8),
@@ -955,52 +1019,66 @@ class _ItemTile extends StatelessWidget {
                 Text(
                   IdrFormatter.format(item.amount),
                   style: TextStyle(
-                      fontWeight: FontWeight.w800, color: accentColor),
+                    fontWeight: FontWeight.w800,
+                    color: accentColor,
+                  ),
                 ),
                 if (item.note != null)
                   Text(
                     item.note!,
                     style: TextStyle(
-                        fontSize: 12,
-                        color: context.appColors.textPrimary),
+                      fontSize: 12,
+                      color: context.appColors.textPrimary,
+                    ),
                   ),
                 Row(
                   children: [
                     Text(
                       item.category,
                       style: TextStyle(
-                          fontSize: 12,
-                          color: context.appColors.textSecondary),
+                        fontSize: 12,
+                        color: context.appColors.textSecondary,
+                      ),
                     ),
-                    if (context.appState.profile.isBusinessMode && item.isStockPurchase) ...[
+                    if (useFeature(
+                          Feature.production,
+                          context.appState.profile,
+                        ) &&
+                        item.isStockPurchase) ...[
                       const SizedBox(width: 5),
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 5,
+                          vertical: 1,
+                        ),
                         decoration: BoxDecoration(
-                          color: const Color(0xFFFF9F00).withValues(alpha: 0.15),
+                          color: const Color(
+                            0xFFFF9F00,
+                          ).withValues(alpha: 0.15),
                           borderRadius: BorderRadius.circular(4),
                         ),
-                        child: const Text(
-                          '📦',
-                          style: TextStyle(fontSize: 9),
-                        ),
+                        child: const Text('📦', style: TextStyle(fontSize: 9)),
                       ),
                     ],
                     if (outletName != null) ...[
                       Text(
                         '  ·  ',
                         style: TextStyle(
-                            color: context.appColors.textSecondary),
+                          color: context.appColors.textSecondary,
+                        ),
                       ),
-                      Icon(Icons.storefront_outlined,
-                          size: 12,
-                          color: context.appColors.textSecondary),
+                      Icon(
+                        Icons.storefront_outlined,
+                        size: 12,
+                        color: context.appColors.textSecondary,
+                      ),
                       const SizedBox(width: 3),
                       Text(
                         outletName,
                         style: TextStyle(
-                            fontSize: 12,
-                            color: context.appColors.textSecondary),
+                          fontSize: 12,
+                          color: context.appColors.textSecondary,
+                        ),
                       ),
                     ],
                   ],
@@ -1009,8 +1087,11 @@ class _ItemTile extends StatelessWidget {
             ),
           ),
           IconButton(
-            icon: const Icon(Icons.delete_outline,
-                size: 18, color: AppColors.negative),
+            icon: const Icon(
+              Icons.delete_outline,
+              size: 18,
+              color: AppColors.negative,
+            ),
             onPressed: () => onDelete(index),
             padding: EdgeInsets.zero,
             constraints: const BoxConstraints(),
@@ -1037,8 +1118,7 @@ class _BottomBar extends StatelessWidget {
         padding: const EdgeInsets.fromLTRB(18, 12, 18, 12),
         decoration: BoxDecoration(
           color: context.appColors.card,
-          border: Border(
-              top: BorderSide(color: context.appColors.outline)),
+          border: Border(top: BorderSide(color: context.appColors.outline)),
         ),
         child: Row(
           children: [
@@ -1081,7 +1161,9 @@ class _BottomBar extends StatelessWidget {
               child: Text(
                 context.t('bulk.saveAll', {'count': '${items.length}'}),
                 style: const TextStyle(
-                    fontWeight: FontWeight.w800, letterSpacing: 1),
+                  fontWeight: FontWeight.w800,
+                  letterSpacing: 1,
+                ),
               ),
             ),
           ],
@@ -1093,8 +1175,10 @@ class _BottomBar extends StatelessWidget {
 
 // ─── Outlet selector block (edit mode) ──────────────────────────────────────
 class _OutletSelectorBlock extends StatelessWidget {
-  const _OutletSelectorBlock(
-      {required this.selectedOutletId, required this.onChanged});
+  const _OutletSelectorBlock({
+    required this.selectedOutletId,
+    required this.onChanged,
+  });
 
   final String? selectedOutletId;
   final ValueChanged<String?> onChanged;
@@ -1107,7 +1191,7 @@ class _OutletSelectorBlock extends StatelessWidget {
     final selectedName = selectedOutletId == null
         ? context.t('outlet.allOutlets')
         : outlets.firstWhereOrNull((o) => o.id == selectedOutletId)?.name ??
-            context.t('outlet.selectOutlet');
+              context.t('outlet.selectOutlet');
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -1126,8 +1210,7 @@ class _OutletSelectorBlock extends StatelessWidget {
             context: context,
             backgroundColor: context.appColors.card,
             shape: const RoundedRectangleBorder(
-              borderRadius:
-                  BorderRadius.vertical(top: Radius.circular(20)),
+              borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
             ),
             builder: (ctx) => SafeArea(
               child: Column(
@@ -1140,7 +1223,9 @@ class _OutletSelectorBlock extends StatelessWidget {
                       child: Text(
                         context.t('outlet.selectOutlet'),
                         style: const TextStyle(
-                            fontWeight: FontWeight.w800, fontSize: 16),
+                          fontWeight: FontWeight.w800,
+                          fontSize: 16,
+                        ),
                       ),
                     ),
                   ),
@@ -1148,8 +1233,7 @@ class _OutletSelectorBlock extends StatelessWidget {
                     leading: const Icon(Icons.store_outlined),
                     title: Text(context.t('outlet.allOutlets')),
                     trailing: selectedOutletId == null
-                        ? const Icon(Icons.check,
-                            color: AppColors.brandBlue)
+                        ? const Icon(Icons.check, color: AppColors.brandBlue)
                         : null,
                     onTap: () {
                       onChanged(null);
@@ -1162,8 +1246,7 @@ class _OutletSelectorBlock extends StatelessWidget {
                       leading: const Icon(Icons.storefront_outlined),
                       title: Text(o.name),
                       trailing: selectedOutletId == o.id
-                          ? const Icon(Icons.check,
-                              color: AppColors.brandBlue)
+                          ? const Icon(Icons.check, color: AppColors.brandBlue)
                           : null,
                       onTap: () {
                         onChanged(o.id);
@@ -1176,8 +1259,7 @@ class _OutletSelectorBlock extends StatelessWidget {
             ),
           ),
           child: Container(
-            padding: const EdgeInsets.symmetric(
-                horizontal: 14, vertical: 14),
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
             decoration: BoxDecoration(
               color: context.appColors.cardSoft,
               borderRadius: BorderRadius.circular(14),
@@ -1188,12 +1270,13 @@ class _OutletSelectorBlock extends StatelessWidget {
             ),
             child: Row(
               children: [
-                const Icon(Icons.storefront_outlined,
-                    color: AppColors.negative),
+                const Icon(
+                  Icons.storefront_outlined,
+                  color: AppColors.negative,
+                ),
                 const SizedBox(width: 10),
                 Expanded(child: Text(selectedName)),
-                Icon(Icons.expand_more,
-                    color: context.appColors.textSecondary),
+                Icon(Icons.expand_more, color: context.appColors.textSecondary),
               ],
             ),
           ),
@@ -1219,13 +1302,15 @@ class _WalletSelectorBlock extends StatelessWidget {
     final selectedName = selectedWalletId == null
         ? context.t('wallet.noWallet')
         : wallets.firstWhereOrNull((w) => w.id == selectedWalletId)?.name ??
-            context.t('wallet.selector');
+              context.t('wallet.selector');
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(context.t('wallet.selector'),
-            style: const TextStyle(fontWeight: FontWeight.w700)),
+        Text(
+          context.t('wallet.selector'),
+          style: const TextStyle(fontWeight: FontWeight.w700),
+        ),
         const SizedBox(height: 10),
         InkWell(
           onTap: () => _showSheet(context, wallets),
@@ -1238,12 +1323,13 @@ class _WalletSelectorBlock extends StatelessWidget {
             ),
             child: Row(
               children: [
-                const Icon(Icons.account_balance_wallet_outlined,
-                    color: AppColors.negative),
+                const Icon(
+                  Icons.account_balance_wallet_outlined,
+                  color: AppColors.negative,
+                ),
                 const SizedBox(width: 10),
                 Expanded(child: Text(selectedName)),
-                Icon(Icons.expand_more,
-                    color: context.appColors.textSecondary),
+                Icon(Icons.expand_more, color: context.appColors.textSecondary),
               ],
             ),
           ),
@@ -1270,7 +1356,9 @@ class _WalletSelectorBlock extends StatelessWidget {
                 child: Text(
                   context.t('wallet.selector'),
                   style: const TextStyle(
-                      fontWeight: FontWeight.w800, fontSize: 16),
+                    fontWeight: FontWeight.w800,
+                    fontSize: 16,
+                  ),
                 ),
               ),
             ),
@@ -1325,7 +1413,7 @@ class _WalletPill extends StatelessWidget {
     final walletName = selectedWalletId == null
         ? context.t('wallet.noWallet')
         : wallets.firstWhereOrNull((w) => w.id == selectedWalletId)?.name ??
-            context.t('wallet.selector');
+              context.t('wallet.selector');
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -1353,8 +1441,11 @@ class _WalletPill extends StatelessWidget {
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Icon(Icons.account_balance_wallet_outlined,
-                    size: 16, color: accentColor),
+                Icon(
+                  Icons.account_balance_wallet_outlined,
+                  size: 16,
+                  color: accentColor,
+                ),
                 const SizedBox(width: 6),
                 Text(
                   walletName,
@@ -1365,8 +1456,11 @@ class _WalletPill extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(width: 4),
-                Icon(Icons.expand_more,
-                    size: 16, color: context.appColors.textSecondary),
+                Icon(
+                  Icons.expand_more,
+                  size: 16,
+                  color: context.appColors.textSecondary,
+                ),
               ],
             ),
           ),
@@ -1393,7 +1487,9 @@ class _WalletPill extends StatelessWidget {
                 child: Text(
                   context.t('wallet.selector'),
                   style: const TextStyle(
-                      fontWeight: FontWeight.w800, fontSize: 16),
+                    fontWeight: FontWeight.w800,
+                    fontSize: 16,
+                  ),
                 ),
               ),
             ),
@@ -1429,4 +1525,3 @@ class _WalletPill extends StatelessWidget {
     );
   }
 }
-

@@ -1,3 +1,4 @@
+import 'package:cari_untung/src/core/config/feature_config.dart';
 import 'package:cari_untung/src/core/ui/app_gradient_scaffold.dart';
 import 'package:collection/collection.dart';
 import 'package:flutter/material.dart';
@@ -15,7 +16,13 @@ import '../../../shared/widgets/category_dropdown.dart';
 
 // ─── Bulk item model ────────────────────────────────────────────────────────
 class _BulkItem {
-  _BulkItem({required this.amount, required this.category, this.note, this.outletId, this.walletId});
+  _BulkItem({
+    required this.amount,
+    required this.category,
+    this.note,
+    this.outletId,
+    this.walletId,
+  });
   final int amount;
   final String category;
   final String? note;
@@ -73,7 +80,8 @@ class _AddIncomeScreenState extends State<AddIncomeScreen> {
 
     final wallets = context.appState.wallets;
     if (_selectedWalletId == null && wallets.isNotEmpty) {
-      final def = wallets.where((w) => w.isDefault).firstOrNull ?? wallets.first;
+      final def =
+          wallets.where((w) => w.isDefault).firstOrNull ?? wallets.first;
       _selectedWalletId = def.id;
     }
 
@@ -102,27 +110,35 @@ class _AddIncomeScreenState extends State<AddIncomeScreen> {
     final amount = int.tryParse(rawAmount) ?? 0;
 
     if (amount <= 0) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        content: Text(context.t('bulk.validation.amountRequired')),
-        backgroundColor: AppColors.negative,
-      ));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(context.t('bulk.validation.amountRequired')),
+          backgroundColor: AppColors.negative,
+        ),
+      );
       return;
     }
     if (_selectedCategory == null) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        content: Text(context.t('income.validation.categoryRequired')),
-        backgroundColor: AppColors.negative,
-      ));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(context.t('income.validation.categoryRequired')),
+          backgroundColor: AppColors.negative,
+        ),
+      );
       return;
     }
     setState(() {
-      _items.add(_BulkItem(
-        amount: amount,
-        category: _selectedCategory!.label,
-        note: _noteController.text.trim().isEmpty ? null : _noteController.text.trim(),
-        outletId: _selectedOutletId,
-        walletId: _selectedWalletId,
-      ));
+      _items.add(
+        _BulkItem(
+          amount: amount,
+          category: _selectedCategory!.label,
+          note: _noteController.text.trim().isEmpty
+              ? null
+              : _noteController.text.trim(),
+          outletId: _selectedOutletId,
+          walletId: _selectedWalletId,
+        ),
+      );
       _amountController.clear();
       _noteController.clear();
       _selectedCategory = null;
@@ -133,10 +149,12 @@ class _AddIncomeScreenState extends State<AddIncomeScreen> {
 
   void _saveAll() {
     if (_items.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        content: Text(context.t('bulk.validation.emptyList')),
-        backgroundColor: AppColors.negative,
-      ));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(context.t('bulk.validation.emptyList')),
+          backgroundColor: AppColors.negative,
+        ),
+      );
       return;
     }
 
@@ -151,12 +169,14 @@ class _AddIncomeScreenState extends State<AddIncomeScreen> {
       );
     }
 
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-      content: Text(
-        context.t('bulk.saveSuccess', {'count': _items.length.toString()}),
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          context.t('bulk.saveSuccess', {'count': _items.length.toString()}),
+        ),
+        backgroundColor: AppColors.positive,
       ),
-      backgroundColor: AppColors.positive,
-    ));
+    );
 
     Navigator.of(context).pop();
   }
@@ -167,26 +187,34 @@ class _AddIncomeScreenState extends State<AddIncomeScreen> {
     if (amount <= 0) return;
 
     if (_selectedCategory == null) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        content: Text(context.t('income.validation.categoryRequired')),
-        backgroundColor: AppColors.negative,
-      ));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(context.t('income.validation.categoryRequired')),
+          backgroundColor: AppColors.negative,
+        ),
+      );
       return;
     }
 
-    context.appState.updateTransaction(widget.transaction!.copyWith(
-      amount: amount,
-      note: _noteController.text.trim().isEmpty ? null : _noteController.text.trim(),
-      category: _selectedCategory!.label,
-      outletId: _selectedOutletId,
-      walletId: _selectedWalletId,
-      effectiveDate: _selectedDate,
-    ));
+    context.appState.updateTransaction(
+      widget.transaction!.copyWith(
+        amount: amount,
+        note: _noteController.text.trim().isEmpty
+            ? null
+            : _noteController.text.trim(),
+        category: _selectedCategory!.label,
+        outletId: _selectedOutletId,
+        walletId: _selectedWalletId,
+        effectiveDate: _selectedDate,
+      ),
+    );
 
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-      content: Text(context.t('common.validation.success')),
-      backgroundColor: AppColors.positive,
-    ));
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(context.t('common.validation.success')),
+        backgroundColor: AppColors.positive,
+      ),
+    );
 
     Navigator.of(context).pop();
   }
@@ -210,8 +238,9 @@ class _AddIncomeScreenState extends State<AddIncomeScreen> {
           icon: const Icon(Icons.arrow_back),
         ),
       ),
-      bottomNavigationBar:
-          _isEditMode ? null : _BottomBar(items: _items, onSave: _saveAll),
+      bottomNavigationBar: _isEditMode
+          ? null
+          : _BottomBar(items: _items, onSave: _saveAll),
       body: SingleChildScrollView(
         padding: EdgeInsets.fromLTRB(
           18,
@@ -281,7 +310,7 @@ class _AddIncomeScreenState extends State<AddIncomeScreen> {
                   onChanged: (id) => setState(() => _selectedOutletId = id),
                 ),
               ],
-              if (!context.appState.profile.isBusinessMode &&
+              if (!useFeature(Feature.production, context.appState.profile) &&
                   context.appState.wallets.isNotEmpty) ...[
                 const SizedBox(height: 16),
                 _WalletSelectorBlock(
@@ -343,7 +372,9 @@ class _AddIncomeScreenState extends State<AddIncomeScreen> {
                       // Amount
                       Container(
                         padding: const EdgeInsets.symmetric(
-                            horizontal: 14, vertical: 10),
+                          horizontal: 14,
+                          vertical: 10,
+                        ),
                         decoration: BoxDecoration(
                           color: AppColors.positive.withValues(alpha: 0.08),
                           borderRadius: BorderRadius.circular(14),
@@ -358,13 +389,17 @@ class _AddIncomeScreenState extends State<AddIncomeScreen> {
                               width: 40,
                               height: 40,
                               decoration: BoxDecoration(
-                                color: AppColors.positive
-                                    .withValues(alpha: 0.15),
+                                color: AppColors.positive.withValues(
+                                  alpha: 0.15,
+                                ),
                                 shape: BoxShape.circle,
                               ),
                               alignment: Alignment.center,
-                              child: const Icon(Icons.add,
-                                  color: AppColors.positive, size: 20),
+                              child: const Icon(
+                                Icons.add,
+                                color: AppColors.positive,
+                                size: 20,
+                              ),
                             ),
                             const SizedBox(width: 12),
                             Expanded(
@@ -404,9 +439,11 @@ class _AddIncomeScreenState extends State<AddIncomeScreen> {
                         TextField(
                           controller: _noteController,
                           decoration: InputDecoration(
-                            prefixIcon: Icon(Icons.edit_outlined,
-                                size: 18,
-                                color: context.appColors.textSecondary),
+                            prefixIcon: Icon(
+                              Icons.edit_outlined,
+                              size: 18,
+                              color: context.appColors.textSecondary,
+                            ),
                             hintText: context.t('income.add.noteHint'),
                             labelText: context.t('common.noteOptional'),
                             isDense: true,
@@ -457,7 +494,9 @@ class _AddIncomeScreenState extends State<AddIncomeScreen> {
                   onPressed: _addToList,
                   style: OutlinedButton.styleFrom(
                     side: const BorderSide(
-                        color: AppColors.positive, width: 1.5),
+                      color: AppColors.positive,
+                      width: 1.5,
+                    ),
                     foregroundColor: AppColors.positive,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(14),
@@ -467,7 +506,9 @@ class _AddIncomeScreenState extends State<AddIncomeScreen> {
                   label: Text(
                     context.t('bulk.addToList'),
                     style: const TextStyle(
-                        fontWeight: FontWeight.w800, letterSpacing: 1),
+                      fontWeight: FontWeight.w800,
+                      letterSpacing: 1,
+                    ),
                   ),
                 ),
               ),
@@ -511,7 +552,7 @@ class _OutletPill extends StatelessWidget {
     final outletName = selectedOutletId == null
         ? context.t('outlet.allOutlets')
         : outlets.firstWhereOrNull((o) => o.id == selectedOutletId)?.name ??
-            context.t('outlet.selectOutlet');
+              context.t('outlet.selectOutlet');
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -530,8 +571,7 @@ class _OutletPill extends StatelessWidget {
           onTap: () => _showSheet(context, outlets),
           borderRadius: BorderRadius.circular(999),
           child: Container(
-            padding:
-                const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
             decoration: BoxDecoration(
               color: accentColor.withValues(alpha: 0.08),
               borderRadius: BorderRadius.circular(999),
@@ -540,8 +580,7 @@ class _OutletPill extends StatelessWidget {
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Icon(Icons.storefront_outlined,
-                    size: 16, color: accentColor),
+                Icon(Icons.storefront_outlined, size: 16, color: accentColor),
                 const SizedBox(width: 6),
                 Text(
                   outletName,
@@ -552,8 +591,11 @@ class _OutletPill extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(width: 4),
-                Icon(Icons.expand_more,
-                    size: 16, color: context.appColors.textSecondary),
+                Icon(
+                  Icons.expand_more,
+                  size: 16,
+                  color: context.appColors.textSecondary,
+                ),
               ],
             ),
           ),
@@ -580,7 +622,9 @@ class _OutletPill extends StatelessWidget {
                 child: Text(
                   context.t('outlet.selectOutlet'),
                   style: const TextStyle(
-                      fontWeight: FontWeight.w800, fontSize: 16),
+                    fontWeight: FontWeight.w800,
+                    fontSize: 16,
+                  ),
                 ),
               ),
             ),
@@ -652,13 +696,13 @@ class _ItemListCard extends StatelessWidget {
             ),
             const SizedBox(height: 10),
             for (int i = 0; i < items.length; i++) ...[
-              if (i > 0)
-                Divider(height: 1, color: context.appColors.outline),
+              if (i > 0) Divider(height: 1, color: context.appColors.outline),
               _ItemTile(
-                  item: items[i],
-                  index: i,
-                  accentColor: accentColor,
-                  onDelete: onDelete),
+                item: items[i],
+                index: i,
+                accentColor: accentColor,
+                onDelete: onDelete,
+              ),
             ],
           ],
         ),
@@ -685,8 +729,8 @@ class _ItemTile extends StatelessWidget {
     final outletName = item.outletId == null
         ? null
         : context.appState.outlets
-            .firstWhereOrNull((o) => o.id == item.outletId)
-            ?.name;
+              .firstWhereOrNull((o) => o.id == item.outletId)
+              ?.name;
 
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8),
@@ -717,33 +761,46 @@ class _ItemTile extends StatelessWidget {
                 Text(
                   IdrFormatter.format(item.amount),
                   style: TextStyle(
-                      fontWeight: FontWeight.w800, color: accentColor),
+                    fontWeight: FontWeight.w800,
+                    color: accentColor,
+                  ),
                 ),
                 if (item.note != null && item.note!.isNotEmpty)
                   Text(
                     item.note!,
                     style: TextStyle(
-                        fontSize: 12, color: context.appColors.textPrimary),
+                      fontSize: 12,
+                      color: context.appColors.textPrimary,
+                    ),
                   ),
                 Row(
                   children: [
                     Text(
                       item.category,
                       style: TextStyle(
-                          fontSize: 12, color: context.appColors.textSecondary),
+                        fontSize: 12,
+                        color: context.appColors.textSecondary,
+                      ),
                     ),
                     if (outletName != null) ...[
                       Text(
                         '  ·  ',
-                        style: TextStyle(color: context.appColors.textSecondary),
+                        style: TextStyle(
+                          color: context.appColors.textSecondary,
+                        ),
                       ),
-                      Icon(Icons.storefront_outlined,
-                          size: 12, color: context.appColors.textSecondary),
+                      Icon(
+                        Icons.storefront_outlined,
+                        size: 12,
+                        color: context.appColors.textSecondary,
+                      ),
                       const SizedBox(width: 3),
                       Text(
                         outletName,
                         style: TextStyle(
-                            fontSize: 12, color: context.appColors.textSecondary),
+                          fontSize: 12,
+                          color: context.appColors.textSecondary,
+                        ),
                       ),
                     ],
                   ],
@@ -752,8 +809,11 @@ class _ItemTile extends StatelessWidget {
             ),
           ),
           IconButton(
-            icon: const Icon(Icons.delete_outline,
-                size: 18, color: AppColors.negative),
+            icon: const Icon(
+              Icons.delete_outline,
+              size: 18,
+              color: AppColors.negative,
+            ),
             onPressed: () => onDelete(index),
             padding: EdgeInsets.zero,
             constraints: const BoxConstraints(),
@@ -823,7 +883,9 @@ class _BottomBar extends StatelessWidget {
               child: Text(
                 context.t('bulk.saveAll', {'count': '${items.length}'}),
                 style: const TextStyle(
-                    fontWeight: FontWeight.w800, letterSpacing: 1),
+                  fontWeight: FontWeight.w800,
+                  letterSpacing: 1,
+                ),
               ),
             ),
           ],
@@ -847,8 +909,18 @@ class _DateRowPicker extends StatelessWidget {
 
   String _formatDate(DateTime d) {
     const months = [
-      'Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun',
-      'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des',
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'Mei',
+      'Jun',
+      'Jul',
+      'Agu',
+      'Sep',
+      'Okt',
+      'Nov',
+      'Des',
     ];
     return '${d.day} ${months[d.month - 1]} ${d.year}';
   }
@@ -883,8 +955,11 @@ class _DateRowPicker extends StatelessWidget {
                 borderRadius: BorderRadius.circular(10),
               ),
               alignment: Alignment.center,
-              child: Icon(Icons.calendar_month_outlined,
-                  color: accentColor, size: 20),
+              child: Icon(
+                Icons.calendar_month_outlined,
+                color: accentColor,
+                size: 20,
+              ),
             ),
             const SizedBox(width: 12),
             Expanded(
@@ -897,8 +972,7 @@ class _DateRowPicker extends StatelessWidget {
               ),
             ),
             Container(
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
               decoration: BoxDecoration(
                 color: context.appColors.card,
                 borderRadius: BorderRadius.circular(999),
@@ -915,8 +989,11 @@ class _DateRowPicker extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(width: 4),
-                  Icon(Icons.keyboard_arrow_down_rounded,
-                      size: 16, color: context.appColors.textSecondary),
+                  Icon(
+                    Icons.keyboard_arrow_down_rounded,
+                    size: 16,
+                    color: context.appColors.textSecondary,
+                  ),
                 ],
               ),
             ),
@@ -929,8 +1006,7 @@ class _DateRowPicker extends StatelessWidget {
 
 // ─── Date picker tile (edit mode) ────────────────────────────────────────────
 class _DatePickerTile extends StatelessWidget {
-  const _DatePickerTile(
-      {required this.selectedDate, required this.onChanged});
+  const _DatePickerTile({required this.selectedDate, required this.onChanged});
 
   final DateTime selectedDate;
   final ValueChanged<DateTime> onChanged;
@@ -948,8 +1024,7 @@ class _DatePickerTile extends StatelessWidget {
         if (picked != null) onChanged(picked);
       },
       child: Container(
-        padding:
-            const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
         decoration: BoxDecoration(
           color: context.appColors.cardSoft,
           borderRadius: BorderRadius.circular(14),
@@ -957,12 +1032,15 @@ class _DatePickerTile extends StatelessWidget {
         ),
         child: Row(
           children: [
-            const Icon(Icons.calendar_today_outlined,
-                color: AppColors.positive),
+            const Icon(
+              Icons.calendar_today_outlined,
+              color: AppColors.positive,
+            ),
             const SizedBox(width: 10),
             Expanded(
               child: Text(
-                  '${selectedDate.day}/${selectedDate.month}/${selectedDate.year}'),
+                '${selectedDate.day}/${selectedDate.month}/${selectedDate.year}',
+              ),
             ),
             Icon(Icons.expand_more, color: context.appColors.textSecondary),
           ],
@@ -974,8 +1052,10 @@ class _DatePickerTile extends StatelessWidget {
 
 // ─── Outlet selector block (edit mode) ──────────────────────────────────────
 class _OutletSelectorBlock extends StatelessWidget {
-  const _OutletSelectorBlock(
-      {required this.selectedOutletId, required this.onChanged});
+  const _OutletSelectorBlock({
+    required this.selectedOutletId,
+    required this.onChanged,
+  });
 
   final String? selectedOutletId;
   final ValueChanged<String?> onChanged;
@@ -988,21 +1068,22 @@ class _OutletSelectorBlock extends StatelessWidget {
     final selectedName = selectedOutletId == null
         ? context.t('outlet.allOutlets')
         : outlets.firstWhereOrNull((o) => o.id == selectedOutletId)?.name ??
-            context.t('outlet.selectOutlet');
+              context.t('outlet.selectOutlet');
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(context.t('outlet.label'),
-            style: const TextStyle(fontWeight: FontWeight.w700)),
+        Text(
+          context.t('outlet.label'),
+          style: const TextStyle(fontWeight: FontWeight.w700),
+        ),
         const SizedBox(height: 10),
         InkWell(
           onTap: () => showModalBottomSheet<void>(
             context: context,
             backgroundColor: context.appColors.card,
             shape: const RoundedRectangleBorder(
-              borderRadius:
-                  BorderRadius.vertical(top: Radius.circular(20)),
+              borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
             ),
             builder: (ctx) => SafeArea(
               child: Column(
@@ -1015,7 +1096,9 @@ class _OutletSelectorBlock extends StatelessWidget {
                       child: Text(
                         context.t('outlet.selectOutlet'),
                         style: const TextStyle(
-                            fontWeight: FontWeight.w800, fontSize: 16),
+                          fontWeight: FontWeight.w800,
+                          fontSize: 16,
+                        ),
                       ),
                     ),
                   ),
@@ -1023,8 +1106,7 @@ class _OutletSelectorBlock extends StatelessWidget {
                     leading: const Icon(Icons.store_outlined),
                     title: Text(context.t('outlet.allOutlets')),
                     trailing: selectedOutletId == null
-                        ? const Icon(Icons.check,
-                            color: AppColors.brandBlue)
+                        ? const Icon(Icons.check, color: AppColors.brandBlue)
                         : null,
                     onTap: () {
                       onChanged(null);
@@ -1037,8 +1119,7 @@ class _OutletSelectorBlock extends StatelessWidget {
                       leading: const Icon(Icons.storefront_outlined),
                       title: Text(o.name),
                       trailing: selectedOutletId == o.id
-                          ? const Icon(Icons.check,
-                              color: AppColors.brandBlue)
+                          ? const Icon(Icons.check, color: AppColors.brandBlue)
                           : null,
                       onTap: () {
                         onChanged(o.id);
@@ -1051,8 +1132,7 @@ class _OutletSelectorBlock extends StatelessWidget {
             ),
           ),
           child: Container(
-            padding: const EdgeInsets.symmetric(
-                horizontal: 14, vertical: 14),
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
             decoration: BoxDecoration(
               color: context.appColors.cardSoft,
               borderRadius: BorderRadius.circular(14),
@@ -1060,12 +1140,13 @@ class _OutletSelectorBlock extends StatelessWidget {
             ),
             child: Row(
               children: [
-                const Icon(Icons.storefront_outlined,
-                    color: AppColors.positive),
+                const Icon(
+                  Icons.storefront_outlined,
+                  color: AppColors.positive,
+                ),
                 const SizedBox(width: 10),
                 Expanded(child: Text(selectedName)),
-                Icon(Icons.expand_more,
-                    color: context.appColors.textSecondary),
+                Icon(Icons.expand_more, color: context.appColors.textSecondary),
               ],
             ),
           ),
@@ -1091,19 +1172,20 @@ class _WalletSelectorBlock extends StatelessWidget {
     final selectedName = selectedWalletId == null
         ? context.t('wallet.noWallet')
         : wallets.firstWhereOrNull((w) => w.id == selectedWalletId)?.name ??
-            context.t('wallet.selector');
+              context.t('wallet.selector');
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(context.t('wallet.selector'),
-            style: const TextStyle(fontWeight: FontWeight.w700)),
+        Text(
+          context.t('wallet.selector'),
+          style: const TextStyle(fontWeight: FontWeight.w700),
+        ),
         const SizedBox(height: 10),
         InkWell(
           onTap: () => _showSheet(context, wallets),
           child: Container(
-            padding:
-                const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
             decoration: BoxDecoration(
               color: context.appColors.cardSoft,
               borderRadius: BorderRadius.circular(14),
@@ -1111,12 +1193,13 @@ class _WalletSelectorBlock extends StatelessWidget {
             ),
             child: Row(
               children: [
-                const Icon(Icons.account_balance_wallet_outlined,
-                    color: AppColors.positive),
+                const Icon(
+                  Icons.account_balance_wallet_outlined,
+                  color: AppColors.positive,
+                ),
                 const SizedBox(width: 10),
                 Expanded(child: Text(selectedName)),
-                Icon(Icons.expand_more,
-                    color: context.appColors.textSecondary),
+                Icon(Icons.expand_more, color: context.appColors.textSecondary),
               ],
             ),
           ),
@@ -1143,7 +1226,9 @@ class _WalletSelectorBlock extends StatelessWidget {
                 child: Text(
                   context.t('wallet.selector'),
                   style: const TextStyle(
-                      fontWeight: FontWeight.w800, fontSize: 16),
+                    fontWeight: FontWeight.w800,
+                    fontSize: 16,
+                  ),
                 ),
               ),
             ),
@@ -1161,8 +1246,7 @@ class _WalletSelectorBlock extends StatelessWidget {
             const Divider(height: 1),
             for (final w in wallets)
               ListTile(
-                leading:
-                    const Icon(Icons.account_balance_wallet_outlined),
+                leading: const Icon(Icons.account_balance_wallet_outlined),
                 title: Text(w.name),
                 subtitle: Text(w.type.displayName),
                 trailing: selectedWalletId == w.id
@@ -1199,7 +1283,7 @@ class _WalletPill extends StatelessWidget {
     final walletName = selectedWalletId == null
         ? context.t('wallet.noWallet')
         : wallets.firstWhereOrNull((w) => w.id == selectedWalletId)?.name ??
-            context.t('wallet.selector');
+              context.t('wallet.selector');
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -1218,19 +1302,20 @@ class _WalletPill extends StatelessWidget {
           onTap: () => _showSheet(context, wallets),
           borderRadius: BorderRadius.circular(999),
           child: Container(
-            padding:
-                const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
             decoration: BoxDecoration(
               color: accentColor.withValues(alpha: 0.08),
               borderRadius: BorderRadius.circular(999),
-              border:
-                  Border.all(color: accentColor.withValues(alpha: 0.4)),
+              border: Border.all(color: accentColor.withValues(alpha: 0.4)),
             ),
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Icon(Icons.account_balance_wallet_outlined,
-                    size: 16, color: accentColor),
+                Icon(
+                  Icons.account_balance_wallet_outlined,
+                  size: 16,
+                  color: accentColor,
+                ),
                 const SizedBox(width: 6),
                 Text(
                   walletName,
@@ -1241,9 +1326,11 @@ class _WalletPill extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(width: 4),
-                Icon(Icons.expand_more,
-                    size: 16,
-                    color: context.appColors.textSecondary),
+                Icon(
+                  Icons.expand_more,
+                  size: 16,
+                  color: context.appColors.textSecondary,
+                ),
               ],
             ),
           ),
@@ -1270,7 +1357,9 @@ class _WalletPill extends StatelessWidget {
                 child: Text(
                   context.t('wallet.selector'),
                   style: const TextStyle(
-                      fontWeight: FontWeight.w800, fontSize: 16),
+                    fontWeight: FontWeight.w800,
+                    fontSize: 16,
+                  ),
                 ),
               ),
             ),
@@ -1288,8 +1377,7 @@ class _WalletPill extends StatelessWidget {
             const Divider(height: 1),
             for (final w in wallets)
               ListTile(
-                leading:
-                    const Icon(Icons.account_balance_wallet_outlined),
+                leading: const Icon(Icons.account_balance_wallet_outlined),
                 title: Text(w.name),
                 subtitle: Text(w.type.displayName),
                 trailing: selectedWalletId == w.id

@@ -1,3 +1,4 @@
+import 'package:cari_untung/src/core/config/feature_config.dart';
 import 'package:flutter/material.dart';
 
 import '../../../core/localization/transalation_extansions.dart';
@@ -7,11 +8,7 @@ import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_dynamic_colors.dart';
 
 class AddCategorySheet extends StatefulWidget {
-  const AddCategorySheet({
-    super.key,
-    required this.type,
-    required this.onAdd,
-  });
+  const AddCategorySheet({super.key, required this.type, required this.onAdd});
 
   final MoneyTransactionType type;
   final void Function(String name, bool isStockPurchase) onAdd;
@@ -89,13 +86,17 @@ class _AddCategorySheetState extends State<AddCategorySheet> {
               ),
             ),
           ),
-          if (_isExpense && context.appState.profile.isBusinessMode) ...[
+          if (_isExpense &&
+              useFeature(Feature.production, context.appState.profile)) ...[
             const SizedBox(height: 12),
             InkWell(
               onTap: () => setState(() => _isStockPurchase = !_isStockPurchase),
               borderRadius: BorderRadius.circular(12),
               child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 14,
+                  vertical: 10,
+                ),
                 decoration: BoxDecoration(
                   color: _isStockPurchase
                       ? const Color(0xFFFF9F00).withValues(alpha: 0.1)

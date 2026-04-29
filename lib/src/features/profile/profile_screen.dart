@@ -1,4 +1,5 @@
 import 'package:cari_untung/src/app/routes.dart';
+import 'package:cari_untung/src/core/config/feature_config.dart';
 import 'package:cari_untung/src/core/state/app_state.dart';
 import 'package:cari_untung/src/features/outlets/manage_outlets_screen.dart';
 import 'package:cari_untung/src/features/categories/manage_categories_screen.dart';
@@ -96,7 +97,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   : context.t('profile.ownerName'),
               style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w800),
             ),
-            if (profile.isBusinessMode) ...[
+            if (useFeature(Feature.production, profile)) ...[
               const SizedBox(height: 4),
               Text(
                 profile.businessName.isNotEmpty
@@ -131,8 +132,18 @@ class _ProfileScreenState extends State<ProfileScreen> {
             ),
             const SizedBox(height: 8),
 
+            // ── Atur Fitur ────────────────────────────────────────────────
+            _ProfileMenuItem(
+              icon: Icons.tune_outlined,
+              title: 'Atur Fitur',
+              subtitle: 'Aktifkan atau nonaktifkan fitur sesuai kebutuhan',
+              onTap: () =>
+                  Navigator.of(context).pushNamed(AppRoutes.manageFeatures),
+            ),
+            const SizedBox(height: 8),
+
             // Dompet — hanya untuk personal (bisnis: tidak perlu)
-            if (!profile.isBusinessMode) ...[
+            if (!useFeature(Feature.production, profile)) ...[
               _ProfileMenuItem(
                 icon: Icons.account_balance_wallet_outlined,
                 title: context.t('profile.menu.wallets'),
@@ -167,18 +178,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
               onTap: () => Navigator.of(context).pushNamed(AppRoutes.budget),
             ),
             const SizedBox(height: 8),
-
-            // ── Atur Fitur ────────────────────────────────────────────────
-            if (profile.isBusinessMode) ...[
-              _ProfileMenuItem(
-                icon: Icons.tune_outlined,
-                title: 'Atur Fitur',
-                subtitle: 'Aktifkan atau nonaktifkan fitur sesuai kebutuhan',
-                onTap: () =>
-                    Navigator.of(context).pushNamed(AppRoutes.manageFeatures),
-              ),
-              const SizedBox(height: 8),
-            ],
 
             // Business-only menus (each gated by its own feature flag)
             if (profile.featureOutlets) ...[
@@ -228,12 +227,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 title: 'Batch Produksi',
                 subtitle:
                     '${context.appState.productionBatches.length} batch tercatat',
-                onTap: () =>
-                    Navigator.of(context).pushNamed(AppRoutes.productionBatches),
+                onTap: () => Navigator.of(
+                  context,
+                ).pushNamed(AppRoutes.productionBatches),
               ),
               const SizedBox(height: 8),
             ],
-            if (profile.isBusinessMode) ...[
+            if (useFeature(Feature.production, profile)) ...[
               _ProfileMenuItem(
                 icon: Icons.warehouse_outlined,
                 title: context.t('profile.menu.inventory'),

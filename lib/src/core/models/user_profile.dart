@@ -1,4 +1,6 @@
-class UserProfile {
+import '../config/feature_config.dart';
+
+class UserProfile implements HasFeatures {
   UserProfile({
     required this.fullName,
     required this.businessName,
@@ -12,6 +14,10 @@ class UserProfile {
     this.featureQuickSale = false,
     this.featureTopCategories = false,
     this.featureBusiestDay = false,
+    // NEW: 3 fitur tambahan
+    this.featureStock = false,
+    this.featureProductAnalytics = false,
+    this.featureDebt = false,
     this.onboardingComplete = false,
   });
 
@@ -23,20 +29,59 @@ class UserProfile {
 
   /// Per-feature toggles — synced to Supabase `profiles` table.
   final bool featureProduct;        // HPP Calculator & Product List
-  final bool featureOutlets;        // Multi-outlet management
-  final bool featureBudget;         // Budget & monthly targets
-  final bool featureProduction;     // Bahan Baku & Batch Produksi
+  final bool featureOutlets;       // Multi-outlet management
+  final bool featureBudget;        // Budget & monthly targets
+  final bool featureProduction;    // Bahan Baku & Batch Produksi
   final bool featureQuickSale;      // Jual Cepat (Quick Sale)
-  final bool featureTopCategories;  // Insight: Kategori Terlaris
-  final bool featureBusiestDay;     // Insight: Hari Tersibuk
+  final bool featureTopCategories; // Insight: Kategori Terlaris
+  final bool featureBusiestDay;    // Insight: Hari Tersibuk
+  // NEW
+  final bool featureStock;          // Stok Barang (Inventory)
+  final bool featureProductAnalytics; // Analitik Produk
+  final bool featureDebt;           // Utang & Piutang
   final bool onboardingComplete;
 
+  // ============================================================================
+  // HasFeatures Implementation - useFeature() Pattern
+  // ============================================================================
+
+  @override
+  bool hasFeature(Feature feature) {
+    switch (feature) {
+      case Feature.product:
+        return featureProduct;
+      case Feature.outlets:
+        return featureOutlets;
+      case Feature.budget:
+        return featureBudget;
+      case Feature.production:
+        return featureProduction;
+      case Feature.quickSale:
+        return featureQuickSale;
+      case Feature.topCategories:
+        return featureTopCategories;
+      case Feature.busiestDay:
+        return featureBusiestDay;
+      // NEW: 3 fitur tambahan
+      case Feature.stock:
+        return featureStock;
+      case Feature.productAnalytics:
+        return featureProductAnalytics;
+      case Feature.debt:
+        return featureDebt;
+    }
+  }
+
+  /// Legacy: isBusinessMode computed from features
   bool get isBusinessMode =>
       featureOutlets ||
       featureBudget ||
       featureProduct ||
       featureProduction ||
-      featureQuickSale;
+      featureQuickSale ||
+      featureStock ||
+      featureProductAnalytics ||
+      featureDebt;
 
   factory UserProfile.empty() {
     return UserProfile(
@@ -61,6 +106,10 @@ class UserProfile {
     bool? featureQuickSale,
     bool? featureTopCategories,
     bool? featureBusiestDay,
+    // NEW
+    bool? featureStock,
+    bool? featureProductAnalytics,
+    bool? featureDebt,
     bool? onboardingComplete,
   }) {
     return UserProfile(
@@ -76,6 +125,10 @@ class UserProfile {
       featureQuickSale: featureQuickSale ?? this.featureQuickSale,
       featureTopCategories: featureTopCategories ?? this.featureTopCategories,
       featureBusiestDay: featureBusiestDay ?? this.featureBusiestDay,
+      // NEW
+      featureStock: featureStock ?? this.featureStock,
+      featureProductAnalytics: featureProductAnalytics ?? this.featureProductAnalytics,
+      featureDebt: featureDebt ?? this.featureDebt,
       onboardingComplete: onboardingComplete ?? this.onboardingComplete,
     );
   }
@@ -94,6 +147,10 @@ class UserProfile {
       'featureQuickSale': featureQuickSale,
       'featureTopCategories': featureTopCategories,
       'featureBusiestDay': featureBusiestDay,
+      // NEW
+      'featureStock': featureStock,
+      'featureProductAnalytics': featureProductAnalytics,
+      'featureDebt': featureDebt,
       'onboardingComplete': onboardingComplete,
     };
   }
@@ -124,6 +181,13 @@ class UserProfile {
           json['featureTopCategories'] as bool? ?? false,
       featureBusiestDay: json['feature_busiest_day'] as bool? ??
           json['featureBusiestDay'] as bool? ?? false,
+      // NEW
+      featureStock: json['feature_stock'] as bool? ??
+          json['featureStock'] as bool? ?? false,
+      featureProductAnalytics: json['feature_product_analytics'] as bool? ??
+          json['featureProductAnalytics'] as bool? ?? false,
+      featureDebt: json['feature_debt'] as bool? ??
+          json['featureDebt'] as bool? ?? false,
       onboardingComplete: json['onboarding_complete'] as bool? ??
           json['onboardingComplete'] as bool? ?? false,
     );

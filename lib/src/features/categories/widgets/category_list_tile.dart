@@ -1,3 +1,4 @@
+import 'package:cari_untung/src/core/config/feature_config.dart';
 import 'package:flutter/material.dart';
 
 import '../../../core/localization/transalation_extansions.dart';
@@ -20,6 +21,7 @@ class CategoryListTile extends StatelessWidget {
   final UserCategory category;
   final Color accentColor;
   final VoidCallback? onDelete;
+
   /// Callback untuk toggle isStockPurchase (hanya custom expense category).
   /// Null = tidak bisa di-toggle (default category atau income).
   final ValueChanged<bool>? onToggleStock;
@@ -63,12 +65,20 @@ class CategoryListTile extends StatelessWidget {
                     color: context.appColors.textPrimary,
                   ),
                 ),
-                if (category.isStockPurchase && context.appState.profile.isBusinessMode) ...[
+                if (category.isStockPurchase &&
+                    useFeature(
+                      Feature.production,
+                      context.appState.profile,
+                    )) ...[
                   const SizedBox(height: 2),
                   Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      const Icon(Icons.inventory_2_outlined, size: 10, color: _stockColor),
+                      const Icon(
+                        Icons.inventory_2_outlined,
+                        size: 10,
+                        color: _stockColor,
+                      ),
                       const SizedBox(width: 3),
                       Text(
                         context.t('category.stockBadge'),
@@ -97,7 +107,10 @@ class CategoryListTile extends StatelessWidget {
                 onTap: () => onToggleStock!(!category.isStockPurchase),
                 child: AnimatedContainer(
                   duration: const Duration(milliseconds: 150),
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 4,
+                  ),
                   decoration: BoxDecoration(
                     color: category.isStockPurchase
                         ? _stockColor.withValues(alpha: 0.15)
@@ -137,8 +150,11 @@ class CategoryListTile extends StatelessWidget {
               const SizedBox(width: 6),
             ],
             IconButton(
-              icon: const Icon(Icons.delete_outline,
-                  color: AppColors.negative, size: 20),
+              icon: const Icon(
+                Icons.delete_outline,
+                color: AppColors.negative,
+                size: 20,
+              ),
               onPressed: onDelete,
               visualDensity: VisualDensity.compact,
               padding: EdgeInsets.zero,

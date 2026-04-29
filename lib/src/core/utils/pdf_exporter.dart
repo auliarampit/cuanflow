@@ -1,3 +1,4 @@
+import 'package:cari_untung/src/core/config/feature_config.dart';
 import 'package:collection/collection.dart';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
@@ -33,8 +34,7 @@ class PdfExporter {
       final d = tx.effectiveDate;
       return DateTime(d.year, d.month, d.day);
     });
-    final sortedDates = grouped.keys.toList()
-      ..sort((a, b) => b.compareTo(a));
+    final sortedDates = grouped.keys.toList()..sort((a, b) => b.compareTo(a));
 
     final pdf = pw.Document();
     pdf.addPage(
@@ -46,8 +46,12 @@ class PdfExporter {
         build: (_) => [
           _buildSummary(totalIncome, totalExpense, totalProfit, profile),
           pw.SizedBox(height: 20),
-          ..._buildGroups(grouped, sortedDates, outletNames,
-              showOutletCol: selectedOutletId == null && outlets.isNotEmpty),
+          ..._buildGroups(
+            grouped,
+            sortedDates,
+            outletNames,
+            showOutletCol: selectedOutletId == null && outlets.isNotEmpty,
+          ),
         ],
       ),
     );
@@ -71,24 +75,40 @@ class PdfExporter {
             pw.Column(
               crossAxisAlignment: pw.CrossAxisAlignment.start,
               children: [
-                pw.Text('CUAN FLOW',
-                    style: pw.TextStyle(
-                        fontSize: 18, fontWeight: pw.FontWeight.bold)),
+                pw.Text(
+                  'CUAN FLOW',
+                  style: pw.TextStyle(
+                    fontSize: 18,
+                    fontWeight: pw.FontWeight.bold,
+                  ),
+                ),
                 if (profile.businessName.isNotEmpty)
-                  pw.Text(profile.businessName,
-                      style: const pw.TextStyle(
-                          fontSize: 11, color: PdfColors.grey700)),
+                  pw.Text(
+                    profile.businessName,
+                    style: const pw.TextStyle(
+                      fontSize: 11,
+                      color: PdfColors.grey700,
+                    ),
+                  ),
               ],
             ),
             pw.Column(
               crossAxisAlignment: pw.CrossAxisAlignment.end,
               children: [
-                pw.Text('Laporan Transaksi',
-                    style: const pw.TextStyle(
-                        fontSize: 11, color: PdfColors.grey600)),
-                pw.Text(period,
-                    style: pw.TextStyle(
-                        fontSize: 11, fontWeight: pw.FontWeight.bold)),
+                pw.Text(
+                  'Laporan Transaksi',
+                  style: const pw.TextStyle(
+                    fontSize: 11,
+                    color: PdfColors.grey600,
+                  ),
+                ),
+                pw.Text(
+                  period,
+                  style: pw.TextStyle(
+                    fontSize: 11,
+                    fontWeight: pw.FontWeight.bold,
+                  ),
+                ),
               ],
             ),
           ],
@@ -104,25 +124,30 @@ class PdfExporter {
 
   static pw.Widget _buildFooter() {
     final now = DateTime.now();
-    final label =
-        'Dicetak: ${_fmt(now)}  •  Cuan Flow © 2026';
+    final label = 'Dicetak: ${_fmt(now)}  •  Cuan Flow © 2026';
     return pw.Column(
       children: [
         pw.Divider(color: PdfColors.grey300),
         pw.SizedBox(height: 4),
-        pw.Text(label,
-            style: const pw.TextStyle(
-                fontSize: 9, color: PdfColors.grey500)),
+        pw.Text(
+          label,
+          style: const pw.TextStyle(fontSize: 9, color: PdfColors.grey500),
+        ),
       ],
     );
   }
 
   // ── Summary box ──────────────────────────────────────────────────────────
 
-  static pw.Widget _buildSummary(int income, int expense, int profit, UserProfile profile) {
+  static pw.Widget _buildSummary(
+    int income,
+    int expense,
+    int profit,
+    UserProfile profile,
+  ) {
     final isProfit = profit >= 0;
     final String netLabel;
-    if (profile.isBusinessMode) {
+    if (useFeature(Feature.production, profile)) {
       netLabel = isProfit ? 'Laba Bersih' : 'Rugi Bersih';
     } else {
       netLabel = isProfit ? 'Sisa Uang' : 'Defisit';
@@ -167,8 +192,10 @@ class PdfExporter {
       mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
       children: [
         pw.Text(label, style: style),
-        pw.Text('$prefix${IdrFormatter.format(amount)}',
-            style: style.copyWith(color: color)),
+        pw.Text(
+          '$prefix${IdrFormatter.format(amount)}',
+          style: style.copyWith(color: color),
+        ),
       ],
     );
   }
@@ -184,18 +211,19 @@ class PdfExporter {
     final result = <pw.Widget>[];
     for (final date in sortedDates) {
       final txs = grouped[date]!;
-      result.add(pw.Container(
-        color: PdfColors.grey200,
-        padding: const pw.EdgeInsets.symmetric(vertical: 4, horizontal: 8),
-        child: pw.Text(
-          _fmt(date, dateOnly: true),
-          style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 10),
+      result.add(
+        pw.Container(
+          color: PdfColors.grey200,
+          padding: const pw.EdgeInsets.symmetric(vertical: 4, horizontal: 8),
+          child: pw.Text(
+            _fmt(date, dateOnly: true),
+            style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 10),
+          ),
         ),
-      ));
+      );
       result.add(pw.SizedBox(height: 4));
       for (final tx in txs) {
-        result.add(_buildTxRow(tx, outletNames,
-            showOutlet: showOutletCol));
+        result.add(_buildTxRow(tx, outletNames, showOutlet: showOutletCol));
       }
       result.add(pw.SizedBox(height: 12));
     }
@@ -213,8 +241,8 @@ class PdfExporter {
     final category = tx.category ?? (isIncome ? 'Pemasukan' : 'Pengeluaran');
     final outletLabel = showOutlet
         ? (tx.outletId != null
-            ? (outletNames[tx.outletId] ?? tx.outletId!)
-            : 'Bersama')
+              ? (outletNames[tx.outletId] ?? tx.outletId!)
+              : 'Bersama')
         : null;
 
     return pw.Padding(
@@ -225,37 +253,57 @@ class PdfExporter {
             child: pw.Column(
               crossAxisAlignment: pw.CrossAxisAlignment.start,
               children: [
-                pw.Row(children: [
-                  pw.Text(category,
+                pw.Row(
+                  children: [
+                    pw.Text(
+                      category,
                       style: pw.TextStyle(
-                          fontWeight: pw.FontWeight.bold, fontSize: 10)),
-                  if (outletLabel != null) ...[
-                    pw.SizedBox(width: 6),
-                    pw.Container(
-                      padding: const pw.EdgeInsets.symmetric(
-                          horizontal: 4, vertical: 1),
-                      decoration: pw.BoxDecoration(
-                        color: PdfColors.blue50,
-                        borderRadius:
-                            const pw.BorderRadius.all(pw.Radius.circular(3)),
+                        fontWeight: pw.FontWeight.bold,
+                        fontSize: 10,
                       ),
-                      child: pw.Text(outletLabel,
-                          style: const pw.TextStyle(
-                              fontSize: 8, color: PdfColors.blue800)),
                     ),
+                    if (outletLabel != null) ...[
+                      pw.SizedBox(width: 6),
+                      pw.Container(
+                        padding: const pw.EdgeInsets.symmetric(
+                          horizontal: 4,
+                          vertical: 1,
+                        ),
+                        decoration: pw.BoxDecoration(
+                          color: PdfColors.blue50,
+                          borderRadius: const pw.BorderRadius.all(
+                            pw.Radius.circular(3),
+                          ),
+                        ),
+                        child: pw.Text(
+                          outletLabel,
+                          style: const pw.TextStyle(
+                            fontSize: 8,
+                            color: PdfColors.blue800,
+                          ),
+                        ),
+                      ),
+                    ],
                   ],
-                ]),
+                ),
                 if ((tx.note ?? '').isNotEmpty)
-                  pw.Text(tx.note!,
-                      style: const pw.TextStyle(
-                          fontSize: 9, color: PdfColors.grey600)),
+                  pw.Text(
+                    tx.note!,
+                    style: const pw.TextStyle(
+                      fontSize: 9,
+                      color: PdfColors.grey600,
+                    ),
+                  ),
               ],
             ),
           ),
           pw.Text(
             '$sign ${IdrFormatter.format(tx.amount)}',
             style: pw.TextStyle(
-                fontWeight: pw.FontWeight.bold, fontSize: 10, color: color),
+              fontWeight: pw.FontWeight.bold,
+              fontSize: 10,
+              color: color,
+            ),
           ),
         ],
       ),
@@ -265,8 +313,18 @@ class PdfExporter {
   // ── Date helper ──────────────────────────────────────────────────────────
 
   static const _months = [
-    'Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun',
-    'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des',
+    'Jan',
+    'Feb',
+    'Mar',
+    'Apr',
+    'Mei',
+    'Jun',
+    'Jul',
+    'Agu',
+    'Sep',
+    'Okt',
+    'Nov',
+    'Des',
   ];
 
   static String _fmt(DateTime d, {bool dateOnly = false}) {

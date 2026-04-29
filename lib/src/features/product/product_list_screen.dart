@@ -1,3 +1,4 @@
+import 'package:cari_untung/src/core/config/feature_config.dart';
 import 'package:flutter/material.dart';
 import '../../core/formatters/idr_formatter.dart';
 import '../../core/localization/transalation_extansions.dart';
@@ -44,13 +45,15 @@ class _ProductListScreenState extends State<ProductListScreen> {
           style: const TextStyle(fontWeight: FontWeight.bold),
         ),
         actions: [
-          if (products.isNotEmpty)
+          if (products.isNotEmpty &&
+              useFeature(Feature.productAnalytics, context.appState.profile))
             IconButton(
               icon: const Icon(Icons.bar_chart),
               tooltip: 'Analitik',
               onPressed: () => Navigator.of(context).push(
                 MaterialPageRoute(
-                    builder: (_) => const ProductAnalyticsScreen()),
+                  builder: (_) => const ProductAnalyticsScreen(),
+                ),
               ),
             ),
         ],
@@ -82,17 +85,16 @@ class _ProductListScreenState extends State<ProductListScreen> {
                     padding: const EdgeInsets.all(16),
                     itemBuilder: (context, index) {
                       final product = filteredProducts[index];
-                      final liveHpp =
-                          product.liveHppPerUnit(rawMaterials);
-                      final hpp =
-                          liveHpp > 0 ? liveHpp : product.hppPerUnit;
+                      final liveHpp = product.liveHppPerUnit(rawMaterials);
+                      final hpp = liveHpp > 0 ? liveHpp : product.hppPerUnit;
                       final margin = product.sellingPrice > 0
                           ? (product.sellingPrice - hpp) /
-                              product.sellingPrice *
-                              100
+                                product.sellingPrice *
+                                100
                           : 0.0;
-                      final isLinked = product.ingredients
-                          .any((i) => i.rawMaterialId != null);
+                      final isLinked = product.ingredients.any(
+                        (i) => i.rawMaterialId != null,
+                      );
 
                       Color marginColor;
                       String marginLabel;
@@ -113,8 +115,9 @@ class _ProductListScreenState extends State<ProductListScreen> {
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(12),
                           side: BorderSide(
-                              color: marginColor.withValues(alpha: 0.4),
-                              width: 1),
+                            color: marginColor.withValues(alpha: 0.4),
+                            width: 1,
+                          ),
                         ),
                         child: InkWell(
                           onTap: () {
@@ -140,8 +143,7 @@ class _ProductListScreenState extends State<ProductListScreen> {
                                         style: TextStyle(
                                           fontSize: 16,
                                           fontWeight: FontWeight.bold,
-                                          color:
-                                              context.appColors.textPrimary,
+                                          color: context.appColors.textPrimary,
                                         ),
                                       ),
                                       const SizedBox(height: 4),
@@ -151,14 +153,17 @@ class _ProductListScreenState extends State<ProductListScreen> {
                                             '${context.t('product.list.hppPrefix')}${IdrFormatter.format(hpp.round())}',
                                             style: TextStyle(
                                               color: context
-                                                  .appColors.textSecondary,
+                                                  .appColors
+                                                  .textSecondary,
                                               fontSize: 13,
                                             ),
                                           ),
                                           if (isLinked) ...[
                                             const SizedBox(width: 4),
-                                            const Text('⚡',
-                                                style: TextStyle(fontSize: 11)),
+                                            const Text(
+                                              '⚡',
+                                              style: TextStyle(fontSize: 11),
+                                            ),
                                           ],
                                         ],
                                       ),
@@ -170,7 +175,8 @@ class _ProductListScreenState extends State<ProductListScreen> {
                                   children: [
                                     Text(
                                       IdrFormatter.format(
-                                          product.sellingPrice.round()),
+                                        product.sellingPrice.round(),
+                                      ),
                                       style: TextStyle(
                                         fontSize: 16,
                                         fontWeight: FontWeight.bold,
@@ -180,11 +186,14 @@ class _ProductListScreenState extends State<ProductListScreen> {
                                     const SizedBox(height: 4),
                                     Container(
                                       padding: const EdgeInsets.symmetric(
-                                          horizontal: 8, vertical: 2),
+                                        horizontal: 8,
+                                        vertical: 2,
+                                      ),
                                       decoration: BoxDecoration(
-                                        color: marginColor.withValues(alpha: 0.15),
-                                        borderRadius:
-                                            BorderRadius.circular(6),
+                                        color: marginColor.withValues(
+                                          alpha: 0.15,
+                                        ),
+                                        borderRadius: BorderRadius.circular(6),
                                       ),
                                       child: Text(
                                         '$marginLabel ${margin.toStringAsFixed(0)}%',
@@ -207,7 +216,8 @@ class _ProductListScreenState extends State<ProductListScreen> {
           ),
         ],
       ),
-      floatingActionButton: filteredProducts.isNotEmpty || _searchQuery.isNotEmpty
+      floatingActionButton:
+          filteredProducts.isNotEmpty || _searchQuery.isNotEmpty
           ? FloatingActionButton(
               onPressed: () {
                 Navigator.of(context).push(
