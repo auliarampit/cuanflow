@@ -1,7 +1,7 @@
 # Business Requirements Document (BRD)
 ## Cuan Flow — Aplikasi Pencatatan Keuangan UMKM
 
-**Versi:** 2.0  
+**Versi:** 2.1  
 **Tanggal:** April 2026  
 **Status:** In Development
 
@@ -16,7 +16,7 @@ Mayoritas pelaku UMKM dan individu di Indonesia masih mencatat keuangan secara m
 - Sulit membuat keputusan bisnis (restok barang, buka cabang, naikkan harga)
 - Tidak bisa deteksi kebocoran pengeluaran
 
-**Cuan Flow** hadir sebagai solusi pencatatan yang ringan, cepat, dan relevan untuk dua segmen utama: **pengguna personal** dan **pedagang kecil (UMKM)**.
+**Cuan Flow** hadir sebagai solusi pencatatan yang ringan, cepat, dan relevan untuk tiga segmen utama: **pengguna personal**, **pedagang/toko (store)**, dan **produsen rumahan (production)**.
 
 ---
 
@@ -28,13 +28,15 @@ Mayoritas pelaku UMKM dan individu di Indonesia masih mencatat keuangan secara m
 | User tahu kondisi keuangan hari ini | Home screen: laba/rugi hari ini |
 | User tidak lupa utang/piutang | Modul Utang dengan notifikasi jatuh tempo |
 | Pedagang tahu stok mana yang mau habis | Alert merah/kuning di Stok Barang |
+| Produsen tahu HPP yang akurat | Kalkulator HPP + Batch Produksi |
 | User bisa lihat laporan bulanan tanpa akuntansi | Laporan otomatis + export PDF |
 
 ---
 
 ## 3. Target Pengguna (Personas)
 
-### 👤 Persona A — Pengguna Personal
+### Persona A — Pengguna Personal
+**Mode:** `personal`  
 **Siapa:** Karyawan, mahasiswa, ibu rumah tangga  
 **Masalah:** Gaji habis sebelum akhir bulan, tidak tahu uang kemana  
 **Tujuan:** Catat pemasukan & pengeluaran harian, pantau sisa uang
@@ -42,32 +44,36 @@ Mayoritas pelaku UMKM dan individu di Indonesia masih mencatat keuangan secara m
 **Fitur yang dipakai:**
 - Tambah pemasukan & pengeluaran
 - Dompet & Rekening (pisah tabungan vs uang jajan)
-- Utang & Piutang (pinjam ke teman, dll)
-- Transaksi Berulang (cicilan, langganan)
+- Utang & Piutang
+- Transaksi Berulang
 - Budget bulanan
 - Laporan bulanan
 
 ---
 
-### 🏪 Persona B — Pedagang Kelontong / Warung
+### Persona B — Pedagang Kelontong / Warung
+**Mode:** `store`  
 **Siapa:** Pemilik warung kelontong, toko sembako, warung makan kecil  
-**Masalah:** Tidak tahu omzet harian, stok sering habis tiba-tiba, uang tunai campur dengan uang pribadi  
+**Masalah:** Tidak tahu omzet harian, stok sering habis tiba-tiba  
 **Tujuan:** Catat penjualan cepat, pantau stok, tahu untung/rugi per hari
 
-**Fitur yang dipakai (semua fitur Personal +):**
+**Fitur tambahan (di atas Personal):**
 - **Jual Cepat** — tap preset → langsung tercatat (killer feature)
 - **Stok Barang** — pantau stok, alert kalau menipis
-- **Laporan Terlaris** — kategori penjualan terbanyak
+- **Analitik Produk** — statistik penjualan per item
+- **Kategori Terlaris** — laporan kategori dengan omzet terbesar
 - **Hari Tersibuk** — visualisasi omzet per hari dalam seminggu
+
+> Mode store juga bisa mengaktifkan: **Budget**, **Multi-outlet**, dan **HPP & Produk** secara opsional.
 
 ---
 
-### 🏢 Persona C — Usaha Menengah (Multi-outlet)
+### Persona C — Usaha Menengah (Multi-outlet)
+**Mode:** `store` + `featureOutlets = true`  
 **Siapa:** Pemilik beberapa cabang toko/warung, owner franchise kecil  
-**Masalah:** Sulit pantau kinerja tiap cabang, tidak tahu cabang mana yang paling profitable  
 **Tujuan:** Pisahkan transaksi per outlet, bandingkan kinerja antar cabang
 
-**Fitur yang dipakai (semua fitur B +):**
+**Fitur tambahan:**
 - **Kelola Outlet** — daftarkan tiap cabang
 - **Filter riwayat per outlet**
 - **Chart kontribusi outlet** — porsi pendapatan per cabang
@@ -75,77 +81,147 @@ Mayoritas pelaku UMKM dan individu di Indonesia masih mencatat keuangan secara m
 
 ---
 
-### 🍳 Persona D — Produsen Kecil (Home Industry)
+### Persona D — Produsen Kecil (Home Industry)
+**Mode:** `production`  
 **Siapa:** Pemilik usaha produksi rumahan (kue, makanan, kerajinan)  
-**Masalah:** Tidak tahu harga pokok produksi (HPP), sering jual rugi tanpa sadar  
-**Tujuan:** Hitung HPP akurat, tentukan harga jual yang menguntungkan
+**Masalah:** Tidak tahu HPP, sering jual rugi tanpa sadar, bahan baku tidak terpantau  
+**Tujuan:** Hitung HPP akurat, catat batch produksi, pantau bahan baku
 
-**Fitur yang dipakai (semua fitur B +):**
-- **Kalkulator HPP** — input bahan baku + biaya → dapat HPP per unit
-- **Daftar Produk** — simpan hasil kalkulasi HPP per produk
+**Fitur yang dipakai:**
+- **HPP & Produk** — input bahan baku + biaya → dapat HPP per unit
+- **Bahan Baku** — daftar bahan baku dengan stok & harga per satuan
+- **Batch Produksi** — catat setiap kali produksi (qty & bahan yang dipakai)
+- **Analitik Produk** — margin per produk, breakeven analysis
+- Utang & Piutang (aktif otomatis)
+- Budget & Target (opsional)
+- Multi-outlet (opsional)
 
 ---
 
-## 4. Feature Map (Fitur vs Persona)
+## 4. Feature Map (Fitur vs Mode)
 
-| Fitur | Personal | Kelontong | Multi-outlet | Produsen |
-|---|:---:|:---:|:---:|:---:|
-| Catat Pemasukan & Pengeluaran | ✅ | ✅ | ✅ | ✅ |
-| Riwayat Transaksi | ✅ | ✅ | ✅ | ✅ |
-| Laporan Bulanan + PDF | ✅ | ✅ | ✅ | ✅ |
-| **Dompet & Rekening** | ✅ | ❌ | ❌ | ❌ |
-| Utang & Piutang | ✅ | ✅ | ✅ | ✅ |
-| Transaksi Berulang | ✅ | ✅ | ✅ | ✅ |
-| Budget Bulanan | ✅ | ✅ | ✅ | ✅ |
-| **Stok Barang** | ❌ | ✅ | ✅ | ✅ |
-| **Jual Cepat** | ❌ | ✅ | ✅ | ✅ |
-| **Laporan Terlaris + Hari Tersibuk** | ❌ | ✅ | ✅ | ✅ |
-| **Kelola Outlet** | ❌ | ❌ | ✅ | ❌ |
-| **Chart Perbandingan Outlet** | ❌ | ❌ | ✅ | ❌ |
-| **Kalkulator HPP** | ❌ | ❌ | ❌ | ✅ |
+```mermaid
+block-beta
+  columns 5
+  block:header:5
+    f["Fitur"]
+    personal["Personal"]
+    store["Store"]
+    production["Produksi"]
+    note["Catatan"]
+  end
+```
 
-> **Cara aktifkan:** Pengaturan → FITUR AKTIF → toggle on/off kapan saja
+| Fitur | Personal | Store | Production | Catatan |
+|---|:---:|:---:|:---:|---|
+| Catat Pemasukan & Pengeluaran | ✅ | ✅ | ✅ | Core |
+| Riwayat Transaksi | ✅ | ✅ | ✅ | Core |
+| Laporan Bulanan + PDF | ✅ | ✅ | ✅ | Core |
+| **Dompet & Rekening** | ✅ | ❌ | ❌ | Hanya personal |
+| Transaksi Berulang | ✅ | ✅ | ✅ | Core |
+| **Utang & Piutang** | ❌ | ❌ | ✅ | Feature flag `featureDebt` |
+| **Budget Bulanan** | ❌ | opt | ✅ | Feature flag `featureBudget` |
+| **Stok Barang** | ❌ | ✅ | ✅ | Feature flag `featureStock` |
+| **Jual Cepat** | ❌ | ✅ | ❌ | Feature flag `featureQuickSale` |
+| **Analitik Produk** | ❌ | ✅ | ✅ | Feature flag `featureProductAnalytics` |
+| **Kategori Terlaris** | ❌ | ✅ | ❌ | Feature flag `featureTopCategories` |
+| **Hari Tersibuk** | ❌ | ✅ | ❌ | Feature flag `featureBusiestDay` |
+| **Kelola Outlet** | ❌ | opt | opt | Feature flag `featureOutlets` |
+| **Chart Perbandingan Outlet** | ❌ | opt | opt | Hanya jika featureOutlets + ≥2 outlet |
+| **HPP & Daftar Produk** | ❌ | opt | ✅ | Feature flag `featureProduct` |
+| **Bahan Baku** | ❌ | ❌ | ✅ | Feature flag `featureProduction` |
+| **Batch Produksi** | ❌ | ❌ | ✅ | Feature flag `featureProduction` |
+
+> `opt` = opsional, bisa diaktifkan saat onboarding atau di **Pengaturan → Atur Fitur**
 
 ---
 
 ## 5. Business Rules
 
 ### 5.1 Mode & Feature Flag
-- Tidak ada "mode" yang kaku — sistem berbasis **feature flag per fitur**
-- `isBusinessMode = featureOutlets OR featureBudget OR featureProduct`
-- Ketika `isBusinessMode = true`, fitur Stok & Jual Cepat otomatis muncul
-- User bisa ubah kapan saja di **Pengaturan → Fitur Aktif**
+
+Sistem berbasis **10 feature flag individual** yang bisa dikombinasi bebas. Mode hanyalah preset awal.
+
+```
+BusinessMode.personal  → semua flag OFF
+BusinessMode.store     → quickSale, topCategories, busiestDay, stock, productAnalytics = ON
+BusinessMode.production → product, outlets, budget, production, stock, productAnalytics, debt = ON
+```
+
+Setelah onboarding, user bisa ubah kapan saja di **Profil → Atur Fitur**.
+
+**Feature flags:**
+
+| Flag | Kunci | Deskripsi |
+|---|---|---|
+| `featureProduct` | HPP & Produk | Kalkulator HPP + daftar produk |
+| `featureOutlets` | Multi-outlet | Kelola cabang |
+| `featureBudget` | Budget | Target anggaran bulanan |
+| `featureProduction` | Bahan Baku & Batch | Manajemen bahan baku + pencatatan batch |
+| `featureQuickSale` | Jual Cepat | Preset penjualan cepat |
+| `featureTopCategories` | Kategori Terlaris | Insight laporan |
+| `featureBusiestDay` | Hari Tersibuk | Insight laporan |
+| `featureStock` | Stok Barang | Inventori barang dagangan |
+| `featureProductAnalytics` | Analitik Produk | Statistik & margin per produk |
+| `featureDebt` | Utang & Piutang | Catatan hutang/piutang |
+
+---
 
 ### 5.2 Kalkulasi Saldo
 - Saldo dompet = `saldo_awal + Σ(pemasukan) - Σ(pengeluaran)` untuk dompet tersebut
 - Tidak ada field "saldo tersimpan" — dihitung real-time dari transaksi
 - Total saldo = jumlah semua dompet yang terdaftar
 
+---
+
 ### 5.3 Transaksi Berulang
 - Dieksekusi otomatis saat app dibuka
 - Cek: `next_execute <= hari_ini` → buat transaksi baru → update `next_execute`
 - Frekuensi: Harian / Mingguan / Bulanan (dengan pilih tanggal 1–28)
 
-### 5.4 Stok Barang
+---
+
+### 5.4 Stok Barang (Inventori)
 - **Hijau (Aman):** `currentStock > minStock`
 - **Kuning (Menipis):** `currentStock <= minStock AND minStock > 0`
 - **Merah (Habis):** `currentStock <= 0`
-- Update stok: manual (+1 / -1 / +10 dari UI), **tidak** terhubung otomatis ke Jual Cepat
+- Update stok: manual (+1 / -1 / +10 dari UI)
+- **Tidak** terhubung otomatis ke Jual Cepat
+
+---
 
 ### 5.4b Dompet & Rekening
-- Hanya tersedia untuk **pengguna personal** (`isBusinessMode = false`)
-- Untuk bisnis: pencatatan kas tidak dipisah per dompet — terlalu kompleks tanpa integrasi payment gateway
-- Akan dipertimbangkan kembali saat adopsi POS + payment gateway
+- Hanya tersedia untuk mode **personal** (`isBusinessMode = false`)
+- Untuk bisnis: pencatatan kas tidak dipisah per dompet
+
+---
 
 ### 5.5 Jual Cepat
 - Tap preset → isi qty → konfirmasi → income tercatat
-- Tidak mengurangi stok secara otomatis (scope POS belum tercapai)
+- Tidak mengurangi stok secara otomatis
 - Pemilihan dompet di-disable sementara (`_kEnableWalletSelector = false`)
+
+---
 
 ### 5.6 Utang & Piutang
 - `iOwe` = saya berhutang ke orang lain
 - `theyOwe` = orang lain berhutang ke saya
-- Tandai lunas → data tetap tersimpan (tidak dihapus), hanya flag `is_paid = true`
+- Tandai lunas → data tetap tersimpan, hanya flag `is_paid = true`
+
+---
+
+### 5.7 Batch Produksi
+- Setiap batch mencatat: produk, tanggal, qty yang dihasilkan, dan bahan baku yang dipakai
+- `costPerUnit = totalMaterialCost / qtyProduced`
+- Bahan baku dipilih dari daftar `raw_materials` milik user
+- Batch **tidak** otomatis mengurangi stok bahan baku (manual update)
+
+---
+
+### 5.8 HPP Calculator (Produk)
+- Input: nama produk, qty hasil, daftar bahan baku (nama + harga), biaya lain
+- Output: total biaya, HPP per unit, margin (jika harga jual diisi)
+- Data tersimpan di tabel `products` (bisa di-load ulang untuk referensi)
 
 ---
 
@@ -172,3 +248,4 @@ Mayoritas pelaku UMKM dan individu di Indonesia masih mencatat keuangan secara m
 | Stok otomatis berkurang saat jual | Perlu integrasi barcode — next phase |
 | Dompet & Rekening untuk mode bisnis | Tidak relevan tanpa integrasi payment gateway / POS |
 | Wallet selector di Jual Cepat | Overkill untuk pencatatan sederhana — ditunda |
+| Pengurangan stok bahan baku otomatis saat batch | Butuh validasi stok yang lebih kompleks — next phase |

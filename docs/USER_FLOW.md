@@ -1,338 +1,313 @@
 # User Flow & Business Flow
 ## Cuan Flow — Panduan Penggunaan per Persona
 
----
+**Versi:** 2.1 | **Tanggal:** April 2026
 
-## Alur Onboarding (Pertama Kali)
-
-```
-Buka App
-    │
-    ▼
-Splash Screen (logo + versi)
-    │
-    ▼
-Sudah punya akun? ──Ya──► Login (email/HP + PIN)
-    │                           │
-    Tidak                       ▼
-    │                      Home Screen
-    ▼
-Register (nama + PIN 6 digit)
-    │
-    ▼
-Pilih Mode Penggunaan
-    ├── Catat Keuangan Pribadi  ──► langsung ke Home
-    └── Pemilik Usaha           ──► pilih fitur yang dibutuhkan
-                                     ├── [✓] Budget & Target
-                                     ├── [ ] Kelola Outlet
-                                     └── [ ] Kalkulator HPP
-                                     ──► Home Screen
-```
-
-> **Ubah mode kapan saja:** Pengaturan → FITUR AKTIF → toggle on/off
+> Preview diagram: buka file ini di VSCode → klik kanan → **"Open Preview"**, atau tekan `Cmd+Shift+V` (Mac) / `Ctrl+Shift+V` (Windows).  
+> Butuh ekstensi **Markdown Preview Mermaid Support** (ID: `bierner.markdown-mermaid`) jika diagram tidak tampil.
 
 ---
 
-## Flow A — Pengguna Personal (Sehari-hari)
+## 1. Alur Onboarding (Pertama Kali)
 
-### Pagi: Cek kondisi keuangan
-```
-Buka App
-    │
-    ▼
-Home Screen
-    ├── Lihat "Laba/Sisa Hari Ini" → angka hijau = sisa positif, merah = minus
-    ├── Lihat "Saldo Total" → tap untuk detail per dompet
-    └── Geser card untuk lihat perbandingan minggu ini
-```
+```mermaid
+flowchart TD
+    A([Buka App]) --> B[Splash Screen]
+    B --> C{Sudah punya akun?}
+    C -- Ya --> D[Login\nemail + PIN]
+    C -- Tidak --> E[Register\nnama + email + PIN 6 digit]
+    D --> H([Home Screen])
+    E --> F[Pilih Mode Penggunaan]
 
-### Siang: Catat pengeluaran
-```
-Home → tombol "Pengeluaran" (merah)
-    │
-    ▼
-Input nominal (kalkulator angka)
-    │
-    ▼
-Pilih kategori (Makan, Transport, dll)
-    │
-    ▼
-Isi keterangan (opsional)
-    │
-    ▼
-Pilih dompet (jika ada)
-    │
-    ▼
-SIMPAN ✓  →  langsung balik ke Home, saldo terupdate
+    F --> G1[Personal\nCatat Keuangan Pribadi]
+    F --> G2[Bisnis / Store\nPemilik Toko / Warung]
+    F --> G3[Produksi\nHome Industry]
+
+    G1 --> H
+
+    G2 --> G2a{Fitur tambahan?}
+    G2a --> G2b["[✓] Budget & Target\n[ ] Multi Outlet\n[ ] HPP & Produk"]
+    G2b --> H
+
+    G3 --> G3a{Fitur tambahan?}
+    G3a --> G3b["HPP, Bahan Baku, Batch = ON otomatis\n[✓] Budget & Target (opsional)\n[ ] Multi Outlet (opsional)"]
+    G3b --> H
 ```
 
-### Akhir bulan: Cek laporan
-```
-Tab Laporan
-    ├── Navigasi bulan (< >)
-    ├── Lihat Total Pemasukan vs Pengeluaran
-    ├── Lihat Sisa Uang bulan ini
-    ├── Pantau progress Budget (jika aktif)
-    └── Export PDF (share ke WhatsApp, simpan, dll)
-```
+> **Ubah kapan saja:** Profil → Atur Fitur → toggle on/off
 
 ---
 
-## Flow B — Pedagang Kelontong (Sehari-hari)
+## 2. Flow Personal — Sehari-hari
 
-### Pagi: Buka warung, cek kondisi
-```
-Buka App
-    │
-    ▼
-Home Screen
-    ├── ⚠ Alert kuning: "3 barang stok menipis" → tap untuk lihat
-    └── Lihat laba kemarin vs hari sebelumnya
-    (Saldo dompet tidak ditampilkan — bisnis tidak pakai fitur dompet)
-    │
-    ▼ (jika ada alert stok)
-Stok Barang
-    ├── Lihat daftar: merah (habis), kuning (menipis), hijau (aman)
-    └── Keputusan: hubungi supplier untuk restok
+### 2a. Cek Kondisi Keuangan (Pagi)
+
+```mermaid
+flowchart TD
+    A([Buka App]) --> B[Home Screen]
+    B --> C["Laba/Sisa Hari Ini\n🟢 positif / 🔴 minus"]
+    B --> D["Saldo Total\n→ tap untuk detail per dompet"]
+    B --> E["Geser card → perbandingan\npemasukan vs pengeluaran minggu ini"]
 ```
 
-### Saat jualan: Catat penjualan (2 ketukan)
-```
-Home → tombol "Jual Cepat" (biru)
-    │
-    ▼
-Grid Preset (Indomie, Es Teh, Rokok Sampoerna, dll)
-    │
-    ▼ (tap salah satu, misal "Rokok Sampoerna")
-Dialog konfirmasi:
-    ├── Nama: Rokok Sampoerna
-    ├── Harga: Rp 26.000
-    ├── Jumlah: [−] 1 [+]  ← ubah jika beli lebih dari 1
-    └── Total: Rp 26.000
-    │
-    ▼ (ketuk "Catat Penjualan")
-✓ Tercatat! → muncul snackbar hijau "Rokok Sampoerna — Rp 26.000 dicatat"
+### 2b. Catat Pengeluaran
+
+```mermaid
+flowchart TD
+    A([Home]) --> B["Tap tombol Pengeluaran 🔴"]
+    B --> C[Input nominal\nvia kalkulator angka]
+    C --> D[Pilih kategori\nMakan, Transport, dll]
+    D --> E[Isi keterangan\nopsional]
+    E --> F{Punya dompet?}
+    F -- Ya --> G[Pilih dompet]
+    F -- Tidak --> H
+    G --> H[SIMPAN ✓]
+    H --> I([Balik ke Home\nsaldo terupdate])
 ```
 
-### Saat terima kiriman supplier: Update stok
-```
-Profil → Stok Barang
-    │
-    ▼
-Cari item (misal: Indomie Goreng, stok sekarang 5)
-    │
-    ▼
-Tap [+10] → stok jadi 15
-Tap [+10] → stok jadi 25
-    │
-    ▼
-✓ Tersimpan otomatis
-```
+### 2c. Cek Laporan Akhir Bulan
 
-### Saat pelanggan hutang: Catat piutang
-```
-Profil → Utang & Piutang
-    │
-    ▼
-Tab "Piutang Saya" → tombol +
-    │
-    ▼
-Isi: Nama (Pak Budi), Jumlah (75.000), Jatuh Tempo (30 April)
-    │
-    ▼
-✓ Tersimpan → muncul di list dengan countdown jatuh tempo
-    │
-    ▼ (saat Pak Budi bayar)
-Tap "Tandai Lunas" → ✓
-```
-
-### Akhir bulan: Analisa bisnis
-```
-Tab Laporan
-    ├── Lihat omzet bulan ini vs bulan lalu
-    ├── Kategori Terlaris → "Rokok" paling banyak = jangan sampai stok habis
-    ├── Hari Tersibuk → Sabtu & Minggu ⭐ = tambah stok sebelum weekend
-    ├── Rincian Pengeluaran → Operasional vs Pembelian Stok
-    └── Export PDF untuk arsip
+```mermaid
+flowchart TD
+    A([Tab Laporan]) --> B["Navigasi bulan ← →"]
+    B --> C[Total Pemasukan\nvs Pengeluaran]
+    C --> D[Pantau Budget\njika featureBudget aktif]
+    D --> E{Export?}
+    E -- Ya --> F["Export PDF\nShare WhatsApp / simpan"]
+    E -- Tidak --> G([Selesai])
+    F --> G
 ```
 
 ---
 
-## Flow C — Multi-outlet
+## 3. Flow Store (Bisnis/Kelontong) — Sehari-hari
 
-### Setup outlet baru
-```
-Profil → Kelola Outlet → [+]
-    │
-    ▼
-Isi nama outlet (misal: "Cabang Barat")
-    │
-    ▼
-✓ Tersimpan → muncul di dropdown filter
-```
+### 3a. Buka Warung, Cek Kondisi
 
-### Catat transaksi per outlet
-```
-Home → Pemasukan
-    │
-    ▼
-Input nominal + kategori
-    │
-    ▼
-Pilih Outlet: [Cabang Pusat ▼]
-    │
-    ▼
-✓ Tersimpan dengan tag outlet
+```mermaid
+flowchart TD
+    A([Buka App]) --> B[Home Screen]
+    B --> C{"Alert stok?"}
+    C -- Ya --> D["⚠ N barang menipis/habis"]
+    D --> E[Stok Barang\nlihat daftar merah/kuning/hijau]
+    E --> F[Keputusan: hubungi supplier]
+    C -- Tidak --> G[Lihat laba kemarin\nvs hari sebelumnya]
 ```
 
-### Bandingkan kinerja antar cabang
-```
-Tab Laporan → (semua outlet dipilih)
-    ├── Chart "Kontribusi Outlet" → pie chart porsi pendapatan
-    └── Chart "Tren per Outlet" → line chart perbandingan bulanan
+### 3b. Catat Penjualan (Jual Cepat — 2 Ketukan)
+
+```mermaid
+flowchart TD
+    A([Home]) --> B["Tap Jual Cepat 🔵"]
+    B --> C[Grid Preset\nIndomie, Es Teh, Rokok, dll]
+    C --> D[Tap salah satu preset]
+    D --> E["Dialog Konfirmasi\nNama · Harga · Qty · Total"]
+    E --> F{Qty benar?}
+    F -- Ubah --> G["[−] qty [+]"]
+    G --> E
+    F -- Benar --> H["Tap Catat Penjualan"]
+    H --> I(["✓ Snackbar hijau\nNama — Rp xxx dicatat"])
 ```
 
----
+### 3c. Update Stok Saat Terima Supplier
 
-## Flow D — Produsen (HPP Calculator)
-
-### Hitung HPP produk baru
+```mermaid
+flowchart TD
+    A([Profil → Stok Barang]) --> B[Cari item]
+    B --> C["Stok sekarang: 5"]
+    C --> D["Tap [+10] → stok: 15"]
+    D --> E["Tap [+10] → stok: 25"]
+    E --> F(["✓ Tersimpan otomatis"])
 ```
-Profil → Kelola Produk & HPP → [+]
-    │
-    ▼
-Nama Produk: "Kue Brownies"
-Hasil Produksi: 20 potong
-    │
-    ▼
-Tambah Bahan Baku:
-    ├── Tepung Terigu 500gr → Rp 8.000
-    ├── Telur 3 butir → Rp 7.500
-    ├── Coklat Batang → Rp 15.000
-    └── [+ Tambah Item]
-    │
-    ▼
-Tambah Biaya Lain:
-    ├── Gas LPG (alokasi) → Rp 5.000
-    └── Kemasan → Rp 6.000
-    │
-    ▼
-Hasil:
-    ├── Total Biaya: Rp 41.500
-    ├── HPP per potong: Rp 2.075
-    ├── Input Harga Jual: Rp 5.000
-    ├── Profit per potong: Rp 2.925
-    └── Margin: 141%
-    │
-    ▼
-Simpan Produk ✓
+
+### 3d. Analisa Bisnis Akhir Bulan
+
+```mermaid
+flowchart TD
+    A([Tab Laporan]) --> B[Omzet bulan ini\nvs bulan lalu]
+    B --> C[Kategori Terlaris\n→ Rokok paling banyak]
+    C --> D[Hari Tersibuk\n→ Sabtu & Minggu ⭐]
+    D --> E[Rincian Pengeluaran\nOperasional vs Pembelian Stok]
+    E --> F["Export PDF untuk arsip"]
 ```
 
 ---
 
-## Flow: Transaksi Berulang (Semua User)
+## 4. Flow Multi-outlet (Store + featureOutlets)
 
-### Setup (sekali saja)
-```
-Profil → Transaksi Berulang → [+]
-    │
-    ▼
-Nama: "Bayar Netflix"
-Jumlah: Rp 54.000
-Tipe: Pengeluaran
-Kategori: Hiburan
-Frekuensi: Bulanan
-Tanggal: 15
-    │
-    ▼
-✓ Tersimpan → next_execute = tanggal 15 bulan depan
-```
+```mermaid
+flowchart TD
+    A([Profil → Kelola Outlet]) --> B["Tap + Tambah Outlet"]
+    B --> C["Isi nama: Cabang Barat"]
+    C --> D(["✓ Tersimpan → muncul di dropdown"])
 
-### Eksekusi otomatis
-```
-Buka App (tanggal 15)
-    │
-    ▼ (di background, saat init)
-App cek: next_execute <= hari ini?
-    ├── Ya → buat transaksi "Bayar Netflix Rp 54.000"
-    │         update next_execute ke bulan depan
-    └── Tidak → skip
-    │
-    ▼
-User buka Riwayat → transaksi sudah ada ✓
+    E([Home → Pemasukan]) --> F[Input nominal + kategori]
+    F --> G["Pilih Outlet: Cabang Pusat ▼"]
+    G --> H(["✓ Tersimpan dengan tag outlet"])
+
+    I([Tab Laporan]) --> J["Chart Kontribusi Outlet\npie chart porsi pendapatan"]
+    J --> K["Chart Tren per Outlet\nline chart perbandingan bulanan"]
 ```
 
 ---
 
-## Navigasi App (Bottom Navigation)
+## 5. Flow Produksi (Mode Production)
 
+### 5a. Kelola Bahan Baku
+
+```mermaid
+flowchart TD
+    A([Profil → Bahan Baku]) --> B["Daftar bahan baku\n🔴 habis / 🟡 menipis / 🟢 aman"]
+    B --> C{Aksi}
+    C -- Tambah --> D["Isi: nama, satuan, harga/unit\nstok awal, min stok, supplier"]
+    D --> E(["✓ Bahan baku ditambahkan"])
+    C -- Edit Stok --> F["Update current_stock"]
+    F --> E
+    C -- Cari --> G["Filter by nama"]
+    G --> B
 ```
-┌─────────────────────────────────────────────┐
-│                  HOME SCREEN                │
-│  - Ringkasan hari ini & minggu ini          │
-│  - Total saldo semua dompet                 │
-│  - Alert stok (bisnis)                      │
-│  - Tombol: Pemasukan | Pengeluaran          │
-│  - Tombol: Jual Cepat (bisnis)              │
-├──────────┬──────────┬──────────┬────────────┤
-│  Beranda │ Riwayat  │ Laporan  │   Profil   │
-│    🏠    │    📋    │    📊    │    👤      │
-└──────────┴──────────┴──────────┴────────────┘
+
+### 5b. Hitung HPP & Simpan Produk
+
+```mermaid
+flowchart TD
+    A([Profil → Kelola Produk & HPP]) --> B["Tap + Produk Baru"]
+    B --> C["Nama: Kue Brownies\nHasil Produksi: 20 potong"]
+    C --> D[Tambah Bahan Baku]
+    D --> D1["Tepung 500gr → Rp 8.000"]
+    D --> D2["Telur 3 butir → Rp 7.500"]
+    D --> D3["Coklat Batang → Rp 15.000"]
+    D1 & D2 & D3 --> E[Tambah Biaya Lain]
+    E --> E1["Gas LPG → Rp 5.000"]
+    E --> E2["Kemasan → Rp 6.000"]
+    E1 & E2 --> F["Kalkulasi Otomatis"]
+    F --> G["Total Biaya: Rp 41.500\nHPP/unit: Rp 2.075"]
+    G --> H["Input Harga Jual: Rp 5.000"]
+    H --> I["Profit/unit: Rp 2.925\nMargin: 141%"]
+    I --> J(["Simpan Produk ✓"])
 ```
 
-### Tab Riwayat
-- Filter: Hari Ini / Kemarin / Minggu Ini / Bulan Ini / Custom
-- Filter outlet (jika featureOutlets)
-- Edit & hapus transaksi
-- Export PDF
+### 5c. Catat Batch Produksi
 
-### Tab Laporan
-- Navigasi per bulan
-- Kartu: Total Pemasukan, Pengeluaran, Laba/Sisa
-- Rincian Pengeluaran (Operasional vs Stok)
-- Budget progress (jika aktif)
-- Bar chart harian/mingguan
-- **Kategori Terlaris** (bisnis)
-- **Hari Tersibuk** (bisnis)
-- Chart outlet (jika featureOutlets + ≥2 outlet)
+```mermaid
+flowchart TD
+    A([Profil → Batch Produksi]) --> B["Tap + Batch Baru"]
+    B --> C["Pilih Produk: Kue Brownies"]
+    C --> D["Tanggal produksi: hari ini"]
+    D --> E["Qty diproduksi: 30 potong"]
+    E --> F["Pilih bahan baku yang dipakai\n(dari daftar raw_materials)"]
+    F --> G["Input qty masing-masing bahan"]
+    G --> H["HPP/unit batch: dihitung otomatis\ntotalMaterialCost / qtyProduced"]
+    H --> I(["Simpan Batch ✓"])
+```
 
-### Tab Profil
-- Pengaturan Akun (nama, bisnis, WA)
-- Dompet & Rekening
-- Utang & Piutang
-- Transaksi Berulang
-- Budget & Target
-- Stok Barang (bisnis)
-- Jual Cepat (bisnis)
-- Kelola Outlet (featureOutlets)
-- Kelola Produk & HPP (featureProduct)
-- Kelola Kategori
-- Notifikasi & Pengingat
-- Ganti PIN
-- Bahasa
-- Tentang Aplikasi
-- Keluar
+### 5d. Analitik Produk
+
+```mermaid
+flowchart TD
+    A([Profil → Analitik Produk]) --> B[Pilih produk]
+    B --> C["Statistik penjualan produk"]
+    C --> D["Margin per periode"]
+    D --> E["Trend qty terjual"]
+    E --> F["Breakeven analysis"]
+```
 
 ---
 
-## Alur Sinkronisasi Data
+## 6. Flow Utang & Piutang
 
-```
-Aksi User (tambah/edit/hapus)
-    │
-    ▼
-Simpan ke Local Storage (JSON) ← Langsung, offline-safe
-    │
-    ▼
-Notifikasi UI update (ChangeNotifier)
-    │
-    ▼ (background, fire & forget)
-Push ke Supabase
-    ├── Sukses → ID lokal diganti UUID server
-    └── Gagal  → tetap di lokal, retry saat online
+```mermaid
+flowchart TD
+    A([Profil → Utang & Piutang]) --> B{Tab}
+    B -- Hutang Saya --> C["iOwe: saya berhutang"]
+    B -- Piutang Saya --> D["theyOwe: mereka berhutang"]
 
-Login / Buka App:
-    └── Pull dari Supabase → merge dengan data lokal
+    C --> E["Tap +\nNama · Jumlah · Jatuh Tempo"]
+    D --> E
+
+    E --> F(["✓ Muncul di list\ndengan countdown jatuh tempo"])
+
+    F --> G{"Lunas?"}
+    G -- Ya --> H["Tap Tandai Lunas"]
+    H --> I(["is_paid = true\nData tetap tersimpan"])
 ```
 
-> **Prinsip:** App selalu bisa dipakai offline. Data lokal adalah source of truth untuk UI. Supabase adalah backup & sync antar device.
+---
+
+## 7. Flow Transaksi Berulang
+
+```mermaid
+flowchart TD
+    A([Profil → Transaksi Berulang]) --> B["Tap + Tambah"]
+    B --> C["Nama: Bayar Netflix\nJumlah: Rp 54.000\nTipe: Pengeluaran\nKategori: Hiburan\nFrekuensi: Bulanan\nTanggal: 15"]
+    C --> D(["✓ next_execute = tgl 15 bulan depan"])
+
+    E([Buka App tgl 15]) --> F{next_execute <= hari ini?}
+    F -- Ya --> G["Buat transaksi otomatis\nBayar Netflix Rp 54.000"]
+    G --> H["Update next_execute → bulan depan"]
+    H --> I(["Muncul di Riwayat ✓"])
+    F -- Tidak --> J([Skip])
+```
+
+---
+
+## 8. Flow Atur Fitur (Manage Features)
+
+```mermaid
+flowchart TD
+    A([Profil → Atur Fitur]) --> B[Halaman Atur Fitur]
+    B --> C["LAPORAN & INSIGHT\n▶ Kategori Terlaris\n▶ Hari Tersibuk"]
+    B --> D["FITUR TRANSAKSI\n▶ Jual Cepat"]
+    B --> E["FITUR BISNIS\n▶ Budget & Target\n▶ Multi Outlet"]
+    B --> F["FITUR PRODUKSI\n▶ HPP & Produk\n▶ Bahan Baku & Batch"]
+
+    C & D & E & F --> G[Toggle ON/OFF]
+    G --> H["Profile diupdate via updateProfile()"]
+    H --> I(["UI refresh otomatis\nMenu muncul/hilang sesuai flag"])
+```
+
+---
+
+## 9. Navigasi App (Bottom Navigation)
+
+```mermaid
+flowchart LR
+    Home["🏠 Beranda\n─────────────\nRingkasan hari ini\nSaldo total\nAlert stok\nTombol: Pemasukan\nTombol: Pengeluaran\nTombol: Jual Cepat\n(jika featureQuickSale)"]
+    History["📋 Riwayat\n─────────────\nFilter waktu\nFilter outlet\nEdit & hapus\nExport PDF"]
+    Report["📊 Laporan\n─────────────\nNavigasi bulan\nTotal in/out/laba\nBudget progress\nBar chart harian\nKategori Terlaris\nHari Tersibuk\nChart outlet"]
+    Profile["👤 Profil\n─────────────\nPengaturan Akun\nDompet & Rekening\nUtang & Piutang\nTransaksi Berulang\nBudget & Target\nStok Barang\nJual Cepat\nKelola Outlet\nProduk & HPP\nBahan Baku\nBatch Produksi\nAnalitik Produk\nKelola Kategori\nAtur Fitur\nNotifikasi\nGanti PIN\nBahasa\nTentang App\nKeluar"]
+
+    Home --- History
+    History --- Report
+    Report --- Profile
+```
+
+---
+
+## 10. Alur Sinkronisasi Data
+
+```mermaid
+sequenceDiagram
+    actor User
+    participant App as Flutter App\n(Local JSON)
+    participant UI as UI Layer\n(ChangeNotifier)
+    participant Supabase
+
+    User->>App: Tambah/Edit/Hapus data
+    App->>App: Simpan ke Local JSON
+    App->>UI: Notifikasi update
+    UI->>User: Tampilan terupdate (instant)
+
+    App-->>Supabase: Push (background, fire & forget)
+    alt Sukses
+        Supabase-->>App: ID lokal → UUID server
+    else Gagal / Offline
+        App->>App: Queue untuk retry
+    end
+
+    Note over App,Supabase: Saat Login / Buka App
+    Supabase-->>App: Pull data terbaru
+    App->>App: Merge dengan data lokal
+```
+
+> **Prinsip:** App selalu bisa dipakai offline. Local = source of truth untuk UI. Supabase = backup & sync antar device.
