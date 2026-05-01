@@ -152,32 +152,39 @@ class _ProfileScreenState extends State<ProfileScreen> {
               ),
               const SizedBox(height: 8),
             ],
-            _ProfileMenuItem(
-              icon: Icons.handshake_outlined,
-              title: context.t('profile.menu.debt'),
-              subtitle: context.t('profile.menu.debtSubtitle'),
-              onTap: () => Navigator.of(context).pushNamed(AppRoutes.debt),
-            ),
-            const SizedBox(height: 8),
+            if (profile.featureDebt) ...[
+              _ProfileMenuItem(
+                icon: Icons.handshake_outlined,
+                title: context.t('profile.menu.debt'),
+                subtitle: context.t('profile.menu.debtSubtitle'),
+                onTap: () => Navigator.of(context).pushNamed(AppRoutes.debt),
+              ),
+              const SizedBox(height: 8),
+            ],
 
             // ── Native Ad (styled as menu card) ───────────────────────────
             _ProfileAdCard(),
             const SizedBox(height: 8),
 
-            _ProfileMenuItem(
-              icon: Icons.repeat_outlined,
-              title: context.t('profile.menu.recurring'),
-              subtitle: context.t('profile.menu.recurringSubtitle'),
-              onTap: () => Navigator.of(context).pushNamed(AppRoutes.recurring),
-            ),
-            const SizedBox(height: 8),
-            _ProfileMenuItem(
-              icon: Icons.savings_outlined,
-              title: context.t('profile.menu.budget'),
-              subtitle: context.t('profile.menu.budgetSubtitle'),
-              onTap: () => Navigator.of(context).pushNamed(AppRoutes.budget),
-            ),
-            const SizedBox(height: 8),
+            if (profile.featureRecurring) ...[
+              _ProfileMenuItem(
+                icon: Icons.repeat_outlined,
+                title: context.t('profile.menu.recurring'),
+                subtitle: context.t('profile.menu.recurringSubtitle'),
+                onTap: () =>
+                    Navigator.of(context).pushNamed(AppRoutes.recurring),
+              ),
+              const SizedBox(height: 8),
+            ],
+            if (profile.featureBudget) ...[
+              _ProfileMenuItem(
+                icon: Icons.savings_outlined,
+                title: context.t('profile.menu.budget'),
+                subtitle: context.t('profile.menu.budgetSubtitle'),
+                onTap: () => Navigator.of(context).pushNamed(AppRoutes.budget),
+              ),
+              const SizedBox(height: 8),
+            ],
 
             // Business-only menus (each gated by its own feature flag)
             if (profile.featureOutlets) ...[

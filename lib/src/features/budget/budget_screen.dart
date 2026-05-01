@@ -204,22 +204,24 @@ class _BudgetCard extends StatelessWidget {
 
   Color _progressColor(double ratio) {
     if (budget.type == MoneyTransactionType.income) {
-      return ratio >= 1.0 ? AppColors.positive : AppColors.brandBlue;
+      return AppColors.positive;
     }
     if (ratio >= 1.0) return AppColors.negative;
     if (ratio >= 0.8) return Colors.orange;
-    return AppColors.brandBlue;
+    return AppColors.negative.withValues(alpha: 0.6);
   }
 
   @override
   Widget build(BuildContext context) {
-    final ratio = budget.targetAmount > 0
-        ? (actual / budget.targetAmount).clamp(0.0, 1.0)
+    final rawRatio = budget.targetAmount > 0
+        ? actual / budget.targetAmount
         : 0.0;
-    final percent = (ratio * 100).round();
+    final ratio = rawRatio.clamp(0.0, 1.0);
+    final percent = (rawRatio * 100).round();
     final isIncome = budget.type == MoneyTransactionType.income;
     final isOverBudget =
         !isIncome && actual > budget.targetAmount;
+    final isIncomeCelebration = isIncome && rawRatio >= 1.0;
 
     final categoryName = budget.categoryId == null
         ? context.t(isIncome
@@ -377,6 +379,32 @@ class _BudgetCard extends StatelessWidget {
                     fontWeight: FontWeight.w600,
                     color: AppColors.negative,
                   ),
+                ),
+              ),
+            ],
+            if (isIncomeCelebration) ...[
+              const SizedBox(height: 8),
+              Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                decoration: BoxDecoration(
+                  color: AppColors.positive.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Text('🎉', style: TextStyle(fontSize: 14)),
+                    const SizedBox(width: 6),
+                    Text(
+                      'Target tercapai! +${IdrFormatter.format(actual - budget.targetAmount)}',
+                      style: const TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.positive,
+                      ),
+                    ),
+                  ],
                 ),
               ),
             ],

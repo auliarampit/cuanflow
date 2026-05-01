@@ -115,7 +115,12 @@ class AppState extends ChangeNotifier {
       return _transactions.fold(
           0, (s, tx) => s + (tx.isIncome ? tx.amount : -tx.amount));
     }
-    return _wallets.fold(0, (s, w) => s + balanceFor(w.id));
+    final walletBalance = _wallets.fold(0, (s, w) => s + balanceFor(w.id));
+    // Transaksi tanpa wallet juga ikut dihitung
+    final unassigned = _transactions
+        .where((tx) => tx.walletId == null || tx.walletId!.isEmpty)
+        .fold(0, (s, tx) => s + (tx.isIncome ? tx.amount : -tx.amount));
+    return walletBalance + unassigned;
   }
 
   /// Saldo satu dompet = saldo awal + pemasukan - pengeluaran dari dompet tsb.
@@ -955,6 +960,16 @@ class AppState extends ChangeNotifier {
       final nextExec = _stripTime(r.nextExecute ?? r.createdAt);
       if (nextExec.isAfter(today)) { updated.add(r); continue; }
 
+      // Jika hari ini = hari eksekusi, cek apakah sudah melewati jam yang ditentukan
+      if (nextExec == today && r.executionHour != null) {
+        final execHour = r.executionHour!;
+        final execMinute = r.executionMinute ?? 0;
+        if (now.hour < execHour || (now.hour == execHour && now.minute < execMinute)) {
+          updated.add(r);
+          continue;
+        }
+      }
+
       // Buat transaksi untuk hari yang jatuh tempo
       final tx = MoneyTransaction(
         id: 'tx_${now.microsecondsSinceEpoch}_${r.id.hashCode.abs()}',
@@ -968,8 +983,8 @@ class AppState extends ChangeNotifier {
       );
       _transactions = [tx, ..._transactions];
       updated.add(r.copyWith(
-        lastExecuted: nextExec,
-        nextExecute: r.computeNextExecute(nextExec),
+        lastExecuted: today,
+        nextExecute: r.computeNextExecute(today),
       ));
       changed = true;
     }

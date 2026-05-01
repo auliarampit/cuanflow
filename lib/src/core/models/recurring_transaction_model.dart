@@ -27,6 +27,8 @@ class RecurringTransactionModel {
     required this.createdAt,
     this.walletId,
     this.dayOfMonth,
+    this.executionHour,
+    this.executionMinute,
     this.lastExecuted,
     this.nextExecute,
   });
@@ -44,6 +46,12 @@ class RecurringTransactionModel {
   /// Untuk monthly: tanggal berapa setiap bulan (1–28)
   final int? dayOfMonth;
 
+  /// Jam eksekusi yang diinginkan (0–23), null = eksekusi kapan saja saat app dibuka
+  final int? executionHour;
+
+  /// Menit eksekusi (0–59), null = 0
+  final int? executionMinute;
+
   final DateTime? lastExecuted;
   final DateTime? nextExecute;
 
@@ -56,6 +64,8 @@ class RecurringTransactionModel {
     bool? isActive,
     String? walletId,
     int? dayOfMonth,
+    int? executionHour,
+    int? executionMinute,
     DateTime? lastExecuted,
     DateTime? nextExecute,
   }) {
@@ -70,6 +80,8 @@ class RecurringTransactionModel {
       createdAt: createdAt,
       walletId: walletId ?? this.walletId,
       dayOfMonth: dayOfMonth ?? this.dayOfMonth,
+      executionHour: executionHour ?? this.executionHour,
+      executionMinute: executionMinute ?? this.executionMinute,
       lastExecuted: lastExecuted ?? this.lastExecuted,
       nextExecute: nextExecute ?? this.nextExecute,
     );
@@ -101,6 +113,8 @@ class RecurringTransactionModel {
         'createdAt': createdAt.toIso8601String(),
         'walletId': walletId,
         'dayOfMonth': dayOfMonth,
+        'executionHour': executionHour,
+        'executionMinute': executionMinute,
         'lastExecuted': lastExecuted?.toIso8601String(),
         'nextExecute': nextExecute?.toIso8601String(),
       };
@@ -134,6 +148,8 @@ class RecurringTransactionModel {
           DateTime.now(),
       walletId: json['walletId'] as String? ?? json['wallet_id'] as String?,
       dayOfMonth: (json['dayOfMonth'] as num?)?.toInt(),
+      executionHour: (json['executionHour'] as num?)?.toInt(),
+      executionMinute: (json['executionMinute'] as num?)?.toInt(),
       lastExecuted: json['lastExecuted'] != null
           ? DateTime.tryParse(json['lastExecuted'] as String)
           : null,

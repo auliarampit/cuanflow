@@ -54,8 +54,11 @@ enum Feature {
   // NEW: Analitik produk (store dan production) - product analytics
   productAnalytics('featureProductAnalytics', 'Analitik Produk'),
 
-  // NEW: Utang & piutang (belum ada toggle di menu) - debt & receivable
-  debt('featureDebt', 'Utang & Piutang');
+  // NEW: Utang & piutang - debt & receivable
+  debt('featureDebt', 'Utang & Piutang'),
+
+  // NEW: Transaksi berulang - recurring transactions
+  recurring('featureRecurring', 'Transaksi Berulang');
 
   const Feature(this.key, this.description);
   final String key;
@@ -76,9 +79,10 @@ const Map<BusinessMode, Map<Feature, bool>> featureConfig = {
     Feature.quickSale: false,
     Feature.topCategories: false,
     Feature.busiestDay: false,
-    Feature.stock: false, // ❌ Stok barang
-    Feature.productAnalytics: false, // ❌ Analitik produk
-    Feature.debt: false, // ❌ Utang & piutang
+    Feature.stock: false,
+    Feature.productAnalytics: false,
+    Feature.debt: false,
+    Feature.recurring: true, // ✅ Transaksi berulang (personal default on)
   },
   BusinessMode.store: {
     Feature.product: false,
@@ -91,6 +95,7 @@ const Map<BusinessMode, Map<Feature, bool>> featureConfig = {
     Feature.stock: true, // ✅ Stok barang (store)
     Feature.productAnalytics: true, // ✅ Analitik produk (store)
     Feature.debt: true, // ✅ Utang & piutang
+    Feature.recurring: true, // ✅ Transaksi berulang
   },
   BusinessMode.production: {
     Feature.product: true, // ✅ HPP Calculator
@@ -100,9 +105,10 @@ const Map<BusinessMode, Map<Feature, bool>> featureConfig = {
     Feature.quickSale: false, // ❌ Fast Sale (production mode fokus ke HPP)
     Feature.topCategories: false, // ❌ Top Products (production fokus ke HPP)
     Feature.busiestDay: false,
-    Feature.stock: false, // ❌ Stok barang (production)
-    Feature.productAnalytics: false, // ❌ Analitik produk (production)
-    Feature.debt: false, // ❌ Utang & piutang (production)
+    Feature.stock: false,
+    Feature.productAnalytics: false,
+    Feature.debt: false,
+    Feature.recurring: true, // ✅ Transaksi berulang
   },
 };
 
@@ -221,6 +227,7 @@ const Map<Feature, bool> _featureDefaults = {
   Feature.stock: true,
   Feature.productAnalytics: true,
   Feature.debt: false,
+  Feature.recurring: true,
 };
 
 /// Convert legacy isBusinessMode to BusinessMode
@@ -246,6 +253,7 @@ const Map<String, Feature> featureMapping = {
   'stok_barang': Feature.stock,
   'analitik_produk': Feature.productAnalytics,
   'utang_piutang': Feature.debt,
+  'transaksi_berulang': Feature.recurring,
 };
 
 /// Get Feature from user request key

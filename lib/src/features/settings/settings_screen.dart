@@ -15,24 +15,9 @@ class SettingsScreen extends StatefulWidget {
 }
 
 class _SettingsScreenState extends State<SettingsScreen> {
-  void _toggleFeature(
-    BuildContext context, {
-    bool? featureProduct,
-    bool? featureOutlets,
-    bool? featureBudget,
-  }) {
-    final p = context.appState.profile;
-    context.appState.updateProfile(p.copyWith(
-      featureProduct: featureProduct,
-      featureOutlets: featureOutlets,
-      featureBudget: featureBudget,
-    ));
-  }
-
   @override
   Widget build(BuildContext context) {
     final settings = context.appState.settings;
-    final profile = context.appState.profile;
 
     return AppGradientScaffold(
       appBar: AppBar(
@@ -103,28 +88,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
           const SizedBox(height: 20),
           _SectionLabel(context.t('settings.sectionFeatures')),
           const SizedBox(height: 8),
-          _FeatureToggleTile(
-            icon: Icons.inventory_2_outlined,
-            title: context.t('settings.featureProduct'),
-            subtitle: context.t('settings.featureProductSubtitle'),
-            value: profile.featureProduct,
-            onChanged: (v) => _toggleFeature(context, featureProduct: v),
-          ),
-          const SizedBox(height: 8),
-          _FeatureToggleTile(
-            icon: Icons.store_outlined,
-            title: context.t('settings.featureOutlets'),
-            subtitle: context.t('settings.featureOutletsSubtitle'),
-            value: profile.featureOutlets,
-            onChanged: (v) => _toggleFeature(context, featureOutlets: v),
-          ),
-          const SizedBox(height: 8),
-          _FeatureToggleTile(
-            icon: Icons.savings_outlined,
-            title: context.t('settings.featureBudget'),
-            subtitle: context.t('settings.featureBudgetSubtitle'),
-            value: profile.featureBudget,
-            onChanged: (v) => _toggleFeature(context, featureBudget: v),
+          _SettingsTile(
+            icon: Icons.tune_outlined,
+            title: context.t('settings.manageFeatures'),
+            onTap: () => Navigator.of(context).pushNamed(AppRoutes.manageFeatures),
           ),
 
           const SizedBox(height: 20),
@@ -417,57 +384,3 @@ class _LanguageOption extends StatelessWidget {
   }
 }
 
-class _FeatureToggleTile extends StatelessWidget {
-  const _FeatureToggleTile({
-    required this.icon,
-    required this.title,
-    required this.subtitle,
-    required this.value,
-    required this.onChanged,
-  });
-
-  final IconData icon;
-  final String title;
-  final String subtitle;
-  final bool value;
-  final ValueChanged<bool> onChanged;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        color: context.appColors.card,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: context.appColors.outline),
-      ),
-      child: ListTile(
-        leading: Container(
-          width: 36,
-          height: 36,
-          decoration: BoxDecoration(
-            color: value
-                ? AppColors.brandBlue.withValues(alpha: 0.12)
-                : context.appColors.cardSoft,
-            borderRadius: BorderRadius.circular(10),
-          ),
-          child: Icon(
-            icon,
-            size: 20,
-            color: value ? AppColors.brandBlue : context.appColors.textSecondary,
-          ),
-        ),
-        title: Text(title,
-            style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
-        subtitle: Text(subtitle,
-            style: TextStyle(
-                fontSize: 12, color: context.appColors.textSecondary)),
-        trailing: Switch.adaptive(
-          value: value,
-          onChanged: onChanged,
-          activeThumbColor: AppColors.brandBlue,
-          activeTrackColor: AppColors.brandBlue.withValues(alpha: 0.4),
-        ),
-      ),
-    );
-  }
-}

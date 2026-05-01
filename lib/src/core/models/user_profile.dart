@@ -14,10 +14,10 @@ class UserProfile implements HasFeatures {
     this.featureQuickSale = false,
     this.featureTopCategories = false,
     this.featureBusiestDay = false,
-    // NEW: 3 fitur tambahan
     this.featureStock = false,
     this.featureProductAnalytics = false,
     this.featureDebt = false,
+    this.featureRecurring = true,
     this.onboardingComplete = false,
   });
 
@@ -35,10 +35,10 @@ class UserProfile implements HasFeatures {
   final bool featureQuickSale;      // Jual Cepat (Quick Sale)
   final bool featureTopCategories; // Insight: Kategori Terlaris
   final bool featureBusiestDay;    // Insight: Hari Tersibuk
-  // NEW
-  final bool featureStock;          // Stok Barang (Inventory)
-  final bool featureProductAnalytics; // Analitik Produk
-  final bool featureDebt;           // Utang & Piutang
+  final bool featureStock;
+  final bool featureProductAnalytics;
+  final bool featureDebt;
+  final bool featureRecurring;
   final bool onboardingComplete;
 
   // ============================================================================
@@ -62,13 +62,14 @@ class UserProfile implements HasFeatures {
         return featureTopCategories;
       case Feature.busiestDay:
         return featureBusiestDay;
-      // NEW: 3 fitur tambahan
       case Feature.stock:
         return featureStock;
       case Feature.productAnalytics:
         return featureProductAnalytics;
       case Feature.debt:
         return featureDebt;
+      case Feature.recurring:
+        return featureRecurring;
     }
   }
 
@@ -110,6 +111,7 @@ class UserProfile implements HasFeatures {
     bool? featureStock,
     bool? featureProductAnalytics,
     bool? featureDebt,
+    bool? featureRecurring,
     bool? onboardingComplete,
   }) {
     return UserProfile(
@@ -125,10 +127,10 @@ class UserProfile implements HasFeatures {
       featureQuickSale: featureQuickSale ?? this.featureQuickSale,
       featureTopCategories: featureTopCategories ?? this.featureTopCategories,
       featureBusiestDay: featureBusiestDay ?? this.featureBusiestDay,
-      // NEW
       featureStock: featureStock ?? this.featureStock,
       featureProductAnalytics: featureProductAnalytics ?? this.featureProductAnalytics,
       featureDebt: featureDebt ?? this.featureDebt,
+      featureRecurring: featureRecurring ?? this.featureRecurring,
       onboardingComplete: onboardingComplete ?? this.onboardingComplete,
     );
   }
@@ -147,10 +149,10 @@ class UserProfile implements HasFeatures {
       'featureQuickSale': featureQuickSale,
       'featureTopCategories': featureTopCategories,
       'featureBusiestDay': featureBusiestDay,
-      // NEW
       'featureStock': featureStock,
       'featureProductAnalytics': featureProductAnalytics,
       'featureDebt': featureDebt,
+      'featureRecurring': featureRecurring,
       'onboardingComplete': onboardingComplete,
     };
   }
@@ -181,13 +183,14 @@ class UserProfile implements HasFeatures {
           json['featureTopCategories'] as bool? ?? false,
       featureBusiestDay: json['feature_busiest_day'] as bool? ??
           json['featureBusiestDay'] as bool? ?? false,
-      // NEW
       featureStock: json['feature_stock'] as bool? ??
           json['featureStock'] as bool? ?? false,
       featureProductAnalytics: json['feature_product_analytics'] as bool? ??
           json['featureProductAnalytics'] as bool? ?? false,
       featureDebt: json['feature_debt'] as bool? ??
           json['featureDebt'] as bool? ?? false,
+      featureRecurring: json['feature_recurring'] as bool? ??
+          json['featureRecurring'] as bool? ?? true,
       onboardingComplete: json['onboarding_complete'] as bool? ??
           json['onboardingComplete'] as bool? ?? false,
     );

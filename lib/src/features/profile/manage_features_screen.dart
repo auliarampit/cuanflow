@@ -50,6 +50,17 @@ class ManageFeaturesScreen extends StatelessWidget {
                 (p) => p.copyWith(featureBusiestDay: v),
               ),
             ),
+            const SizedBox(height: 8),
+            _FeatureToggleRow(
+              icon: Icons.bar_chart_outlined,
+              title: 'Analitik Produk',
+              subtitle: 'Laporan penjualan dan tren per produk',
+              value: profile.featureProductAnalytics,
+              onChanged: (v) => _toggle(
+                context,
+                (p) => p.copyWith(featureProductAnalytics: v),
+              ),
+            ),
             const SizedBox(height: 24),
             _SectionHeader(title: 'Fitur Transaksi'),
             const SizedBox(height: 8),
@@ -61,6 +72,28 @@ class ManageFeaturesScreen extends StatelessWidget {
               onChanged: (v) => _toggle(
                 context,
                 (p) => p.copyWith(featureQuickSale: v),
+              ),
+            ),
+            const SizedBox(height: 8),
+            _FeatureToggleRow(
+              icon: Icons.repeat_outlined,
+              title: 'Transaksi Berulang',
+              subtitle: 'Catat transaksi rutin secara otomatis',
+              value: profile.featureRecurring,
+              onChanged: (v) => _toggle(
+                context,
+                (p) => p.copyWith(featureRecurring: v),
+              ),
+            ),
+            const SizedBox(height: 8),
+            _FeatureToggleRow(
+              icon: Icons.account_balance_wallet_outlined,
+              title: 'Utang & Piutang',
+              subtitle: 'Catat dan pantau utang serta piutang',
+              value: profile.featureDebt,
+              onChanged: (v) => _toggle(
+                context,
+                (p) => p.copyWith(featureDebt: v),
               ),
             ),
             const SizedBox(height: 24),
@@ -85,6 +118,17 @@ class ManageFeaturesScreen extends StatelessWidget {
               onChanged: (v) => _toggle(
                 context,
                 (p) => p.copyWith(featureOutlets: v),
+              ),
+            ),
+            const SizedBox(height: 8),
+            _FeatureToggleRow(
+              icon: Icons.warehouse_outlined,
+              title: 'Stok Barang',
+              subtitle: 'Kelola inventaris dan stok produk',
+              value: profile.featureStock,
+              onChanged: (v) => _toggle(
+                context,
+                (p) => p.copyWith(featureStock: v),
               ),
             ),
             const SizedBox(height: 24),

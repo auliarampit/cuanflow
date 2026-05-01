@@ -299,6 +299,7 @@ class _RecurringFormState extends State<_RecurringForm> {
   String? _category;
   String? _walletId;
   bool _isActive = true;
+  TimeOfDay? _executionTime;
 
   bool get _isEdit => widget.existing != null;
 
@@ -317,6 +318,12 @@ class _RecurringFormState extends State<_RecurringForm> {
       if (r.dayOfMonth != null) {
         _dayController.text = r.dayOfMonth.toString();
       }
+      if (r.executionHour != null) {
+        _executionTime = TimeOfDay(
+          hour: r.executionHour!,
+          minute: r.executionMinute ?? 0,
+        );
+      }
     }
   }
 
@@ -326,6 +333,14 @@ class _RecurringFormState extends State<_RecurringForm> {
     _amountController.dispose();
     _dayController.dispose();
     super.dispose();
+  }
+
+  Future<void> _pickTime() async {
+    final picked = await showTimePicker(
+      context: context,
+      initialTime: _executionTime ?? const TimeOfDay(hour: 8, minute: 0),
+    );
+    if (picked != null) setState(() => _executionTime = picked);
   }
 
   void _save() {
@@ -351,6 +366,8 @@ class _RecurringFormState extends State<_RecurringForm> {
         walletId: _walletId,
         isActive: _isActive,
         dayOfMonth: dayOfMonth,
+        executionHour: _executionTime?.hour,
+        executionMinute: _executionTime?.minute,
       ));
     } else {
       appState.addRecurring(RecurringTransactionModel(
@@ -364,6 +381,8 @@ class _RecurringFormState extends State<_RecurringForm> {
         createdAt: now,
         walletId: _walletId,
         dayOfMonth: dayOfMonth,
+        executionHour: _executionTime?.hour,
+        executionMinute: _executionTime?.minute,
         nextExecute: now,
       ));
     }
@@ -487,6 +506,40 @@ class _RecurringFormState extends State<_RecurringForm> {
                 ),
               ),
             ],
+            const SizedBox(height: 14),
+            // Time picker
+            InkWell(
+              onTap: _pickTime,
+              borderRadius: BorderRadius.circular(8),
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                decoration: BoxDecoration(
+                  border: Border.all(color: context.appColors.outline),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Row(
+                  children: [
+                    Icon(Icons.access_time_outlined,
+                        size: 20, color: context.appColors.textSecondary),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Text(
+                        _executionTime != null
+                            ? 'Jam eksekusi: ${_executionTime!.format(context)}'
+                            : 'Jam eksekusi: kapan saja',
+                        style: const TextStyle(fontSize: 14),
+                      ),
+                    ),
+                    if (_executionTime != null)
+                      GestureDetector(
+                        onTap: () => setState(() => _executionTime = null),
+                        child: Icon(Icons.clear,
+                            size: 18, color: context.appColors.textSecondary),
+                      ),
+                  ],
+                ),
+              ),
+            ),
             if (wallets.isNotEmpty) ...[
               const SizedBox(height: 14),
               Text(context.t('recurring.walletLabel'),

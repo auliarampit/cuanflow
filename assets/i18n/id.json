@@ -317,13 +317,8 @@
   "sync.sync": "Sinkron",
   "sync.noInternet": "Tidak ada koneksi internet. Data akan disinkronkan saat online.",
 
-  "settings.sectionFeatures": "FITUR AKTIF",
-  "settings.featureProduct": "Kalkulator HPP & Produk",
-  "settings.featureProductSubtitle": "Hitung harga pokok produksi",
-  "settings.featureOutlets": "Kelola Outlet / Cabang",
-  "settings.featureOutletsSubtitle": "Pisahkan transaksi per outlet",
-  "settings.featureBudget": "Budget & Target Bulanan",
-  "settings.featureBudgetSubtitle": "Pantau target pemasukan & batas pengeluaran",
+  "settings.sectionFeatures": "FITUR",
+  "settings.manageFeatures": "Atur Fitur Aktif",
   "settings.langIndonesian": "Bahasa Indonesia",
   "settings.langEnglish": "English",
 

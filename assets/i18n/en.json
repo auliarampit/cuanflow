@@ -317,13 +317,8 @@
   "sync.sync": "Sync",
   "sync.noInternet": "No internet connection. Data will sync when online.",
 
-  "settings.sectionFeatures": "ACTIVE FEATURES",
-  "settings.featureProduct": "COGS Calculator & Products",
-  "settings.featureProductSubtitle": "Calculate cost of goods sold",
-  "settings.featureOutlets": "Manage Outlets / Branches",
-  "settings.featureOutletsSubtitle": "Separate transactions by outlet",
-  "settings.featureBudget": "Budget & Monthly Targets",
-  "settings.featureBudgetSubtitle": "Monitor income targets & expense limits",
+  "settings.sectionFeatures": "FEATURES",
+  "settings.manageFeatures": "Manage Active Features",
   "settings.langIndonesian": "Indonesian",
   "settings.langEnglish": "English",
 

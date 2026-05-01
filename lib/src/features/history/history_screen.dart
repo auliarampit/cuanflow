@@ -307,57 +307,59 @@ class _HistoryScreenState extends State<HistoryScreen> {
       ),
       body: Column(
         children: [
-          // Filter: tanggal (baris 1) + outlet (baris 2, jika relevan)
+          // Filter: tanggal + outlet dalam satu baris
           Padding(
             padding: const EdgeInsets.fromLTRB(20, 0, 20, 12),
-            child: Column(
+            child: Row(
               children: [
-                // Baris 1 — filter tanggal (full width)
-                InkWell(
-                  onTap: _showFilterSheet,
-                  borderRadius: BorderRadius.circular(12),
-                  child: Container(
-                    height: 46,
-                    padding: const EdgeInsets.symmetric(horizontal: 12),
-                    decoration: BoxDecoration(
-                      color: context.appColors.cardSoft,
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: context.appColors.outline),
-                    ),
-                    child: Row(
-                      children: [
-                        Icon(
-                          Icons.calendar_today,
-                          size: 16,
-                          color: context.appColors.textSecondary,
-                        ),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: Text(
-                            _getFilterLabel(),
-                            style: TextStyle(
-                              fontWeight: FontWeight.w700,
-                              fontSize: 13,
-                              color: context.appColors.textPrimary,
-                            ),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
+                // Filter tanggal — ambil semua sisa ruang
+                Expanded(
+                  child: InkWell(
+                    onTap: _showFilterSheet,
+                    borderRadius: BorderRadius.circular(12),
+                    child: Container(
+                      height: 46,
+                      padding: const EdgeInsets.symmetric(horizontal: 12),
+                      decoration: BoxDecoration(
+                        color: context.appColors.cardSoft,
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: context.appColors.outline),
+                      ),
+                      child: Row(
+                        children: [
+                          Icon(
+                            Icons.calendar_today,
+                            size: 16,
+                            color: context.appColors.textSecondary,
                           ),
-                        ),
-                        Icon(
-                          Icons.keyboard_arrow_down,
-                          size: 18,
-                          color: context.appColors.textSecondary,
-                        ),
-                      ],
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              _getFilterLabel(),
+                              style: TextStyle(
+                                fontWeight: FontWeight.w700,
+                                fontSize: 13,
+                                color: context.appColors.textPrimary,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                          Icon(
+                            Icons.keyboard_arrow_down,
+                            size: 18,
+                            color: context.appColors.textSecondary,
+                          ),
+                        ],
+                      ),
                     ),
                   ),
                 ),
 
-                // Baris 2 — filter outlet (hanya jika fitur outlet aktif & ada ≥2 outlet)
+                // Filter outlet — hanya jika fitur outlet aktif & ada ≥2 outlet
                 if (context.appState.profile.featureOutlets &&
                     context.appState.outlets.length >= 2) ...[
-                  const SizedBox(height: 8),
+                  const SizedBox(width: 8),
                   _OutletDropdown(
                     outlets: context.appState.outlets,
                     selectedOutletId: _selectedOutletFilter,
