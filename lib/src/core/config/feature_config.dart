@@ -1,17 +1,17 @@
 /// Feature Configuration - Single Source of Truth
-/// 
+///
 /// Three business modes:
 /// - personal: Minimal features for individual use
 /// - store: Business features (quick sale, top products, etc.)
 /// - production: Full features (HPP, inventory, production batch)
-/// 
+///
 /// Usage:
 /// ```dart
 /// import 'package:cari_untung/src/core/config/feature_config.dart';
-/// 
+///
 /// // Check specific feature
 /// final canUseFastSale = useFeature(Feature.quickSale, profile);
-/// 
+///
 /// // Or use the extension
 /// final hasFastSale = profile.hasFeature(Feature.quickSale);
 /// ```
@@ -28,7 +28,7 @@ enum BusinessMode {
 
   const BusinessMode(this.value);
   final String value;
-  
+
   static BusinessMode fromString(String value) {
     return BusinessMode.values.firstWhere(
       (m) => m.value == value,
@@ -47,13 +47,13 @@ enum Feature {
   quickSale('featureQuickSale', 'Jual Cepat (Quick Sale)'),
   topCategories('featureTopCategories', 'Insight: Kategori Terlaris'),
   busiestDay('featureBusiestDay', 'Insight: Hari Tersibuk'),
-  
+
   // NEW: Stok barang (store) - inventory stock management
   stock('featureStock', 'Stok Barang (Inventory)'),
-  
+
   // NEW: Analitik produk (store dan production) - product analytics
   productAnalytics('featureProductAnalytics', 'Analitik Produk'),
-  
+
   // NEW: Utang & piutang (belum ada toggle di menu) - debt & receivable
   debt('featureDebt', 'Utang & Piutang');
 
@@ -76,33 +76,33 @@ const Map<BusinessMode, Map<Feature, bool>> featureConfig = {
     Feature.quickSale: false,
     Feature.topCategories: false,
     Feature.busiestDay: false,
-    Feature.stock: false,           // ❌ Stok barang
+    Feature.stock: false, // ❌ Stok barang
     Feature.productAnalytics: false, // ❌ Analitik produk
-    Feature.debt: false,            // ❌ Utang & piutang
+    Feature.debt: false, // ❌ Utang & piutang
   },
   BusinessMode.store: {
     Feature.product: false,
     Feature.outlets: false,
     Feature.budget: false,
     Feature.production: false,
-    Feature.quickSale: true,        // ✅ Fast Sale
-    Feature.topCategories: true,   // ✅ Top Products
+    Feature.quickSale: true, // ✅ Fast Sale
+    Feature.topCategories: true, // ✅ Top Products
     Feature.busiestDay: true,
-    Feature.stock: true,            // ✅ Stok barang (store)
+    Feature.stock: true, // ✅ Stok barang (store)
     Feature.productAnalytics: true, // ✅ Analitik produk (store)
-    Feature.debt: false,           // ❌ Utang & piutang
+    Feature.debt: true, // ✅ Utang & piutang
   },
   BusinessMode.production: {
-    Feature.product: true,         // ✅ HPP Calculator
+    Feature.product: true, // ✅ HPP Calculator
     Feature.outlets: true,
     Feature.budget: true,
-    Feature.production: true,     // ✅ Inventory & Batch Produksi
-    Feature.quickSale: false,      // ❌ Fast Sale (production mode fokus ke HPP)
+    Feature.production: true, // ✅ Inventory & Batch Produksi
+    Feature.quickSale: false, // ❌ Fast Sale (production mode fokus ke HPP)
     Feature.topCategories: false, // ❌ Top Products (production fokus ke HPP)
     Feature.busiestDay: false,
-    Feature.stock: true,          // ✅ Stok barang (production)
-    Feature.productAnalytics: true, // ✅ Analitik produk (production)
-    Feature.debt: true,           // ✅ Utang & piutang (production)
+    Feature.stock: false, // ❌ Stok barang (production)
+    Feature.productAnalytics: false, // ❌ Analitik produk (production)
+    Feature.debt: false, // ❌ Utang & piutang (production)
   },
 };
 
@@ -112,12 +112,12 @@ const Map<BusinessMode, Map<Feature, bool>> featureConfig = {
 
 /// Core function: Check if a feature is enabled
 /// Replaces hardcoded conditions like: mode == 'personal' || profile.isBusinessMode
-/// 
+///
 /// Example:
 /// ```dart
 /// // Before:
 /// if (profile.isBusinessMode) { ... }
-/// 
+///
 /// // After:
 /// if (useFeature(Feature.quickSale, profile)) { ... }
 /// ```
@@ -126,17 +126,17 @@ bool useFeature(Feature feature, dynamic profile) {
   if (profile is HasFeatures) {
     return profile.hasFeature(feature);
   }
-  
+
   // Support BusinessMode enum
   if (profile is BusinessMode) {
     return featureConfig[profile]?[feature] ?? false;
   }
-  
+
   // Support legacy bool (isBusinessMode)
   if (profile is bool) {
     return profile && (_featureDefaults[feature] ?? false);
   }
-  
+
   return false;
 }
 
@@ -169,7 +169,7 @@ abstract class HasFeatures {
 /// Extension to add feature checks to UserProfile
 extension UserProfileFeatures on dynamic {
   /// Check if profile has a specific feature
-  /// 
+  ///
   /// Usage:
   /// ```dart
   /// profile.hasFeature(Feature.quickSale)
@@ -181,7 +181,7 @@ extension UserProfileFeatures on dynamic {
     }
     return false;
   }
-  
+
   /// Get business mode from profile
   BusinessMode? get businessMode {
     if (this is HasFeatures) {
@@ -190,7 +190,7 @@ extension UserProfileFeatures on dynamic {
       if (profile.hasFeature(Feature.production)) {
         return BusinessMode.production;
       }
-      if (profile.hasFeature(Feature.quickSale) || 
+      if (profile.hasFeature(Feature.quickSale) ||
           profile.hasFeature(Feature.topCategories)) {
         return BusinessMode.store;
       }
@@ -198,7 +198,7 @@ extension UserProfileFeatures on dynamic {
     }
     return null;
   }
-  
+
   /// Check if in business mode (non-personal)
   bool get isBusinessMode {
     return Feature.values.any((f) => useFeature(f, this));
