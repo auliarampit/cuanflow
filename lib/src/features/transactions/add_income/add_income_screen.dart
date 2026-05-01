@@ -13,6 +13,7 @@ import '../../../core/state/app_state.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_dynamic_colors.dart';
 import '../../../shared/widgets/category_dropdown.dart';
+import '../../../shared/widgets/recent_items_bar.dart';
 
 // ─── Bulk item model ────────────────────────────────────────────────────────
 class _BulkItem {
@@ -360,7 +361,32 @@ class _AddIncomeScreenState extends State<AddIncomeScreen> {
                 accentColor: AppColors.positive,
                 onChanged: (d) => setState(() => _selectedDate = d),
               ),
-              const SizedBox(height: 18),
+              const SizedBox(height: 14),
+
+              // Recent/frequent items
+              RecentItemsBar(
+                type: MoneyTransactionType.income,
+                accentColor: AppColors.positive,
+                onSelect: (item) {
+                  setState(() {
+                    _selectedCategory = categories.firstWhereOrNull(
+                      (c) => c.label == item.category,
+                    );
+                    _amountController.text =
+                        CurrencyInputFormatter.formatVal(item.amount);
+                    if (item.note != null && item.note!.isNotEmpty) {
+                      _noteController.text = item.note!;
+                    }
+                    if (item.outletId != null) {
+                      _selectedOutletId = item.outletId;
+                    }
+                    if (item.walletId != null) {
+                      _selectedWalletId = item.walletId;
+                    }
+                  });
+                },
+              ),
+              const SizedBox(height: 4),
 
               // Form card
               Card(

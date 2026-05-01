@@ -12,6 +12,7 @@ import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_dynamic_colors.dart';
 import '../../../core/ui/app_gradient_scaffold.dart';
 import '../../../shared/widgets/category_dropdown.dart';
+import '../../../shared/widgets/recent_items_bar.dart';
 
 // ─── Bulk item model ────────────────────────────────────────────────────────
 class _BulkItem {
@@ -472,7 +473,30 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
                 accentColor: AppColors.negative,
                 onChanged: (d) => setState(() => _selectedDate = d),
               ),
-              const SizedBox(height: 18),
+              const SizedBox(height: 14),
+
+              // Recent/frequent items
+              RecentItemsBar(
+                type: MoneyTransactionType.expense,
+                accentColor: AppColors.negative,
+                onSelect: (item) {
+                  setState(() {
+                    _selectedCategory = categories.firstWhereOrNull(
+                      (c) => c.label == item.category,
+                    );
+                    _amountController.text =
+                        CurrencyInputFormatter.formatVal(item.amount);
+                    _noteController.text = item.note ?? '';
+                    if (item.outletId != null) {
+                      _selectedOutletId = item.outletId;
+                    }
+                    if (item.walletId != null) {
+                      _selectedWalletId = item.walletId;
+                    }
+                  });
+                },
+              ),
+              const SizedBox(height: 4),
 
               // Form card
               Card(
