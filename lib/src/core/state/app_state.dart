@@ -194,12 +194,11 @@ class AppState extends ChangeNotifier {
       _settings = AppSettings.fromJson(settingsMap);
     }
 
-    if (_settings.dailyNotification) {
-      unawaited(NotificationService.schedule(
-        hour: _settings.notificationHour,
-        minute: _settings.notificationMinute,
-      ));
-    }
+    unawaited(NotificationService.scheduleReminders(
+      slot1: _settings.reminder1Enabled,
+      slot2: _settings.reminder2Enabled,
+      slot3: _settings.reminder3Enabled,
+    ));
 
     _transactions = _syncService.migrateOldIds(_transactions);
     await _processRecurring();
@@ -640,6 +639,41 @@ class AppState extends ChangeNotifier {
     await _persist();
     notifyListeners();
     unawaited(syncTransactions());
+    if (type == MoneyTransactionType.expense) {
+      unawaited(_checkBudgetAlerts());
+    }
+  }
+
+  // Simpan budget ID + level yang sudah dinotifikasi (session-only, reset saat app restart).
+  final Set<String> _alertedBudgets = {};
+
+  Future<void> _checkBudgetAlerts() async {
+    if (!_settings.budgetAlertEnabled) return;
+    final now = DateTime.now();
+    for (final budget in budgetsFor(now)) {
+      if (budget.type != MoneyTransactionType.expense) continue;
+      if (budget.targetAmount <= 0) continue;
+      final actual = actualFor(budget);
+      final ratio = actual / budget.targetAmount;
+      final level = ratio >= 1.0 ? 100 : ratio >= 0.9 ? 90 : ratio >= 0.8 ? 80 : 0;
+      if (level == 0) continue;
+      final alertKey = '${budget.id}_$level';
+      if (_alertedBudgets.contains(alertKey)) continue;
+      _alertedBudgets.add(alertKey);
+      final budgetName = _resolveBudgetName(budget);
+      await NotificationService.showBudgetAlert(
+        budgetName: budgetName,
+        percent: (ratio * 100).round(),
+      );
+    }
+  }
+
+  String _resolveBudgetName(BudgetModel budget) {
+    if (budget.categoryId == null) return 'Total Pengeluaran';
+    for (final c in categoriesFor(MoneyTransactionType.expense)) {
+      if (c.id == budget.categoryId) return c.name;
+    }
+    return 'Budget';
   }
 
   // ─── Wallet CRUD ──────────────────────────────────────────────────────────────

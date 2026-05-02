@@ -2,21 +2,29 @@ import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:timezone/data/latest_all.dart' as tz_data;
 import 'package:timezone/timezone.dart' as tz;
 
-/// Manages the daily transaction reminder notification.
+/// Manages daily reminder notifications (3 slots) and budget alert notifications.
 ///
 /// Usage:
-///   await NotificationService.init();          // once at app start
-///   await NotificationService.schedule();      // when toggle turned ON
-///   await NotificationService.cancel();        // when toggle turned OFF
+///   await NotificationService.init();             // once at app start
+///   await NotificationService.scheduleReminders(slot1: true, slot2: false, slot3: true);
+///   await NotificationService.cancelAll();
+///   await NotificationService.showBudgetAlert(budgetName: 'Makan', percent: 85);
 class NotificationService {
   NotificationService._();
 
-  static const _channelId = 'daily_reminder';
-  static const _channelName = 'Pengingat Harian';
-  static const _notifId = 1;
+  static const _reminderChannelId = 'daily_reminder';
+  static const _reminderChannelName = 'Pengingat Harian';
+  static const _budgetChannelId = 'budget_alert';
+  static const _budgetChannelName = 'Peringatan Budget';
 
-  static const _defaultHour = 20;
-  static const _defaultMinute = 0;
+  // Reminder slot IDs: 1 = 09:00, 2 = 15:00, 3 = 21:00
+  static const _reminder1Id = 1;
+  static const _reminder2Id = 2;
+  static const _reminder3Id = 3;
+  static const _budgetAlertId = 100;
+
+  static const _reminderHours = [9, 15, 21];
+  static const _reminderIds = [_reminder1Id, _reminder2Id, _reminder3Id];
 
   static final _plugin = FlutterLocalNotificationsPlugin();
 
@@ -24,20 +32,17 @@ class NotificationService {
   static Future<void> init() async {
     tz_data.initializeTimeZones();
 
-    // Try to set local timezone from system
     try {
       final localTz = DateTime.now().timeZoneName;
       tz.setLocalLocation(tz.getLocation(localTz));
     } catch (_) {
-      // Fallback: use UTC offset to approximate
       final offset = DateTime.now().timeZoneOffset;
-      final sign = offset.isNegative ? '-' : '+';
       final hh = offset.inHours.abs().toString().padLeft(2, '0');
       try {
-        tz.setLocalLocation(tz.getLocation('Etc/GMT${sign == '+' ? '-' : '+'}${offset.inHours.abs()}'));
+        tz.setLocalLocation(tz.getLocation(
+            'Etc/GMT${offset.isNegative ? '+' : '-'}${offset.inHours.abs()}'));
       } catch (e2) {
-        // If all fails, stay with UTC — notification time will be offset
-        assert(hh.isNotEmpty); // suppress unused var warning
+        assert(hh.isNotEmpty);
       }
     }
 
@@ -53,26 +58,84 @@ class NotificationService {
     );
   }
 
-  /// Schedule a daily notification at [hour]:[minute] local time.
-  /// Requests permission on first call.
-  static Future<void> schedule({
-    int hour = _defaultHour,
-    int minute = _defaultMinute,
+  /// Schedule daily reminder notifications for each enabled slot.
+  /// Slot times are fixed: slot1 = 09:00, slot2 = 15:00, slot3 = 21:00.
+  static Future<void> scheduleReminders({
+    bool slot1 = true,
+    bool slot2 = true,
+    bool slot3 = true,
   }) async {
     await _requestPermissions();
-    await cancel(); // clear any existing schedule
+    final slots = [slot1, slot2, slot3];
+    for (var i = 0; i < 3; i++) {
+      await _plugin.cancel(_reminderIds[i]);
+      if (slots[i]) {
+        await _scheduleReminder(_reminderIds[i], _reminderHours[i], 0);
+      }
+    }
+  }
 
+  /// Cancel all daily reminders.
+  static Future<void> cancelAll() async {
+    for (final id in _reminderIds) {
+      await _plugin.cancel(id);
+    }
+  }
+
+  /// Show an immediate budget alert notification.
+  static Future<void> showBudgetAlert({
+    required String budgetName,
+    required int percent,
+  }) async {
+    final message = percent >= 100
+        ? 'Budget "$budgetName" sudah melebihi batas! ($percent%)'
+        : 'Budget "$budgetName" sudah terpakai $percent% — hampir habis!';
+
+    await _plugin.show(
+      _budgetAlertId,
+      'Peringatan Budget 📊',
+      message,
+      const NotificationDetails(
+        android: AndroidNotificationDetails(
+          _budgetChannelId,
+          _budgetChannelName,
+          channelDescription: 'Notifikasi peringatan budget mendekati batas',
+          importance: Importance.high,
+          priority: Priority.high,
+          icon: '@mipmap/ic_launcher',
+        ),
+        iOS: DarwinNotificationDetails(),
+      ),
+    );
+  }
+
+  // ── Legacy compat — kept so any existing call sites compile ───────────────
+
+  /// @deprecated Gunakan [scheduleReminders] untuk multi-slot.
+  static Future<void> schedule({
+    int hour = 20,
+    int minute = 0,
+  }) async {
+    await _requestPermissions();
+    await _scheduleReminder(_reminder1Id, hour, minute);
+  }
+
+  /// @deprecated Gunakan [cancelAll].
+  static Future<void> cancel() => _plugin.cancel(_reminder1Id);
+
+  // ── Helpers ───────────────────────────────────────────────────────────────
+
+  static Future<void> _scheduleReminder(int id, int hour, int minute) async {
     final scheduledDate = _nextOccurrence(hour, minute);
-
     await _plugin.zonedSchedule(
-      _notifId,
+      id,
       'Cuan Flow 💰',
       'Jangan lupa catat transaksi hari ini!',
       scheduledDate,
       const NotificationDetails(
         android: AndroidNotificationDetails(
-          _channelId,
-          _channelName,
+          _reminderChannelId,
+          _reminderChannelName,
           channelDescription: 'Notifikasi pengingat catat transaksi harian',
           importance: Importance.defaultImportance,
           priority: Priority.defaultPriority,
@@ -87,13 +150,6 @@ class NotificationService {
     );
   }
 
-  /// Cancel the daily reminder.
-  static Future<void> cancel() async {
-    await _plugin.cancel(_notifId);
-  }
-
-  // ── Helpers ───────────────────────────────────────────────────────────────
-
   static tz.TZDateTime _nextOccurrence(int hour, int minute) {
     final now = tz.TZDateTime.now(tz.local);
     var scheduled =
@@ -105,13 +161,11 @@ class NotificationService {
   }
 
   static Future<void> _requestPermissions() async {
-    // Android 13+
     await _plugin
         .resolvePlatformSpecificImplementation<
             AndroidFlutterLocalNotificationsPlugin>()
         ?.requestNotificationsPermission();
 
-    // iOS
     await _plugin
         .resolvePlatformSpecificImplementation<
             IOSFlutterLocalNotificationsPlugin>()
