@@ -104,11 +104,12 @@ class ReportPdfService {
       ),
     );
 
-    await Printing.layoutPdf(
-      onLayout: (PdfPageFormat format) async => pdf.save(),
-      name: isId
-          ? 'Laporan_Keuangan_$monthName'
-          : 'Financial_Report_$monthName',
+    final bytes = await pdf.save();
+    await Printing.sharePdf(
+      bytes: bytes,
+      filename: isId
+          ? 'Laporan_Keuangan_$monthName.pdf'
+          : 'Financial_Report_$monthName.pdf',
     );
   }
 

@@ -69,6 +69,7 @@ class AppState extends ChangeNotifier {
   bool _initialized = false;
   bool _isSyncing = false;
   Timer? _retryTimer;
+  Timer? _recurringTimer;
   List<MoneyTransaction> _transactions = [];
   List<ProductModel> _products = [];
   List<OutletModel> _outlets = [];
@@ -203,6 +204,13 @@ class AppState extends ChangeNotifier {
     _transactions = _syncService.migrateOldIds(_transactions);
     await _processRecurring();
 
+    // Cek recurring setiap 5 menit saat app aktif di foreground.
+    _recurringTimer?.cancel();
+    _recurringTimer = Timer.periodic(
+      const Duration(minutes: 5),
+      (_) => _processRecurring(),
+    );
+
     _initialized = true;
     notifyListeners();
 
@@ -222,12 +230,15 @@ class AppState extends ChangeNotifier {
   }
 
   Future<void> onAppResumed() async {
-    if (currentUser != null) await syncTransactions();
+    if (currentUser != null) unawaited(syncTransactions());
+    // Cek recurring saat app kembali dari background
+    await _processRecurring();
   }
 
   @override
   void dispose() {
     _retryTimer?.cancel();
+    _recurringTimer?.cancel();
     super.dispose();
   }
 

@@ -101,7 +101,7 @@ class HistoryTransactionItem extends StatelessWidget {
                       const SizedBox(width: 3),
                       Text(
                         DateFormat('HH:mm').format(
-                            transaction.effectiveDate.toLocal()),
+                            transaction.createdAt.toLocal()),
                         style: TextStyle(
                           fontSize: 11,
                           color: context.appColors.textSecondary,

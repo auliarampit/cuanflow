@@ -357,7 +357,9 @@ class _RecurringFormState extends State<_RecurringForm> {
     final now = DateTime.now();
 
     if (_isEdit) {
-      appState.updateRecurring(widget.existing!.copyWith(
+      // Build model dengan setting baru, lalu recompute nextExecute dari hari ini
+      // agar perubahan frekuensi (misal: bulanan → harian) langsung valid.
+      final updated = widget.existing!.copyWith(
         name: name,
         amount: amount,
         type: _type,
@@ -368,6 +370,9 @@ class _RecurringFormState extends State<_RecurringForm> {
         dayOfMonth: dayOfMonth,
         executionHour: _executionTime?.hour,
         executionMinute: _executionTime?.minute,
+      );
+      appState.updateRecurring(updated.copyWith(
+        nextExecute: updated.computeNextExecute(now),
       ));
     } else {
       appState.addRecurring(RecurringTransactionModel(

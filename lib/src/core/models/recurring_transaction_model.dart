@@ -55,6 +55,9 @@ class RecurringTransactionModel {
   final DateTime? lastExecuted;
   final DateTime? nextExecute;
 
+  // Sentinel untuk membedakan "tidak di-pass" vs "di-pass null" di copyWith.
+  static const _absent = Object();
+
   RecurringTransactionModel copyWith({
     String? name,
     int? amount,
@@ -62,10 +65,10 @@ class RecurringTransactionModel {
     MoneyTransactionType? type,
     RecurringFrequency? frequency,
     bool? isActive,
-    String? walletId,
+    Object? walletId = _absent,
     int? dayOfMonth,
-    int? executionHour,
-    int? executionMinute,
+    Object? executionHour = _absent,
+    Object? executionMinute = _absent,
     DateTime? lastExecuted,
     DateTime? nextExecute,
   }) {
@@ -78,10 +81,10 @@ class RecurringTransactionModel {
       frequency: frequency ?? this.frequency,
       isActive: isActive ?? this.isActive,
       createdAt: createdAt,
-      walletId: walletId ?? this.walletId,
+      walletId: identical(walletId, _absent) ? this.walletId : walletId as String?,
       dayOfMonth: dayOfMonth ?? this.dayOfMonth,
-      executionHour: executionHour ?? this.executionHour,
-      executionMinute: executionMinute ?? this.executionMinute,
+      executionHour: identical(executionHour, _absent) ? this.executionHour : executionHour as int?,
+      executionMinute: identical(executionMinute, _absent) ? this.executionMinute : executionMinute as int?,
       lastExecuted: lastExecuted ?? this.lastExecuted,
       nextExecute: nextExecute ?? this.nextExecute,
     );
