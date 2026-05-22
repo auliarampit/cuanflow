@@ -163,22 +163,71 @@ Saat implement fitur:
 
 ---
 
-## 9. HOW AI SHOULD WORK
+## 9. VIBE CODING WORKFLOW
 
-Setiap task:
+### Flow Setiap Sesi Coding
 
-1. Gunakan AI_CONTEXT.md
-2. Gunakan PRD (jika ada)
-3. Kerjakan per task kecil
-4. Jangan modify scope tanpa instruksi
+```
+DISCOVERY → PLANNING → IMPLEMENTATION → VERIFY
+```
+
+**Jangan langsung coding.** Selalu tanya dulu:
+1. Ini fix bug atau tambah fitur?
+2. Fitur ini untuk mode mana? (cek feature flag)
+3. Ada dampak ke AppState, model, atau route?
+
+### Ritual Awal Sesi
+Gunakan `/start` untuk load konteks lengkap sebelum mulai coding.
+
+### Jenis Task & Skill yang Tepat
+
+| Task | Skill | Dokumen yang dibaca |
+|---|---|---|
+| Tambah fitur baru | `/add-feature` | BRD + AI_CONTEXT + feature_config |
+| Fix bug | `/fix` | AI_CONTEXT + file terdampak |
+| Cek roadmap & status | `/roadmap` | CLAUDE.md + git log |
+| Mulai sesi baru | `/start` | BRD + AI_CONTEXT + git log |
+| Cek/ubah feature flag | `/feature-flags` | feature_config.dart |
+
+### Prioritas Implementasi (Dari Diskusi Owner, 2026-05)
+
+```
+PHASE 0 — Fondasi (sebelum publik)
+├── P0.1  Onboarding wizard redesign (guided, bukan mode picker)
+├── P0.2  Shopping list bulk expense UX  ← KILLER FEATURE
+├── P0.3  Personal mode (budget + trend harian)
+└── P0.4  Freemium/paywall scaffold
+
+PHASE 1 — Retail Polish (bulan 1 setelah launch)
+├── P1.1  Quick sale improvement
+├── P1.2  Health dashboard per outlet
+└── P1.3  Push notif budget alert (sudah ada, polish)
+
+PHASE 2 — Produsen Complete (kuartal 1)
+├── P2.1  HPP calculator yang intuitif
+├── P2.2  Raw material → produksi → margin flow
+└── P2.3  Laporan profit per batch
+```
 
 ---
 
-## 10. OUTPUT EXPECTATION
+## 10. HOW AI SHOULD WORK
+
+Setiap task:
+
+1. Baca `docs/AI_CONTEXT.md` + `docs/BRD.md` untuk konteks bisnis
+2. Kerjakan per task kecil, jangan modify scope tanpa instruksi
+3. Ikuti pola CRUD AppState yang sudah ada
+4. Jangan over-engineer — solusi paling sederhana yang benar
+
+---
+
+## 11. OUTPUT EXPECTATION
 
 AI harus:
 
-- Konsisten dengan docs
+- Konsisten dengan docs (BRD > USER_FLOW > ERD)
 - Tidak over-engineer
-- Tidak menambah fitur di luar scope
-- Menghasilkan code modular & scalable
+- Tidak menambah fitur di luar scope yang disepakati
+- Menghasilkan code modular mengikuti pola existing
+- Komentar dalam Bahasa Indonesia

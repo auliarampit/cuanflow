@@ -237,7 +237,101 @@ Setelah onboarding, user bisa ubah kapan saja di **Profil → Atur Fitur**.
 
 ---
 
-## 7. Out of Scope (Sengaja Tidak Dibangun)
+## 7. Strategi Go-Public & Growth Funnel
+
+### Growth Funnel — Tiga Segmen, Satu App
+
+App ini tidak hanya melayani 3 segmen berbeda — tiga segmen ini adalah **jalur pertumbuhan satu user**.
+User tidak perlu pindah app saat bisnis mereka berkembang.
+
+```
+ENTRY              →    GROW              →    SCALE
+Personal                Retail/Warung           Produsen
+(gratis/murah)          (mulai bayar)           (premium)
+
+"Kelola keuangan        "Buka warung,            "Bisnis produksi,
+ pribadi dulu"           pakai yang ini           butuh kelola HPP
+                         saja ah"                 dan margin"
+```
+
+Ini adalah **mekanisme retensi utama**: user yang upgrade tidak churn, mereka naik tier.
+
+---
+
+### Monetisasi — Freemium + Subscription
+
+| Tier | Harga | Yang Dapat |
+|---|---|---|
+| **Gratis** | Rp 0 | Fitur personal dasar, 3 bulan history, 1 wallet, AdMob |
+| **Retail** | Rp 19.000/bln | Multi-outlet, history penuh, export PDF, quick sale |
+| **Produsen** | Rp 49.000/bln | Semua Retail + HPP, raw materials, batch, analitik |
+
+Target break-even: ~50–100 user berbayar (estimasi biaya operasional Rp 500rb–2jt/bulan).
+
+---
+
+### Shopping List UX — Spec Killer Feature
+
+**Problem:** Input pengeluaran satu per satu tidak sesuai mental model user saat belanja.
+User belanja banyak item sekaligus tapi harus input satu per satu.
+
+**Target UX — Bulk Expense seperti nulis di notes:**
+```
+[Tanggal: Hari ini ▼]  [Outlet: Toko A ▼]
+
+  15.000   Cabe            [+ Tambah]
+  20.000   Tepung          [+ Tambah]
+   8.000   Plastik         [+ Tambah]
+  ─────────────────────
+  3 item · Total: Rp 43.000
+
+          [Simpan Semua]
+```
+
+**Acceptance criteria:**
+- User bisa input 5 item dalam < 30 detik
+- Tidak ada "save" per item — semua tersimpan sekaligus di akhir
+- Kategori bisa dipilih atau di-skip (pakai "Lainnya")
+- Satu kali klik Simpan → buat N transaksi sekaligus
+
+---
+
+### Onboarding Redesign — Target
+
+**Problem saat ini:** Langsung dihadapkan pilihan mode teknikal (personal/bisnis/produksi).
+
+**Target — Guided wizard berbasis situasi:**
+```
+"Apa yang ingin kamu kelola?"
+  → 💰 Keuangan pribadi saya
+  → 🏪 Warung / toko saya
+  → 🏭 Usaha produksi saya
+
+(Feature flags di-set otomatis berdasarkan pilihan)
+
+→ Tur singkat 3 layar
+→ Home
+```
+
+User tidak perlu paham konsep "mode" — mereka hanya pilih situasi mereka.
+
+---
+
+### Definition of Done — Go-Public Ready
+
+App dinyatakan siap publik jika semua checklist ini terpenuhi:
+
+- [ ] Onboarding bisa dilalui user baru tanpa bantuan dalam < 2 menit
+- [ ] Personal mode terasa lengkap dan berguna sendiri
+- [ ] Shopping list UX tersedia (input 5 item < 30 detik)
+- [ ] Home menampilkan health summary yang langsung menjawab "sehat ga?"
+- [ ] Freemium tier berjalan (gratis vs berbayar terdifferensiasi)
+- [ ] Tidak ada crash pada happy path ketiga segmen
+- [ ] Export PDF berfungsi untuk semua mode
+
+---
+
+## 8. Out of Scope (Sengaja Tidak Dibangun)
 
 | Yang Tidak Dibangun | Alasan |
 |---|---|

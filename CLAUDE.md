@@ -135,20 +135,56 @@ Untuk menambah route baru:
 
 ## Monetisasi & Biaya
 
-- App gratis dengan Google AdMob
-- Tidak ada subscription atau in-app purchase saat ini
-- Fitur AI (free-text input) **ditunda** karena biaya API per-request tidak cocok untuk app gratis
+- Freemium: tier gratis (AdMob) + subscription berbayar
+- Retail: Rp 19.000/bulan · Produsen: Rp 49.000/bulan
+- Fitur AI (free-text input) **ditunda ke v3+** — biaya API per-request tidak cocok untuk app gratis
 
 ---
 
-## Roadmap Aktif (per 2026-04)
+## Vibe Coding Workflow
 
-Prioritas saat ini (dari diskusi dengan owner):
+### Flow Setiap Sesi
+```
+/start → diskusi task → implement → /verify
+```
 
-1. **Quick Amount Shortcuts** (effort: kecil) — tombol `+5rb` `+10rb` `+50rb` di form input
-2. **Recent/Frequent Items** (effort: sedang) — 5 item yang sering diinput muncul saat buka form
-3. **Budget Alert Notification** (effort: sedang) — push notif saat budget hampir habis
-4. **Shopping List → Draft Transaksi** (effort: besar, HOOK UTAMA) — buat daftar belanja, centang saat belanja, auto-generate transaksi
+### Skill yang Tersedia
+
+| Skill | Kapan dipakai |
+|---|---|
+| `/start` | **Selalu di awal sesi** — load konteks, tampilkan roadmap, tanya mau ngerjain apa |
+| `/add-feature` | Tambah fitur baru — scaffold + checklist integrasi |
+| `/fix` | Fix bug — isolate → root cause → fix → verify |
+| `/roadmap` | Lihat status fitur dan prioritas |
+| `/feature-flags` | Cek atau ubah feature flag per mode |
+
+### Dokumen Referensi (Dibaca Sebelum Implement)
+- `docs/BRD.md` — visi produk, 3 segmen, monetisasi, go-public checklist
+- `docs/AI_CONTEXT.md` — rules, anti-pattern, pola implementasi
+- `docs/USER_FLOW.md` — UX flow per fitur
+- `docs/ERD.md` — database schema
+
+### Jangan Langsung Coding
+Sebelum implement, selalu tanya:
+1. Ini fix bug atau tambah fitur?
+2. Fitur ini untuk mode mana? (cek feature flag)
+3. Ada dampak ke AppState, model, atau route?
+
+---
+
+## Roadmap Aktif (per 2026-05, hasil diskusi owner)
+
+### Phase 0 — Fondasi Go-Public (prioritas sekarang)
+1. **Onboarding Wizard** — redesign dari mode picker ke guided situational wizard
+2. **Shopping List Bulk Expense** — input banyak item sekaligus, satu save (KILLER FEATURE)
+3. **Personal Mode Lengkap** — budget + spending trend harian
+4. **Freemium/Paywall Scaffold** — gating fitur per tier
+
+### Phase 1 — Retail Polish (bulan 1 setelah launch)
+- Quick sale improvement, health dashboard per outlet, push notif polish
+
+### Phase 2 — Produsen Complete (kuartal 1)
+- HPP intuitif, raw material → produksi → margin flow, laporan profit per batch
 
 Fitur AI input (free-text → parse → Supabase) **ditunda ke v3+**.
 
