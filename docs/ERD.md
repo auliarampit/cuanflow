@@ -432,19 +432,20 @@ Cabang / outlet bisnis. Aktif jika `featureOutlets = true`.
 
 ---
 
-### 2. `products` — local JSON only, belum ada sync service
+### 2. `products` — `ProductSyncService` ada, tapi belum disambungkan ke AppState
 
 **Model Dart:** `ProductModel` (HPP Calculator)
 
-**Status:** `AppState.addProduct()` / `updateProduct()` / `deleteProduct()` hanya panggil `_persist()` → local JSON. **Tidak ada `ProductSyncService`.**
+**Status:** File `core/services/product_sync_service.dart` sudah dibuat mengikuti pola `RawMaterialSyncService`, tapi `AppState.addProduct()` / `updateProduct()` / `deleteProduct()` masih hanya panggil `_persist()` → local JSON. **Belum ada koneksi ke sync service.**
 
-**Supabase `products` table:** Ada di ERD, tapi tidak dipakai oleh sync layer saat ini.
+**Supabase `products` table:** Ada di ERD dan sync service sudah siap, tapi belum dipanggil dari AppState.
 
 **Konsekuensi:** Data produk (HPP, bahan baku resep) tidak tersync antar device. Jika user ganti HP, data produk hilang.
 
 **Action saat ingin sync:**
-1. Buat `ProductSyncService` mengikuti pola `RawMaterialSyncService`.
-2. Panggil `productSyncService.upsert(product).ignore()` setelah `_persist()` di AppState.
+1. Inject `ProductSyncService` ke `AppState` (ikuti pola `_rawMaterialSync`).
+2. Panggil `_productSync.upsert(product).ignore()` setelah `_persist()` di `addProduct()` / `updateProduct()`.
+3. Panggil `_productSync.delete(id).ignore()` di `deleteProduct()`.
 
 ---
 
