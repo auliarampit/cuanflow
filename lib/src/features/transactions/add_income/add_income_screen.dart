@@ -1,4 +1,4 @@
-import 'package:cari_untung/src/core/config/feature_config.dart';
+import 'package:cari_untung/src/core/config/space_features.dart';
 import 'package:cari_untung/src/core/ui/app_gradient_scaffold.dart';
 import 'package:collection/collection.dart';
 import 'package:flutter/material.dart';
@@ -223,7 +223,11 @@ class _AddIncomeScreenState extends State<AddIncomeScreen> {
   @override
   Widget build(BuildContext context) {
     final categories = _buildCategories(context);
-    final featureOutlets = context.appState.profile.featureOutlets;
+    final appState = context.appState;
+    final space = appState.activeSpace;
+    final isPremium = appState.profile.isBusinessPremium;
+    final featureOutlets = SpaceFeatures.canUseOutlets(space, isPremium);
+    final canUseProductionBatch = SpaceFeatures.canUseProductionBatch(space, isPremium);
 
     return AppGradientScaffold(
       appBar: AppBar(
@@ -311,7 +315,7 @@ class _AddIncomeScreenState extends State<AddIncomeScreen> {
                   onChanged: (id) => setState(() => _selectedOutletId = id),
                 ),
               ],
-              if (!useFeature(Feature.production, context.appState.profile) &&
+              if (!canUseProductionBatch &&
                   context.appState.wallets.isNotEmpty) ...[
                 const SizedBox(height: 16),
                 _WalletSelectorBlock(

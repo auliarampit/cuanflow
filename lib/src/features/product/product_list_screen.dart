@@ -1,4 +1,4 @@
-import 'package:cari_untung/src/core/config/feature_config.dart';
+import 'package:cari_untung/src/core/config/space_features.dart';
 import 'package:flutter/material.dart';
 import '../../core/formatters/idr_formatter.dart';
 import '../../core/localization/transalation_extansions.dart';
@@ -46,7 +46,7 @@ class _ProductListScreenState extends State<ProductListScreen> {
         ),
         actions: [
           if (products.isNotEmpty &&
-              useFeature(Feature.productAnalytics, context.appState.profile))
+              SpaceFeatures.canUseProductAnalytics(context.appState.activeSpace, context.appState.profile.isBusinessPremium))
             IconButton(
               icon: const Icon(Icons.bar_chart),
               tooltip: 'Analitik',

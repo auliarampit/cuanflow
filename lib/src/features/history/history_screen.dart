@@ -2,6 +2,7 @@ import 'package:collection/collection.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
+import '../../core/config/space_features.dart';
 import '../../core/localization/transalation_extansions.dart';
 import '../../core/models/money_transaction.dart';
 import '../../core/models/outlet_model.dart';
@@ -387,7 +388,10 @@ class _HistoryScreenState extends State<HistoryScreen> {
                 ),
 
                 // Filter outlet — hanya jika fitur outlet aktif & ada ≥2 outlet
-                if (context.appState.profile.featureOutlets &&
+                if (SpaceFeatures.canUseOutlets(
+                      context.appState.activeSpace,
+                      context.appState.profile.isBusinessPremium,
+                    ) &&
                     context.appState.outlets.length >= 2) ...[
                   const SizedBox(width: 8),
                   _OutletDropdown(

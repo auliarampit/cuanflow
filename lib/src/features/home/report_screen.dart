@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart' show TemplateType;
 import 'package:intl/intl.dart';
 
+import '../../core/config/space_features.dart';
 import '../../core/formatters/idr_formatter.dart';
 import '../../core/localization/transalation_extansions.dart';
 import '../../core/models/money_transaction.dart';
@@ -93,6 +94,8 @@ class _ReportScreenState extends State<ReportScreen> {
   Widget build(BuildContext context) {
     final appState = context.appState;
     final selectedOutlet = appState.selectedOutlet;
+    final space = appState.activeSpace;
+    final isPremium = appState.profile.isBusinessPremium;
 
     final summary = appState.summaryForDate(DateRangeType.month, _selectedDate);
     final prevDate =
@@ -297,7 +300,7 @@ class _ReportScreenState extends State<ReportScreen> {
                   ],
 
                   // ── Budget bulan ini (hanya jika fitur aktif & ada budget) ─
-                  if (appState.profile.featureBudget) ...[
+                  if (SpaceFeatures.canUseBudget(space, isPremium)) ...[
                     const SizedBox(height: 16),
                     _BudgetSection(
                       budgets: appState.budgetsFor(_selectedDate),
@@ -323,17 +326,17 @@ class _ReportScreenState extends State<ReportScreen> {
                   ),
 
                   // ── Insight bisnis: Terlaris + Hari Tersibuk ─────────────
-                  if (appState.profile.featureTopCategories && history.isNotEmpty) ...[
+                  if (SpaceFeatures.canUseTopCategories(space, isPremium) && history.isNotEmpty) ...[
                     const SizedBox(height: 16),
                     _TopCategoriesCard(transactions: history),
                   ],
-                  if (appState.profile.featureBusiestDay && history.isNotEmpty) ...[
+                  if (SpaceFeatures.canUseBusiestDay(space, isPremium) && history.isNotEmpty) ...[
                     const SizedBox(height: 12),
                     _BusiestDaysCard(transactions: history),
                   ],
 
                   // ── Outlet charts (hanya jika fitur outlet aktif, semua outlet dipilih, ≥2 outlet)
-                  if (appState.profile.featureOutlets &&
+                  if (SpaceFeatures.canUseOutlets(space, isPremium) &&
                       selectedOutlet == null &&
                       appState.outlets.length >= 2) ...[
                     const SizedBox(height: 12),

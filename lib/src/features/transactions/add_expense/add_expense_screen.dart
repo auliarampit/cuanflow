@@ -1,4 +1,4 @@
-import 'package:cari_untung/src/core/config/feature_config.dart';
+import 'package:cari_untung/src/core/config/space_features.dart';
 import 'package:collection/collection.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -247,11 +247,11 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
   @override
   Widget build(BuildContext context) {
     final categories = _buildCategories(context);
-    final featureOutlets = context.appState.profile.featureOutlets;
-    final isBusinessMode = useFeature(
-      Feature.production,
-      context.appState.profile,
-    );
+    final expAppState = context.appState;
+    final expSpace = expAppState.activeSpace;
+    final expIsPremium = expAppState.profile.isBusinessPremium;
+    final featureOutlets = SpaceFeatures.canUseOutlets(expSpace, expIsPremium);
+    final isBusinessMode = SpaceFeatures.canUseProductionBatch(expSpace, expIsPremium);
 
     return AppGradientScaffold(
       appBar: AppBar(
@@ -438,7 +438,7 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
               onChanged: (id) => setState(() => _selectedOutletId = id),
             ),
           ],
-          if (!useFeature(Feature.production, context.appState.profile) &&
+          if (!isBusinessMode &&
               context.appState.wallets.isNotEmpty) ...[
             const SizedBox(height: 18),
             _WalletSelectorBlock(
@@ -1170,9 +1170,9 @@ class _ItemTile extends StatelessWidget {
                         color: context.appColors.textSecondary,
                       ),
                     ),
-                    if (useFeature(
-                          Feature.production,
-                          context.appState.profile,
+                    if (SpaceFeatures.canUseProductionBatch(
+                          context.appState.activeSpace,
+                          context.appState.profile.isBusinessPremium,
                         ) &&
                         item.isStockPurchase) ...[
                       const SizedBox(width: 5),

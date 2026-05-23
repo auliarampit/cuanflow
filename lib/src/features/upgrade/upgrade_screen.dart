@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 
-import '../../core/models/subscription_tier.dart';
 import '../../core/state/app_state.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_dynamic_colors.dart';
@@ -9,88 +8,151 @@ import '../../core/ui/app_gradient_scaffold.dart';
 class UpgradeScreen extends StatelessWidget {
   const UpgradeScreen({super.key});
 
-  /// Tampilkan bottom sheet "upgrade required" dari mana saja.
-  static void showUpgradeSheet(
-    BuildContext context, {
-    required SubscriptionTier required,
-  }) {
+  static void showUpgradeSheet(BuildContext context) {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (_) => _UpgradeSheet(requiredTier: required),
+      builder: (_) => const _UpgradeSheet(),
     );
   }
 
   @override
   Widget build(BuildContext context) {
-    final currentTier = context.appState.profile.subscriptionTier;
+    final isPremium = context.appState.profile.isBusinessPremium;
 
     return AppGradientScaffold(
-      appBar: AppBar(title: const Text('Pilih Paket')),
+      appBar: AppBar(title: const Text('Business Premium')),
       body: SingleChildScrollView(
         padding: const EdgeInsets.fromLTRB(18, 16, 18, 32),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              'Pilih paket yang sesuai kebutuhan bisnis kamu',
-              style: TextStyle(
-                fontSize: 14,
-                color: context.appColors.textSecondary,
+            // ── Header ───────────────────────────────────────────────────
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [
+                    AppColors.brandBlue.withValues(alpha: 0.85),
+                    AppColors.brandBlue.withValues(alpha: 0.6),
+                  ],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+                borderRadius: BorderRadius.circular(18),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Icon(
+                    Icons.workspace_premium_outlined,
+                    color: Colors.white,
+                    size: 32,
+                  ),
+                  const SizedBox(height: 12),
+                  const Text(
+                    'Business Premium',
+                    style: TextStyle(
+                      fontSize: 22,
+                      fontWeight: FontWeight.w800,
+                      color: Colors.white,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  const Text(
+                    '~Rp 20.000 / bulan',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.white70,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'Buka semua fitur Ruang Warung & Produksi. Tanpa iklan.',
+                    style: TextStyle(
+                      fontSize: 13,
+                      color: Colors.white.withValues(alpha: 0.85),
+                    ),
+                  ),
+                ],
               ),
             ),
             const SizedBox(height: 24),
 
-            // ── Paket Gratis ─────────────────────────────────────────────
-            _PlanCard(
-              tier: SubscriptionTier.free,
-              isCurrentPlan: currentTier == SubscriptionTier.free,
-              features: const [
-                'Catat pemasukan & pengeluaran',
-                'Budget & target bulanan',
-                'Transaksi berulang (cicilan, dll)',
-                'Laporan & history',
-                'Iklan (AdMob)',
-              ],
-            ),
-            const SizedBox(height: 14),
+            // ── Fitur Ruang Warung ────────────────────────────────────────
+            _SectionHeader(title: 'Ruang Warung', color: AppColors.positive),
+            const SizedBox(height: 10),
+            ..._storeFeatures.map((f) => _FeatureItem(text: f)),
+            const SizedBox(height: 20),
 
-            // ── Paket Retail ─────────────────────────────────────────────
-            _PlanCard(
-              tier: SubscriptionTier.retail,
-              isCurrentPlan: currentTier == SubscriptionTier.retail,
-              isPopular: true,
-              features: const [
-                'Semua fitur Gratis',
-                'Jual Cepat (preset produk)',
-                'Stok barang & inventaris',
-                'Analitik produk & kategori terlaris',
-                'Utang & piutang',
-                'Hari tersibuk & insight',
-                'Tanpa iklan',
-              ],
-            ),
-            const SizedBox(height: 14),
+            // ── Fitur Ruang Produksi ──────────────────────────────────────
+            _SectionHeader(title: 'Ruang Produksi', color: Colors.deepPurple),
+            const SizedBox(height: 10),
+            ..._productionFeatures.map((f) => _FeatureItem(text: f)),
+            const SizedBox(height: 20),
 
-            // ── Paket Produsen ───────────────────────────────────────────
-            _PlanCard(
-              tier: SubscriptionTier.production,
-              isCurrentPlan: currentTier == SubscriptionTier.production,
-              features: const [
-                'Semua fitur Retail',
-                'Kalkulator HPP & daftar produk',
-                'Manajemen bahan baku',
-                'Batch produksi',
-                'Multi outlet',
-                'Analitik profit per produk',
-              ],
-            ),
-
+            // ── Selalu gratis ─────────────────────────────────────────────
+            _SectionHeader(
+                title: 'Selalu Gratis (semua Ruang)',
+                color: AppColors.brandBlue),
+            const SizedBox(height: 10),
+            ..._freeFeatures.map((f) => _FeatureItem(text: f, isFree: true)),
             const SizedBox(height: 28),
+
+            // ── CTA ───────────────────────────────────────────────────────
+            if (isPremium)
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: AppColors.positive.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(14),
+                  border: Border.all(
+                      color: AppColors.positive.withValues(alpha: 0.3)),
+                ),
+                child: const Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(Icons.check_circle_outline,
+                        color: AppColors.positive, size: 20),
+                    SizedBox(width: 10),
+                    Text(
+                      'Business Premium Aktif',
+                      style: TextStyle(
+                        fontWeight: FontWeight.w700,
+                        color: AppColors.positive,
+                        fontSize: 15,
+                      ),
+                    ),
+                  ],
+                ),
+              )
+            else
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: () => _onSubscribe(context),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.brandBlue,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                  ),
+                  child: const Text(
+                    'Berlangganan Business Premium',
+                    style: TextStyle(fontWeight: FontWeight.w700, fontSize: 15),
+                  ),
+                ),
+              ),
+            const SizedBox(height: 12),
             Center(
               child: Text(
-                'Bisa ganti paket kapan saja · Tanpa kontrak',
+                'Bisa batal kapan saja · Tanpa kontrak',
                 style: TextStyle(
                   fontSize: 12,
                   color: context.appColors.textSecondary,
@@ -102,173 +164,15 @@ class UpgradeScreen extends StatelessWidget {
       ),
     );
   }
-}
-
-// ── Plan card ─────────────────────────────────────────────────────────────────
-
-class _PlanCard extends StatelessWidget {
-  const _PlanCard({
-    required this.tier,
-    required this.isCurrentPlan,
-    required this.features,
-    this.isPopular = false,
-  });
-
-  final SubscriptionTier tier;
-  final bool isCurrentPlan;
-  final bool isPopular;
-  final List<String> features;
-
-  Color _accentColor() {
-    switch (tier) {
-      case SubscriptionTier.free:
-        return AppColors.brandBlue;
-      case SubscriptionTier.retail:
-        return AppColors.positive;
-      case SubscriptionTier.production:
-        return Colors.deepPurple;
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final accent = _accentColor();
-    final priceLabel = tier.pricePerMonth == 0
-        ? 'Gratis selamanya'
-        : 'Rp ${_formatPrice(tier.pricePerMonth)}/bulan';
-
-    return Stack(
-      clipBehavior: Clip.none,
-      children: [
-        Container(
-          padding: const EdgeInsets.all(20),
-          decoration: BoxDecoration(
-            color: isCurrentPlan
-                ? accent.withValues(alpha: 0.06)
-                : context.appColors.card,
-            borderRadius: BorderRadius.circular(18),
-            border: Border.all(
-              color: isCurrentPlan ? accent : context.appColors.outline,
-              width: isCurrentPlan ? 2 : 1,
-            ),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Header
-              Row(
-                children: [
-                  Text(
-                    tier.label,
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.w800,
-                      color: accent,
-                    ),
-                  ),
-                  const Spacer(),
-                  Text(
-                    priceLabel,
-                    style: TextStyle(
-                      fontSize: 13,
-                      fontWeight: FontWeight.w700,
-                      color: context.appColors.textPrimary,
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 14),
-
-              // Feature list
-              ...features.map(
-                (f) => Padding(
-                  padding: const EdgeInsets.only(bottom: 6),
-                  child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Icon(
-                        Icons.check_rounded,
-                        size: 15,
-                        color: accent,
-                      ),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: Text(
-                          f,
-                          style: TextStyle(
-                            fontSize: 13,
-                            color: context.appColors.textSecondary,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-              const SizedBox(height: 14),
-
-              // CTA
-              SizedBox(
-                width: double.infinity,
-                child: isCurrentPlan
-                    ? OutlinedButton(
-                        onPressed: null,
-                        style: OutlinedButton.styleFrom(
-                          side: BorderSide(color: accent),
-                          foregroundColor: accent,
-                        ),
-                        child: const Text('Paket Aktif'),
-                      )
-                    : ElevatedButton(
-                        onPressed: () => _onSubscribe(context),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: accent,
-                          foregroundColor: Colors.white,
-                        ),
-                        child: Text(
-                          tier == SubscriptionTier.free
-                              ? 'Downgrade ke Gratis'
-                              : 'Berlangganan',
-                        ),
-                      ),
-              ),
-            ],
-          ),
-        ),
-
-        // Badge "Populer"
-        if (isPopular)
-          Positioned(
-            top: -10,
-            right: 16,
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-              decoration: BoxDecoration(
-                color: accent,
-                borderRadius: BorderRadius.circular(20),
-              ),
-              child: const Text(
-                'Populer',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 11,
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
-            ),
-          ),
-      ],
-    );
-  }
 
   void _onSubscribe(BuildContext context) {
     showDialog(
       context: context,
       builder: (_) => AlertDialog(
         title: const Text('Segera Hadir'),
-        content: Text(
-          'Fitur berlangganan paket ${tier.label} sedang dalam pengembangan.\n\n'
-          'Untuk informasi lebih lanjut, hubungi tim kami.',
+        content: const Text(
+          'Fitur berlangganan sedang dalam pengembangan.\n\n'
+          'Hubungi tim kami untuk aktivasi manual sementara.',
         ),
         actions: [
           TextButton(
@@ -279,38 +183,108 @@ class _PlanCard extends StatelessWidget {
       ),
     );
   }
-
-  static String _formatPrice(int price) {
-    if (price >= 1000) {
-      return '${(price / 1000).toStringAsFixed(0)}.000';
-    }
-    return price.toString();
-  }
 }
 
-// ── Upgrade bottom sheet (shown from PaywallGate) ─────────────────────────────
+const _storeFeatures = [
+  'Jual Cepat (Quick Sale) — preset produk',
+  'Utang & Piutang',
+  'Stok Barang & Inventaris',
+  'Multi Outlet',
+  'Analitik Produk',
+  'Kategori Terlaris & Hari Tersibuk',
+];
 
-class _UpgradeSheet extends StatelessWidget {
-  const _UpgradeSheet({required this.requiredTier});
+const _productionFeatures = [
+  'Kalkulator HPP & Daftar Produk',
+  'Bahan Baku & Manajemen Stok',
+  'Batch Produksi',
+  'Multi Outlet',
+  'Analitik Profit per Produk',
+  'Budget & Target Bulanan',
+];
 
-  final SubscriptionTier requiredTier;
+const _freeFeatures = [
+  'Catat pemasukan & pengeluaran',
+  'Kategori custom',
+  'Laporan harian & mingguan',
+  'Transaksi berulang',
+];
 
-  Color _accentColor() {
-    switch (requiredTier) {
-      case SubscriptionTier.free:
-        return AppColors.brandBlue;
-      case SubscriptionTier.retail:
-        return AppColors.positive;
-      case SubscriptionTier.production:
-        return Colors.deepPurple;
-    }
-  }
+// ── Widgets ───────────────────────────────────────────────────────────────────
+
+class _SectionHeader extends StatelessWidget {
+  const _SectionHeader({required this.title, required this.color});
+  final String title;
+  final Color color;
 
   @override
   Widget build(BuildContext context) {
-    final accent = _accentColor();
-    final priceLabel = 'Rp ${_formatPrice(requiredTier.pricePerMonth)}/bulan';
+    return Row(
+      children: [
+        Container(
+          width: 3,
+          height: 14,
+          decoration: BoxDecoration(
+            color: color,
+            borderRadius: BorderRadius.circular(2),
+          ),
+        ),
+        const SizedBox(width: 8),
+        Text(
+          title,
+          style: TextStyle(
+            fontSize: 13,
+            fontWeight: FontWeight.w700,
+            color: color,
+          ),
+        ),
+      ],
+    );
+  }
+}
 
+class _FeatureItem extends StatelessWidget {
+  const _FeatureItem({required this.text, this.isFree = false});
+  final String text;
+  final bool isFree;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(
+            isFree ? Icons.check_circle_outline : Icons.check_rounded,
+            size: 16,
+            color: isFree
+                ? AppColors.brandBlue.withValues(alpha: 0.7)
+                : AppColors.positive,
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Text(
+              text,
+              style: TextStyle(
+                fontSize: 13,
+                color: context.appColors.textSecondary,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ── Bottom sheet ──────────────────────────────────────────────────────────────
+
+class _UpgradeSheet extends StatelessWidget {
+  const _UpgradeSheet();
+
+  @override
+  Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
         color: context.appColors.card,
@@ -325,7 +299,6 @@ class _UpgradeSheet extends StatelessWidget {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          // Handle bar
           Container(
             width: 36,
             height: 4,
@@ -335,27 +308,25 @@ class _UpgradeSheet extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 20),
-
-          // Icon
           Container(
             width: 56,
             height: 56,
             decoration: BoxDecoration(
-              color: accent.withValues(alpha: 0.12),
+              color: AppColors.brandBlue.withValues(alpha: 0.12),
               shape: BoxShape.circle,
             ),
-            child: Icon(Icons.lock_outline, color: accent, size: 28),
+            child: const Icon(Icons.workspace_premium_outlined,
+                color: AppColors.brandBlue, size: 28),
           ),
           const SizedBox(height: 16),
-
-          Text(
-            'Fitur Paket ${requiredTier.label}',
-            style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w800),
+          const Text(
+            'Fitur Business Premium',
+            style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800),
           ),
           const SizedBox(height: 8),
           Text(
-            'Fitur ini tersedia mulai paket ${requiredTier.label} ($priceLabel).\n'
-            'Upgrade untuk mengakses fitur ini.',
+            'Fitur ini membutuhkan Business Premium (~Rp 20.000/bulan).\n'
+            'Unlock semua fitur Warung & Produksi sekaligus.',
             textAlign: TextAlign.center,
             style: TextStyle(
               fontSize: 13,
@@ -364,7 +335,6 @@ class _UpgradeSheet extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 24),
-
           SizedBox(
             width: double.infinity,
             child: ElevatedButton(
@@ -373,19 +343,16 @@ class _UpgradeSheet extends StatelessWidget {
                 Navigator.of(context).pushNamed('/upgrade');
               },
               style: ElevatedButton.styleFrom(
-                backgroundColor: accent,
+                backgroundColor: AppColors.brandBlue,
                 foregroundColor: Colors.white,
                 padding: const EdgeInsets.symmetric(vertical: 14),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(14),
                 ),
               ),
-              child: Text(
-                'Lihat Paket ${requiredTier.label}',
-                style: const TextStyle(
-                  fontWeight: FontWeight.w700,
-                  fontSize: 15,
-                ),
+              child: const Text(
+                'Lihat Business Premium',
+                style: TextStyle(fontWeight: FontWeight.w700, fontSize: 15),
               ),
             ),
           ),
@@ -400,12 +367,5 @@ class _UpgradeSheet extends StatelessWidget {
         ],
       ),
     );
-  }
-
-  static String _formatPrice(int price) {
-    if (price >= 1000) {
-      return '${(price / 1000).toStringAsFixed(0)}.000';
-    }
-    return price.toString();
   }
 }

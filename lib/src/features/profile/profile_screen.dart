@@ -1,4 +1,5 @@
 import 'package:cari_untung/src/app/routes.dart';
+import 'package:cari_untung/src/core/config/space_features.dart';
 import 'package:cari_untung/src/core/models/space_model.dart';
 import 'package:cari_untung/src/core/models/subscription_tier.dart';
 import 'package:cari_untung/src/core/state/app_state.dart';
@@ -67,7 +68,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final profile = context.appState.profile;
+    final appState = context.appState;
+    final profile = appState.profile;
+    final space = appState.activeSpace;
+    final isPremium = profile.isBusinessPremium;
 
     return SafeArea(
       child: SingleChildScrollView(
@@ -138,7 +142,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             ),
             const SizedBox(height: 8),
             // Dompet — hanya untuk personal & store (produksi pakai outlet)
-            if (!profile.featureOutlets) ...[
+            if (!SpaceFeatures.canUseOutlets(space, isPremium)) ...[
               _ProfileMenuItem(
                 icon: Icons.account_balance_wallet_outlined,
                 title: context.t('profile.menu.wallets'),
@@ -149,19 +153,19 @@ class _ProfileScreenState extends State<ProfileScreen> {
             ],
 
             // ── Section: Fitur Aktif ───────────────────────────────────────
-            if (profile.featureDebt ||
-                profile.featureRecurring ||
-                profile.featureBudget ||
-                profile.featureOutlets ||
-                profile.featureProduct ||
-                profile.featureProduction ||
-                profile.featureStock ||
-                profile.featureQuickSale) ...[
+            if (SpaceFeatures.canUseDebt(space, isPremium) ||
+                SpaceFeatures.canUseRecurring(space, isPremium) ||
+                SpaceFeatures.canUseBudget(space, isPremium) ||
+                SpaceFeatures.canUseOutlets(space, isPremium) ||
+                SpaceFeatures.canUseHpp(space, isPremium) ||
+                SpaceFeatures.canUseProductionBatch(space, isPremium) ||
+                SpaceFeatures.canUseStock(space, isPremium) ||
+                SpaceFeatures.canUseQuickSale(space, isPremium)) ...[
               _SectionLabel('Fitur Aktif'),
               const SizedBox(height: 10),
             ],
 
-            if (profile.featureDebt) ...[
+            if (SpaceFeatures.canUseDebt(space, isPremium)) ...[
               _ProfileMenuItem(
                 icon: Icons.handshake_outlined,
                 title: context.t('profile.menu.debt'),
@@ -170,7 +174,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
               ),
               const SizedBox(height: 8),
             ],
-            if (profile.featureRecurring) ...[
+            if (SpaceFeatures.canUseRecurring(space, isPremium)) ...[
               _ProfileMenuItem(
                 icon: Icons.repeat_outlined,
                 title: context.t('profile.menu.recurring'),
@@ -180,7 +184,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
               ),
               const SizedBox(height: 8),
             ],
-            if (profile.featureBudget) ...[
+            if (SpaceFeatures.canUseBudget(space, isPremium)) ...[
               _ProfileMenuItem(
                 icon: Icons.savings_outlined,
                 title: context.t('profile.menu.budget'),
@@ -189,7 +193,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
               ),
               const SizedBox(height: 8),
             ],
-            if (profile.featureQuickSale) ...[
+            if (SpaceFeatures.canUseQuickSale(space, isPremium)) ...[
               _ProfileMenuItem(
                 icon: Icons.point_of_sale,
                 title: context.t('profile.menu.quickSale'),
@@ -199,7 +203,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
               ),
               const SizedBox(height: 8),
             ],
-            if (profile.featureOutlets) ...[
+            if (SpaceFeatures.canUseOutlets(space, isPremium)) ...[
               _ProfileMenuItem(
                 icon: Icons.store_outlined,
                 title: 'Kelola Outlet',
@@ -212,7 +216,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
               ),
               const SizedBox(height: 8),
             ],
-            if (profile.featureProduct) ...[
+            if (SpaceFeatures.canUseHpp(space, isPremium)) ...[
               _ProfileMenuItem(
                 icon: Icons.inventory_2_outlined,
                 title: context.t('profile.menu.product'),
@@ -230,7 +234,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
               ),
               const SizedBox(height: 8),
             ],
-            if (profile.featureProduction) ...[
+            if (SpaceFeatures.canUseProductionBatch(space, isPremium)) ...[
               _ProfileMenuItem(
                 icon: Icons.science_outlined,
                 title: 'Bahan Baku',
@@ -250,7 +254,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
               ),
               const SizedBox(height: 8),
             ],
-            if (profile.featureStock) ...[
+            if (SpaceFeatures.canUseStock(space, isPremium)) ...[
               _ProfileMenuItem(
                 icon: Icons.warehouse_outlined,
                 title: context.t('profile.menu.inventory'),

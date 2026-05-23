@@ -243,12 +243,12 @@ class SpaceFeatures {
 - [x] Update `OnboardingScreen` untuk arahkan ke `SetupSpacesScreen` bukan mode picker lama
 
 ### Phase 4 — Feature Locking UI
-- [ ] Buat `SpaceFeatures` helper class (lihat contoh di atas)
-- [ ] Buat `LockedFeatureCard` widget: tampilkan konten terkunci + CTA upgrade
-- [ ] Update semua screen yang pakai `profile.featureX` → pakai `SpaceFeatures.canUseX(...)`
-- [ ] Pastikan menu "Fitur Aktif" di ProfileScreen driven by `SpaceFeatures` bukan feature flags lama
-- [ ] Buat `UpgradeScreen` baru yang spesifik Business Premium (gantikan yang lama)
-- [ ] Integrasikan payment gateway (in-app purchase atau link ke Midtrans/Xendit)
+- [x] Buat `SpaceFeatures` helper class (lihat contoh di atas)
+- [x] Buat `LockedFeatureCard` widget: tampilkan konten terkunci + CTA upgrade
+- [x] Update semua screen yang pakai `profile.featureX` → pakai `SpaceFeatures.canUseX(...)`
+- [x] Pastikan menu "Fitur Aktif" di ProfileScreen driven by `SpaceFeatures` bukan feature flags lama
+- [x] Buat `UpgradeScreen` baru yang spesifik Business Premium (gantikan yang lama)
+- [ ] Integrasikan payment gateway (in-app purchase atau link ke Midtrans/Xendit) — SKIP (ditunda, butuh keputusan vendor)
 
 ### Phase 5 — Cleanup (setelah Phase 4 stabil)
 - [ ] Hapus semua `feature*` field dari `UserProfile` model

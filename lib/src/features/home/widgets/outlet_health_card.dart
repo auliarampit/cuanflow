@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../../../core/config/feature_config.dart';
+import '../../../core/config/space_features.dart';
 import '../../../core/formatters/idr_formatter.dart';
 import '../../../core/models/money_transaction.dart';
 import '../../../core/state/app_state.dart';
@@ -138,11 +138,13 @@ class OutletHealthCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final profile = appState.profile;
+    final space = appState.activeSpace;
+    final isPremium = profile.isBusinessPremium;
     final showBudget =
-        useFeature(Feature.budget, profile) &&
+        SpaceFeatures.canUseBudget(space, isPremium) &&
         appState.budgetsFor(selectedDate).isNotEmpty;
-    final showStock = useFeature(Feature.stock, profile);
-    final showOutletRanking = useFeature(Feature.outlets, profile) &&
+    final showStock = SpaceFeatures.canUseStock(space, isPremium);
+    final showOutletRanking = SpaceFeatures.canUseOutlets(space, isPremium) &&
         appState.selectedOutlet == null &&
         appState.outlets.length >= 2;
 

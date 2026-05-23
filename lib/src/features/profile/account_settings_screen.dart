@@ -1,4 +1,4 @@
-import 'package:cari_untung/src/core/config/feature_config.dart';
+import 'package:cari_untung/src/core/models/space_model.dart';
 import 'package:flutter/material.dart';
 
 import '../../core/localization/transalation_extansions.dart';
@@ -83,6 +83,8 @@ class _AccountSettingsScreenState extends State<AccountSettingsScreen> {
   @override
   Widget build(BuildContext context) {
     final profile = context.appState.profile;
+    final space = context.appState.activeSpace;
+    final isBusinessSpace = space?.type != SpaceType.personal;
 
     return AppGradientScaffold(
       appBar: AppBar(
@@ -121,7 +123,7 @@ class _AccountSettingsScreenState extends State<AccountSettingsScreen> {
                             fontWeight: FontWeight.w700,
                           ),
                         ),
-                        if (useFeature(Feature.production, profile)) ...[
+                        if (isBusinessSpace) ...[
                           const SizedBox(height: 4),
                           Text(
                             profile.businessName.isNotEmpty
@@ -148,7 +150,7 @@ class _AccountSettingsScreenState extends State<AccountSettingsScreen> {
                       hintText: context.t('accountSettings.fullNameLabel'),
                     ),
                   ),
-                  if (useFeature(Feature.production, profile)) ...[
+                  if (isBusinessSpace) ...[
                     const SizedBox(height: 16),
                     Text(
                       context.t('accountSettings.businessNameLabel'),

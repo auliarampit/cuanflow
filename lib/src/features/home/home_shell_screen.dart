@@ -1,3 +1,4 @@
+import 'package:cari_untung/src/core/config/space_features.dart';
 import 'package:cari_untung/src/core/localization/transalation_extansions.dart';
 import 'package:cari_untung/src/core/models/outlet_model.dart';
 import 'package:cari_untung/src/core/state/app_state.dart';
@@ -251,7 +252,7 @@ class _HomeShellScreenState extends State<HomeShellScreen> {
     final contentColumn = Column(
       children: [
         const SpaceSwitcherBar(),
-        if (appState.profile.featureOutlets && appState.outlets.isNotEmpty)
+        if (SpaceFeatures.canUseOutlets(appState.activeSpace, appState.profile.isBusinessPremium) && appState.outlets.isNotEmpty)
           _OutletSwitcherBar(
             selectedOutlet: selectedOutlet,
             onTap: () => _showOutletPicker(context),

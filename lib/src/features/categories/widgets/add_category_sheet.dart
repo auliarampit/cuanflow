@@ -1,4 +1,4 @@
-import 'package:cari_untung/src/core/config/feature_config.dart';
+import 'package:cari_untung/src/core/config/space_features.dart';
 import 'package:flutter/material.dart';
 
 import '../../../core/localization/transalation_extansions.dart';
@@ -87,7 +87,7 @@ class _AddCategorySheetState extends State<AddCategorySheet> {
             ),
           ),
           if (_isExpense &&
-              useFeature(Feature.production, context.appState.profile)) ...[
+              SpaceFeatures.canUseProductionBatch(context.appState.activeSpace, context.appState.profile.isBusinessPremium)) ...[
             const SizedBox(height: 12),
             InkWell(
               onTap: () => setState(() => _isStockPurchase = !_isStockPurchase),

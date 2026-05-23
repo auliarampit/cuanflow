@@ -3,8 +3,9 @@ import 'package:cari_untung/src/core/formatters/idr_formatter.dart';
 import 'package:cari_untung/src/core/localization/transalation_extansions.dart';
 import 'package:flutter/material.dart';
 
+import '../../core/config/space_features.dart';
+import '../../core/models/space_model.dart';
 import '../../core/state/app_state.dart';
-import 'package:cari_untung/src/core/config/feature_config.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_dynamic_colors.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
@@ -220,9 +221,12 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final profile = context.appState.profile;
+    final appState = context.appState;
+    final profile = appState.profile;
+    final space = appState.activeSpace;
+    final isPremium = profile.isBusinessPremium;
     final displayName =
-        profile.isBusinessMode && profile.businessName.isNotEmpty
+        space?.type != SpaceType.personal && profile.businessName.isNotEmpty
         ? profile.businessName
         : profile.fullName.isNotEmpty
         ? profile.fullName
@@ -245,16 +249,17 @@ class _HomeScreenState extends State<HomeScreen> {
     final income = activeSummary.totalIncome;
     final expense = activeSummary.totalExpense;
 
-    final isFastSaleEnabled = useFeature(Feature.quickSale, profile);
+    final isFastSaleEnabled = SpaceFeatures.canUseQuickSale(space, isPremium);
+    final canUseStock = SpaceFeatures.canUseStock(space, isPremium);
     final profitCard = _buildProfitCard(
       title: activeSummary.netProfit < 0
           ? context.t(
-              useFeature(Feature.stock, profile)
+              canUseStock
                   ? (_isWeekly ? 'home.weeklyLoss' : 'home.todayLoss')
                   : (_isWeekly ? 'home.weeklyDeficit' : 'home.todayDeficit'),
             )
           : context.t(
-              useFeature(Feature.stock, profile)
+              canUseStock
                   ? (_isWeekly ? 'home.weeklyProfit' : 'home.todayProfit')
                   : (_isWeekly ? 'home.weeklyBalance' : 'home.todayBalance'),
             ),
@@ -323,8 +328,8 @@ class _HomeScreenState extends State<HomeScreen> {
           const SizedBox(height: 12),
           profitCard,
           const SizedBox(height: 14),
-          if (!useFeature(Feature.stock, profile)) _TotalBalanceCard(),
-          if (!useFeature(Feature.stock, profile)) const SizedBox(height: 14),
+          if (!canUseStock) _TotalBalanceCard(),
+          if (!canUseStock) const SizedBox(height: 14),
           Row(
             children: [
               Expanded(
@@ -430,7 +435,7 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
           const SizedBox(height: 18),
           // ── Tren 7 hari (personal & production) ──────────────────────
-          if (useFeature(Feature.budget, profile)) ...[
+          if (SpaceFeatures.canUseBudget(space, isPremium)) ...[
             const DailyTrendCard(),
             const SizedBox(height: 14),
           ],
@@ -439,8 +444,8 @@ class _HomeScreenState extends State<HomeScreen> {
             child: const NativeAdCard(templateType: TemplateType.small),
           ),
           const SizedBox(height: 14),
-          // ── Low-stock alert (business only) ──────────────────────────
-          if (useFeature(Feature.stock, profile)) ...[
+          // ── Low-stock alert (store only) ─────────────────────────────
+          if (canUseStock) ...[
             Builder(
               builder: (context) {
                 final lowStock = context.appState.lowStockItems;
