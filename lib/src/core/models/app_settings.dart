@@ -10,6 +10,12 @@ class AppSettings {
     this.reminder2Enabled = true,
     this.reminder3Enabled = true,
     this.budgetAlertEnabled = true,
+    this.reminder1Hour = 9,
+    this.reminder1Minute = 0,
+    this.reminder2Hour = 15,
+    this.reminder2Minute = 0,
+    this.reminder3Hour = 21,
+    this.reminder3Minute = 0,
   });
 
   final String localeCode;
@@ -33,6 +39,14 @@ class AppSettings {
 
   /// Notifikasi peringatan saat budget pengeluaran hampir habis (>80%)
   final bool budgetAlertEnabled;
+
+  /// Jam dan menit custom per slot pengingat harian.
+  final int reminder1Hour;
+  final int reminder1Minute;
+  final int reminder2Hour;
+  final int reminder2Minute;
+  final int reminder3Hour;
+  final int reminder3Minute;
 
   factory AppSettings.defaults() {
     return AppSettings(
@@ -60,6 +74,12 @@ class AppSettings {
     bool? reminder2Enabled,
     bool? reminder3Enabled,
     bool? budgetAlertEnabled,
+    int? reminder1Hour,
+    int? reminder1Minute,
+    int? reminder2Hour,
+    int? reminder2Minute,
+    int? reminder3Hour,
+    int? reminder3Minute,
   }) {
     return AppSettings(
       localeCode: localeCode ?? this.localeCode,
@@ -72,6 +92,12 @@ class AppSettings {
       reminder2Enabled: reminder2Enabled ?? this.reminder2Enabled,
       reminder3Enabled: reminder3Enabled ?? this.reminder3Enabled,
       budgetAlertEnabled: budgetAlertEnabled ?? this.budgetAlertEnabled,
+      reminder1Hour: reminder1Hour ?? this.reminder1Hour,
+      reminder1Minute: reminder1Minute ?? this.reminder1Minute,
+      reminder2Hour: reminder2Hour ?? this.reminder2Hour,
+      reminder2Minute: reminder2Minute ?? this.reminder2Minute,
+      reminder3Hour: reminder3Hour ?? this.reminder3Hour,
+      reminder3Minute: reminder3Minute ?? this.reminder3Minute,
     );
   }
 
@@ -87,6 +113,12 @@ class AppSettings {
       'reminder2Enabled': reminder2Enabled,
       'reminder3Enabled': reminder3Enabled,
       'budgetAlertEnabled': budgetAlertEnabled,
+      'reminder1Hour': reminder1Hour,
+      'reminder1Minute': reminder1Minute,
+      'reminder2Hour': reminder2Hour,
+      'reminder2Minute': reminder2Minute,
+      'reminder3Hour': reminder3Hour,
+      'reminder3Minute': reminder3Minute,
     };
   }
 
@@ -115,6 +147,12 @@ class AppSettings {
       reminder2Enabled: jsonMap['reminder2Enabled'] as bool? ?? hadDailyNotif,
       reminder3Enabled: jsonMap['reminder3Enabled'] as bool? ?? hadDailyNotif,
       budgetAlertEnabled: jsonMap['budgetAlertEnabled'] as bool? ?? true,
+      reminder1Hour: jsonMap['reminder1Hour'] as int? ?? 9,
+      reminder1Minute: jsonMap['reminder1Minute'] as int? ?? 0,
+      reminder2Hour: jsonMap['reminder2Hour'] as int? ?? 15,
+      reminder2Minute: jsonMap['reminder2Minute'] as int? ?? 0,
+      reminder3Hour: jsonMap['reminder3Hour'] as int? ?? 21,
+      reminder3Minute: jsonMap['reminder3Minute'] as int? ?? 0,
     );
   }
 }

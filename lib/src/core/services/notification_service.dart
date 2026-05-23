@@ -23,7 +23,6 @@ class NotificationService {
   static const _reminder3Id = 3;
   static const _budgetAlertId = 100;
 
-  static const _reminderHours = [9, 15, 21];
   static const _reminderIds = [_reminder1Id, _reminder2Id, _reminder3Id];
 
   static final _plugin = FlutterLocalNotificationsPlugin();
@@ -59,20 +58,61 @@ class NotificationService {
   }
 
   /// Schedule daily reminder notifications for each enabled slot.
-  /// Slot times are fixed: slot1 = 09:00, slot2 = 15:00, slot3 = 21:00.
+  /// Waktu per slot bisa dikustomisasi; default: 09:00, 15:00, 21:00.
   static Future<void> scheduleReminders({
     bool slot1 = true,
     bool slot2 = true,
     bool slot3 = true,
+    int slot1Hour = 9,
+    int slot1Minute = 0,
+    int slot2Hour = 15,
+    int slot2Minute = 0,
+    int slot3Hour = 21,
+    int slot3Minute = 0,
   }) async {
     await _requestPermissions();
     final slots = [slot1, slot2, slot3];
+    final hours = [slot1Hour, slot2Hour, slot3Hour];
+    final minutes = [slot1Minute, slot2Minute, slot3Minute];
     for (var i = 0; i < 3; i++) {
       await _plugin.cancel(_reminderIds[i]);
       if (slots[i]) {
-        await _scheduleReminder(_reminderIds[i], _reminderHours[i], 0);
+        await _scheduleReminder(_reminderIds[i], hours[i], minutes[i]);
       }
     }
+  }
+
+  /// Kirim notifikasi percobaan segera (untuk verifikasi dari settings screen).
+  static Future<void> sendTestNotification() async {
+    await _requestPermissions();
+    await _plugin.show(
+      98,
+      'Cuan Flow 💰',
+      'Notifikasi berhasil! Pengingat akan muncul di waktu yang kamu pilih.',
+      const NotificationDetails(
+        android: AndroidNotificationDetails(
+          _reminderChannelId,
+          _reminderChannelName,
+          channelDescription: 'Notifikasi pengingat catat transaksi harian',
+          importance: Importance.high,
+          priority: Priority.high,
+          icon: '@mipmap/ic_launcher',
+        ),
+        iOS: DarwinNotificationDetails(),
+      ),
+    );
+  }
+
+  /// Cek apakah notifikasi diizinkan di sistem (Android 13+).
+  /// Selalu true di iOS karena permission di-request saat jadwal.
+  static Future<bool> hasPermission() async {
+    final android = _plugin
+        .resolvePlatformSpecificImplementation<
+            AndroidFlutterLocalNotificationsPlugin>();
+    if (android != null) {
+      return await android.areNotificationsEnabled() ?? true;
+    }
+    return true;
   }
 
   /// Cancel all daily reminders.
