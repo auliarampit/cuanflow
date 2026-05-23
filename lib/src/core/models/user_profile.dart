@@ -1,4 +1,5 @@
 import '../config/feature_config.dart';
+import 'subscription_tier.dart';
 
 class UserProfile implements HasFeatures {
   UserProfile({
@@ -19,6 +20,8 @@ class UserProfile implements HasFeatures {
     this.featureDebt = false,
     this.featureRecurring = true,
     this.onboardingComplete = false,
+    this.subscriptionTier = SubscriptionTier.free,
+    this.subscriptionExpiry,
   });
 
   final String fullName;
@@ -40,6 +43,8 @@ class UserProfile implements HasFeatures {
   final bool featureDebt;
   final bool featureRecurring;
   final bool onboardingComplete;
+  final SubscriptionTier subscriptionTier;
+  final DateTime? subscriptionExpiry;
 
   // ============================================================================
   // HasFeatures Implementation - useFeature() Pattern
@@ -113,6 +118,9 @@ class UserProfile implements HasFeatures {
     bool? featureDebt,
     bool? featureRecurring,
     bool? onboardingComplete,
+    SubscriptionTier? subscriptionTier,
+    DateTime? subscriptionExpiry,
+    bool clearSubscriptionExpiry = false,
   }) {
     return UserProfile(
       fullName: fullName ?? this.fullName,
@@ -132,6 +140,8 @@ class UserProfile implements HasFeatures {
       featureDebt: featureDebt ?? this.featureDebt,
       featureRecurring: featureRecurring ?? this.featureRecurring,
       onboardingComplete: onboardingComplete ?? this.onboardingComplete,
+      subscriptionTier: subscriptionTier ?? this.subscriptionTier,
+      subscriptionExpiry: clearSubscriptionExpiry ? null : (subscriptionExpiry ?? this.subscriptionExpiry),
     );
   }
 
@@ -154,6 +164,8 @@ class UserProfile implements HasFeatures {
       'featureDebt': featureDebt,
       'featureRecurring': featureRecurring,
       'onboardingComplete': onboardingComplete,
+      'subscriptionTier': subscriptionTier.value,
+      'subscriptionExpiry': subscriptionExpiry?.toIso8601String(),
     };
   }
 
@@ -193,6 +205,13 @@ class UserProfile implements HasFeatures {
           json['featureRecurring'] as bool? ?? true,
       onboardingComplete: json['onboarding_complete'] as bool? ??
           json['onboardingComplete'] as bool? ?? false,
+      subscriptionTier: SubscriptionTier.fromString(
+        json['subscription_tier'] as String? ??
+            json['subscriptionTier'] as String?,
+      ),
+      subscriptionExpiry: json['subscriptionExpiry'] != null
+          ? DateTime.tryParse(json['subscriptionExpiry'] as String)
+          : null,
     );
   }
 }

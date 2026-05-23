@@ -1,5 +1,6 @@
 import 'package:cari_untung/src/app/routes.dart';
 import 'package:cari_untung/src/core/config/feature_config.dart';
+import 'package:cari_untung/src/core/models/subscription_tier.dart';
 import 'package:cari_untung/src/core/state/app_state.dart';
 import 'package:cari_untung/src/features/outlets/manage_outlets_screen.dart';
 import 'package:cari_untung/src/features/categories/manage_categories_screen.dart';
@@ -106,7 +107,20 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 style: TextStyle(color: context.appColors.textSecondary),
               ),
             ],
-            const SizedBox(height: 28),
+            const SizedBox(height: 12),
+
+            // ── Tier badge ────────────────────────────────────────────────
+            _TierBadge(tier: profile.subscriptionTier),
+            const SizedBox(height: 16),
+
+            // ── Upgrade CTA (hanya untuk free tier) ───────────────────────
+            if (profile.subscriptionTier == SubscriptionTier.free) ...[
+              _UpgradeCtaCard(
+                onTap: () =>
+                    Navigator.of(context).pushNamed(AppRoutes.upgrade),
+              ),
+              const SizedBox(height: 16),
+            ],
 
             // ── Section label ─────────────────────────────────────────────
             Align(
@@ -399,6 +413,124 @@ class _ProfileAdCard extends StatelessWidget {
       ),
       clipBehavior: Clip.hardEdge,
       child: const NativeAdCard(templateType: TemplateType.small),
+    );
+  }
+}
+
+// ── Tier badge ────────────────────────────────────────────────────────────────
+
+class _TierBadge extends StatelessWidget {
+  const _TierBadge({required this.tier});
+
+  final SubscriptionTier tier;
+
+  Color _color() {
+    switch (tier) {
+      case SubscriptionTier.free:
+        return AppColors.brandBlue;
+      case SubscriptionTier.retail:
+        return AppColors.positive;
+      case SubscriptionTier.production:
+        return Colors.deepPurple;
+    }
+  }
+
+  IconData _icon() {
+    switch (tier) {
+      case SubscriptionTier.free:
+        return Icons.person_outline;
+      case SubscriptionTier.retail:
+        return Icons.store_outlined;
+      case SubscriptionTier.production:
+        return Icons.factory_outlined;
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final color = _color();
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: color.withValues(alpha: 0.3)),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(_icon(), size: 14, color: color),
+          const SizedBox(width: 6),
+          Text(
+            'Paket ${tier.label}',
+            style: TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.w700,
+              color: color,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ── Upgrade CTA card (free tier only) ────────────────────────────────────────
+
+class _UpgradeCtaCard extends StatelessWidget {
+  const _UpgradeCtaCard({required this.onTap});
+
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            colors: [
+              AppColors.positive.withValues(alpha: 0.85),
+              AppColors.brandBlue.withValues(alpha: 0.85),
+            ],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+          borderRadius: BorderRadius.circular(16),
+        ),
+        child: Row(
+          children: [
+            const Icon(Icons.rocket_launch_outlined,
+                color: Colors.white, size: 28),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'Upgrade Paket',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.w800,
+                      fontSize: 14,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    'Akses fitur bisnis mulai Rp 19.000/bulan',
+                    style: TextStyle(
+                      color: Colors.white.withValues(alpha: 0.85),
+                      fontSize: 12,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const Icon(Icons.chevron_right, color: Colors.white),
+          ],
+        ),
+      ),
     );
   }
 }

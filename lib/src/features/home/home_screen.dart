@@ -11,6 +11,7 @@ import '../../core/theme/app_dynamic_colors.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
 
 import '../../shared/widgets/native_ad_card.dart';
+import 'widgets/daily_trend_card.dart';
 
 class _TotalBalanceCard extends StatelessWidget {
   @override
@@ -467,6 +468,11 @@ class _HomeScreenState extends State<HomeScreen> {
             ],
           ),
           const SizedBox(height: 18),
+          // ── Tren 7 hari (personal & production) ──────────────────────
+          if (useFeature(Feature.budget, profile)) ...[
+            const DailyTrendCard(),
+            const SizedBox(height: 14),
+          ],
           ClipRRect(
             borderRadius: BorderRadius.circular(12),
             child: const NativeAdCard(templateType: TemplateType.small),

@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
 
+import '../../core/config/feature_config.dart';
+import '../../core/models/subscription_tier.dart';
 import '../../core/models/user_profile.dart';
 import '../../core/state/app_state.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_dynamic_colors.dart';
 import '../../core/ui/app_gradient_scaffold.dart';
+import '../upgrade/upgrade_screen.dart';
 
 class ManageFeaturesScreen extends StatelessWidget {
   const ManageFeaturesScreen({super.key});
@@ -14,14 +17,19 @@ class ManageFeaturesScreen extends StatelessWidget {
     context.appState.updateProfile(updated);
   }
 
+  void _showUpgrade(BuildContext context, SubscriptionTier required) {
+    UpgradeScreen.showUpgradeSheet(context, required: required);
+  }
+
   @override
   Widget build(BuildContext context) {
     final profile = context.appState.profile;
+    final tier = profile.subscriptionTier;
+    final canRetail = tier.allows(Feature.quickSale);
+    final canProduction = tier.allows(Feature.product);
 
     return AppGradientScaffold(
-      appBar: AppBar(
-        title: const Text('Atur Fitur'),
-      ),
+      appBar: AppBar(title: const Text('Atur Fitur')),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
         child: Column(
@@ -34,10 +42,10 @@ class ManageFeaturesScreen extends StatelessWidget {
               title: 'Kategori Terlaris',
               subtitle: 'Tampilkan produk terlaris di halaman laporan',
               value: profile.featureTopCategories,
-              onChanged: (v) => _toggle(
-                context,
-                (p) => p.copyWith(featureTopCategories: v),
-              ),
+              locked: !canRetail,
+              onChanged: canRetail
+                  ? (v) => _toggle(context, (p) => p.copyWith(featureTopCategories: v))
+                  : (_) => _showUpgrade(context, SubscriptionTier.retail),
             ),
             const SizedBox(height: 8),
             _FeatureToggleRow(
@@ -45,10 +53,10 @@ class ManageFeaturesScreen extends StatelessWidget {
               title: 'Hari Tersibuk',
               subtitle: 'Tampilkan hari dengan transaksi terbanyak',
               value: profile.featureBusiestDay,
-              onChanged: (v) => _toggle(
-                context,
-                (p) => p.copyWith(featureBusiestDay: v),
-              ),
+              locked: !canRetail,
+              onChanged: canRetail
+                  ? (v) => _toggle(context, (p) => p.copyWith(featureBusiestDay: v))
+                  : (_) => _showUpgrade(context, SubscriptionTier.retail),
             ),
             const SizedBox(height: 8),
             _FeatureToggleRow(
@@ -56,10 +64,10 @@ class ManageFeaturesScreen extends StatelessWidget {
               title: 'Analitik Produk',
               subtitle: 'Laporan penjualan dan tren per produk',
               value: profile.featureProductAnalytics,
-              onChanged: (v) => _toggle(
-                context,
-                (p) => p.copyWith(featureProductAnalytics: v),
-              ),
+              locked: !canRetail,
+              onChanged: canRetail
+                  ? (v) => _toggle(context, (p) => p.copyWith(featureProductAnalytics: v))
+                  : (_) => _showUpgrade(context, SubscriptionTier.retail),
             ),
             const SizedBox(height: 24),
             _SectionHeader(title: 'Fitur Transaksi'),
@@ -69,10 +77,10 @@ class ManageFeaturesScreen extends StatelessWidget {
               title: 'Jual Cepat',
               subtitle: 'Shortcut catat penjualan langsung dari preset',
               value: profile.featureQuickSale,
-              onChanged: (v) => _toggle(
-                context,
-                (p) => p.copyWith(featureQuickSale: v),
-              ),
+              locked: !canRetail,
+              onChanged: canRetail
+                  ? (v) => _toggle(context, (p) => p.copyWith(featureQuickSale: v))
+                  : (_) => _showUpgrade(context, SubscriptionTier.retail),
             ),
             const SizedBox(height: 8),
             _FeatureToggleRow(
@@ -80,10 +88,8 @@ class ManageFeaturesScreen extends StatelessWidget {
               title: 'Transaksi Berulang',
               subtitle: 'Catat transaksi rutin secara otomatis',
               value: profile.featureRecurring,
-              onChanged: (v) => _toggle(
-                context,
-                (p) => p.copyWith(featureRecurring: v),
-              ),
+              onChanged: (v) =>
+                  _toggle(context, (p) => p.copyWith(featureRecurring: v)),
             ),
             const SizedBox(height: 8),
             _FeatureToggleRow(
@@ -91,10 +97,10 @@ class ManageFeaturesScreen extends StatelessWidget {
               title: 'Utang & Piutang',
               subtitle: 'Catat dan pantau utang serta piutang',
               value: profile.featureDebt,
-              onChanged: (v) => _toggle(
-                context,
-                (p) => p.copyWith(featureDebt: v),
-              ),
+              locked: !canRetail,
+              onChanged: canRetail
+                  ? (v) => _toggle(context, (p) => p.copyWith(featureDebt: v))
+                  : (_) => _showUpgrade(context, SubscriptionTier.retail),
             ),
             const SizedBox(height: 24),
             _SectionHeader(title: 'Fitur Bisnis'),
@@ -104,10 +110,8 @@ class ManageFeaturesScreen extends StatelessWidget {
               title: 'Budget & Target',
               subtitle: 'Atur dan pantau anggaran bulanan',
               value: profile.featureBudget,
-              onChanged: (v) => _toggle(
-                context,
-                (p) => p.copyWith(featureBudget: v),
-              ),
+              onChanged: (v) =>
+                  _toggle(context, (p) => p.copyWith(featureBudget: v)),
             ),
             const SizedBox(height: 8),
             _FeatureToggleRow(
@@ -115,10 +119,10 @@ class ManageFeaturesScreen extends StatelessWidget {
               title: 'Multi Outlet',
               subtitle: 'Kelola beberapa cabang atau outlet',
               value: profile.featureOutlets,
-              onChanged: (v) => _toggle(
-                context,
-                (p) => p.copyWith(featureOutlets: v),
-              ),
+              locked: !canProduction,
+              onChanged: canProduction
+                  ? (v) => _toggle(context, (p) => p.copyWith(featureOutlets: v))
+                  : (_) => _showUpgrade(context, SubscriptionTier.production),
             ),
             const SizedBox(height: 8),
             _FeatureToggleRow(
@@ -126,10 +130,10 @@ class ManageFeaturesScreen extends StatelessWidget {
               title: 'Stok Barang',
               subtitle: 'Kelola inventaris dan stok produk',
               value: profile.featureStock,
-              onChanged: (v) => _toggle(
-                context,
-                (p) => p.copyWith(featureStock: v),
-              ),
+              locked: !canRetail,
+              onChanged: canRetail
+                  ? (v) => _toggle(context, (p) => p.copyWith(featureStock: v))
+                  : (_) => _showUpgrade(context, SubscriptionTier.retail),
             ),
             const SizedBox(height: 24),
             _SectionHeader(title: 'Fitur Produksi'),
@@ -139,10 +143,10 @@ class ManageFeaturesScreen extends StatelessWidget {
               title: 'HPP & Produk',
               subtitle: 'Hitung harga pokok produksi dan kelola produk',
               value: profile.featureProduct,
-              onChanged: (v) => _toggle(
-                context,
-                (p) => p.copyWith(featureProduct: v),
-              ),
+              locked: !canProduction,
+              onChanged: canProduction
+                  ? (v) => _toggle(context, (p) => p.copyWith(featureProduct: v))
+                  : (_) => _showUpgrade(context, SubscriptionTier.production),
             ),
             const SizedBox(height: 8),
             _FeatureToggleRow(
@@ -150,10 +154,10 @@ class ManageFeaturesScreen extends StatelessWidget {
               title: 'Bahan Baku & Batch',
               subtitle: 'Catat bahan baku dan batch produksi',
               value: profile.featureProduction,
-              onChanged: (v) => _toggle(
-                context,
-                (p) => p.copyWith(featureProduction: v),
-              ),
+              locked: !canProduction,
+              onChanged: canProduction
+                  ? (v) => _toggle(context, (p) => p.copyWith(featureProduction: v))
+                  : (_) => _showUpgrade(context, SubscriptionTier.production),
             ),
             const SizedBox(height: 16),
           ],
@@ -190,6 +194,7 @@ class _FeatureToggleRow extends StatelessWidget {
     required this.subtitle,
     required this.value,
     required this.onChanged,
+    this.locked = false,
   });
 
   final IconData icon;
@@ -197,18 +202,27 @@ class _FeatureToggleRow extends StatelessWidget {
   final String subtitle;
   final bool value;
   final ValueChanged<bool> onChanged;
+  final bool locked;
 
   @override
   Widget build(BuildContext context) {
     final appColors = context.appColors;
 
-    final bgColor = value
-        ? AppColors.brandBlue.withValues(alpha: 0.08)
-        : appColors.card;
-    final borderColor = value
-        ? AppColors.brandBlue.withValues(alpha: 0.3)
-        : appColors.outline;
-    final iconColor = value ? AppColors.brandBlue : appColors.textSecondary;
+    final bgColor = locked
+        ? appColors.cardSoft
+        : value
+            ? AppColors.brandBlue.withValues(alpha: 0.08)
+            : appColors.card;
+    final borderColor = locked
+        ? appColors.outline
+        : value
+            ? AppColors.brandBlue.withValues(alpha: 0.3)
+            : appColors.outline;
+    final iconColor = locked
+        ? appColors.textSecondary.withValues(alpha: 0.5)
+        : value
+            ? AppColors.brandBlue
+            : appColors.textSecondary;
 
     return InkWell(
       borderRadius: BorderRadius.circular(12),
@@ -230,9 +244,12 @@ class _FeatureToggleRow extends StatelessWidget {
                 children: [
                   Text(
                     title,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 13,
                       fontWeight: FontWeight.w700,
+                      color: locked
+                          ? appColors.textSecondary.withValues(alpha: 0.6)
+                          : null,
                     ),
                   ),
                   const SizedBox(height: 2),
@@ -246,11 +263,16 @@ class _FeatureToggleRow extends StatelessWidget {
                 ],
               ),
             ),
-            Switch(
-              value: value,
-              onChanged: onChanged,
-              activeThumbColor: AppColors.brandBlue,
-            ),
+            if (locked)
+              Icon(Icons.lock_outline,
+                  size: 18,
+                  color: appColors.textSecondary.withValues(alpha: 0.5))
+            else
+              Switch(
+                value: value,
+                onChanged: onChanged,
+                activeThumbColor: AppColors.brandBlue,
+              ),
           ],
         ),
       ),

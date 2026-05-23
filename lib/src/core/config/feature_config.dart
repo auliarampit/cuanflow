@@ -74,7 +74,7 @@ const Map<BusinessMode, Map<Feature, bool>> featureConfig = {
   BusinessMode.personal: {
     Feature.product: false,
     Feature.outlets: false,
-    Feature.budget: false,
+    Feature.budget: true, // personal bisa set budget bulanan
     Feature.production: false,
     Feature.quickSale: false,
     Feature.topCategories: false,

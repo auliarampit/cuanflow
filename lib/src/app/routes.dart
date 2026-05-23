@@ -28,4 +28,5 @@ final class AppRoutes {
   static const productionBatches = '/production-batches';
   static const productAnalytics = '/product-analytics';
   static const manageFeatures = '/manage-features';
+  static const upgrade = '/upgrade';
 }
