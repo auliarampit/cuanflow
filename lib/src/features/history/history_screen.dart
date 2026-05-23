@@ -29,7 +29,9 @@ class HistoryScreen extends StatefulWidget {
 class _HistoryScreenState extends State<HistoryScreen> {
   HistoryFilter _selectedFilter = HistoryFilter.today;
   DateTimeRange? _customRange;
-  String? _selectedOutletFilter; // null = semua outlet
+  String? _selectedOutletFilter;
+  String? _selectedTypeFilter; // null = semua, 'income', 'expense'
+  String? _selectedCategoryFilter; // null = semua kategori
 
   void _showFilterSheet() {
     // Simpan screen context sebelum masuk builder — hindari shadowing
@@ -127,11 +129,39 @@ class _HistoryScreenState extends State<HistoryScreen> {
         break;
     }
 
-    return allTxs.where((tx) {
+    var result = allTxs.where((tx) {
       final txDate = tx.effectiveDate;
       return txDate.isAfter(start.subtract(const Duration(seconds: 1))) &&
           txDate.isBefore(end);
     }).toList();
+
+    if (_selectedTypeFilter == 'income') {
+      result = result.where((tx) => tx.isIncome).toList();
+    } else if (_selectedTypeFilter == 'expense') {
+      result = result.where((tx) => !tx.isIncome).toList();
+    }
+
+    if (_selectedCategoryFilter != null) {
+      result = result.where((tx) => tx.category == _selectedCategoryFilter).toList();
+    }
+
+    return result;
+  }
+
+  List<String> _getAvailableCategories() {
+    final base = context.appState.allTransactions;
+    final typeFiltered = _selectedTypeFilter == null
+        ? base
+        : _selectedTypeFilter == 'income'
+            ? base.where((tx) => tx.isIncome).toList()
+            : base.where((tx) => !tx.isIncome).toList();
+    final cats = typeFiltered
+        .map((tx) => tx.category ?? '')
+        .where((c) => c.isNotEmpty)
+        .toSet()
+        .toList()
+      ..sort();
+    return cats;
   }
 
   void _showActionModal(MoneyTransaction item) {
@@ -372,6 +402,28 @@ class _HistoryScreenState extends State<HistoryScreen> {
             ),
           ),
 
+          // Filter: type (Semua/Masuk/Keluar) + kategori
+          Padding(
+            padding: const EdgeInsets.fromLTRB(20, 0, 20, 10),
+            child: Row(
+              children: [
+                _TypeFilterChips(
+                  selected: _selectedTypeFilter,
+                  onChanged: (v) => setState(() {
+                    _selectedTypeFilter = v;
+                    _selectedCategoryFilter = null;
+                  }),
+                ),
+                const Spacer(),
+                _CategoryFilterButton(
+                  selected: _selectedCategoryFilter,
+                  categories: _getAvailableCategories(),
+                  onChanged: (v) => setState(() => _selectedCategoryFilter = v),
+                ),
+              ],
+            ),
+          ),
+
           // List
           Expanded(
             child: filteredTxs.isEmpty
@@ -569,6 +621,190 @@ class _HistoryAdCard extends StatelessWidget {
       decoration: BoxDecoration(borderRadius: BorderRadius.circular(14)),
       clipBehavior: Clip.hardEdge,
       child: const NativeAdCard(templateType: TemplateType.small),
+    );
+  }
+}
+
+// ── Type filter chips ─────────────────────────────────────────────────────────
+
+class _TypeFilterChips extends StatelessWidget {
+  const _TypeFilterChips({required this.selected, required this.onChanged});
+
+  final String? selected;
+  final ValueChanged<String?> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        _TypeChip(
+          label: 'Semua',
+          active: selected == null,
+          onTap: () => onChanged(null),
+          color: context.appColors.textSecondary,
+        ),
+        const SizedBox(width: 6),
+        _TypeChip(
+          label: '↑ Masuk',
+          active: selected == 'income',
+          onTap: () => onChanged('income'),
+          color: AppColors.positive,
+        ),
+        const SizedBox(width: 6),
+        _TypeChip(
+          label: '↓ Keluar',
+          active: selected == 'expense',
+          onTap: () => onChanged('expense'),
+          color: AppColors.negative,
+        ),
+      ],
+    );
+  }
+}
+
+class _TypeChip extends StatelessWidget {
+  const _TypeChip({
+    required this.label,
+    required this.active,
+    required this.onTap,
+    required this.color,
+  });
+
+  final String label;
+  final bool active;
+  final VoidCallback onTap;
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 150),
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+        decoration: BoxDecoration(
+          color: active ? color.withValues(alpha: 0.12) : Colors.transparent,
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(
+            color: active ? color : context.appColors.outline,
+          ),
+        ),
+        child: Text(
+          label,
+          style: TextStyle(
+            fontSize: 12,
+            fontWeight: FontWeight.w700,
+            color: active ? color : context.appColors.textSecondary,
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// ── Category filter button ────────────────────────────────────────────────────
+
+class _CategoryFilterButton extends StatelessWidget {
+  const _CategoryFilterButton({
+    required this.selected,
+    required this.categories,
+    required this.onChanged,
+  });
+
+  final String? selected;
+  final List<String> categories;
+  final ValueChanged<String?> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    final isFiltered = selected != null;
+    final label = selected ?? 'Kategori';
+
+    return PopupMenuButton<String?>(
+      onSelected: (v) => onChanged(v == '__all__' ? null : v),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      color: context.appColors.card,
+      itemBuilder: (_) => [
+        PopupMenuItem<String?>(
+          value: '__all__',
+          child: Text(
+            'Semua Kategori',
+            style: TextStyle(
+              fontWeight:
+                  !isFiltered ? FontWeight.w700 : FontWeight.normal,
+              color: !isFiltered
+                  ? AppColors.brandBlue
+                  : context.appColors.textPrimary,
+            ),
+          ),
+        ),
+        ...categories.map(
+          (cat) => PopupMenuItem<String?>(
+            value: cat,
+            child: Text(
+              cat,
+              style: TextStyle(
+                fontWeight:
+                    selected == cat ? FontWeight.w700 : FontWeight.normal,
+                color: selected == cat
+                    ? AppColors.brandBlue
+                    : context.appColors.textPrimary,
+              ),
+            ),
+          ),
+        ),
+      ],
+      child: Container(
+        height: 34,
+        padding: const EdgeInsets.symmetric(horizontal: 10),
+        decoration: BoxDecoration(
+          color: isFiltered
+              ? AppColors.brandBlue.withValues(alpha: 0.1)
+              : Colors.transparent,
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(
+            color:
+                isFiltered ? AppColors.brandBlue : context.appColors.outline,
+          ),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              Icons.category_outlined,
+              size: 14,
+              color: isFiltered
+                  ? AppColors.brandBlue
+                  : context.appColors.textSecondary,
+            ),
+            const SizedBox(width: 4),
+            ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 90),
+              child: Text(
+                label,
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                  color: isFiltered
+                      ? AppColors.brandBlue
+                      : context.appColors.textSecondary,
+                ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+            const SizedBox(width: 2),
+            Icon(
+              Icons.keyboard_arrow_down,
+              size: 14,
+              color: isFiltered
+                  ? AppColors.brandBlue
+                  : context.appColors.textSecondary,
+            ),
+          ],
+        ),
+      ),
     );
   }
 }
