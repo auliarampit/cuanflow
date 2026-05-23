@@ -1,10 +1,7 @@
 import 'package:cari_untung/src/app/routes.dart';
-import 'package:cari_untung/src/core/config/feature_config.dart';
 import 'package:cari_untung/src/core/models/subscription_tier.dart';
 import 'package:cari_untung/src/core/state/app_state.dart';
 import 'package:cari_untung/src/features/outlets/manage_outlets_screen.dart';
-import 'package:cari_untung/src/features/categories/manage_categories_screen.dart';
-import 'package:cari_untung/src/features/product/product_list_screen.dart';
 import 'package:cari_untung/src/shared/widgets/loading_dialog.dart';
 import 'package:cari_untung/src/shared/widgets/native_ad_card.dart';
 import 'package:flutter/material.dart';
@@ -98,12 +95,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   : context.t('profile.ownerName'),
               style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w800),
             ),
-            if (useFeature(Feature.production, profile)) ...[
+            if (profile.businessName.isNotEmpty) ...[
               const SizedBox(height: 4),
               Text(
-                profile.businessName.isNotEmpty
-                    ? profile.businessName
-                    : context.t('profile.businessName'),
+                profile.businessName,
                 style: TextStyle(color: context.appColors.textSecondary),
               ),
             ],
@@ -122,22 +117,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
               const SizedBox(height: 16),
             ],
 
-            // ── Section label ─────────────────────────────────────────────
-            Align(
-              alignment: Alignment.centerLeft,
-              child: Text(
-                context.t('profile.settingsSectionTitle'),
-                style: TextStyle(
-                  fontWeight: FontWeight.w700,
-                  letterSpacing: 1.4,
-                  fontSize: 12,
-                  color: context.appColors.textSecondary,
-                ),
-              ),
-            ),
+            // ── Section: Akun ─────────────────────────────────────────────
+            _SectionLabel(context.t('profile.settingsSectionTitle')),
             const SizedBox(height: 10),
-
-            // ── Menu items ────────────────────────────────────────────────
             _ProfileMenuItem(
               icon: Icons.person_outline,
               title: context.t('profile.menu.accountSettings'),
@@ -145,8 +127,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
               onTap: () => _openAccountSettings(context),
             ),
             const SizedBox(height: 8),
-
-            // ── Atur Fitur ────────────────────────────────────────────────
             _ProfileMenuItem(
               icon: Icons.tune_outlined,
               title: 'Atur Fitur',
@@ -156,8 +136,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
             ),
             const SizedBox(height: 8),
 
-            // Dompet — hanya untuk personal (bisnis: tidak perlu)
-            if (!useFeature(Feature.production, profile)) ...[
+            // Dompet — hanya untuk personal & store (produksi pakai outlet)
+            if (!profile.featureOutlets) ...[
               _ProfileMenuItem(
                 icon: Icons.account_balance_wallet_outlined,
                 title: context.t('profile.menu.wallets'),
@@ -166,6 +146,20 @@ class _ProfileScreenState extends State<ProfileScreen> {
               ),
               const SizedBox(height: 8),
             ],
+
+            // ── Section: Fitur Aktif ───────────────────────────────────────
+            if (profile.featureDebt ||
+                profile.featureRecurring ||
+                profile.featureBudget ||
+                profile.featureOutlets ||
+                profile.featureProduct ||
+                profile.featureProduction ||
+                profile.featureStock ||
+                profile.featureQuickSale) ...[
+              _SectionLabel('Fitur Aktif'),
+              const SizedBox(height: 10),
+            ],
+
             if (profile.featureDebt) ...[
               _ProfileMenuItem(
                 icon: Icons.handshake_outlined,
@@ -175,11 +169,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
               ),
               const SizedBox(height: 8),
             ],
-
-            // ── Native Ad (styled as menu card) ───────────────────────────
-            _ProfileAdCard(),
-            const SizedBox(height: 8),
-
             if (profile.featureRecurring) ...[
               _ProfileMenuItem(
                 icon: Icons.repeat_outlined,
@@ -199,8 +188,16 @@ class _ProfileScreenState extends State<ProfileScreen> {
               ),
               const SizedBox(height: 8),
             ],
-
-            // Business-only menus (each gated by its own feature flag)
+            if (profile.featureQuickSale) ...[
+              _ProfileMenuItem(
+                icon: Icons.point_of_sale,
+                title: context.t('profile.menu.quickSale'),
+                subtitle: context.t('profile.menu.quickSaleSubtitle'),
+                onTap: () =>
+                    Navigator.of(context).pushNamed(AppRoutes.quickSale),
+              ),
+              const SizedBox(height: 8),
+            ],
             if (profile.featureOutlets) ...[
               _ProfileMenuItem(
                 icon: Icons.store_outlined,
@@ -219,9 +216,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 icon: Icons.inventory_2_outlined,
                 title: context.t('profile.menu.product'),
                 subtitle: context.t('profile.menu.productSubtitle'),
-                onTap: () => Navigator.of(context).push(
-                  MaterialPageRoute(builder: (_) => const ProductListScreen()),
-                ),
+                onTap: () =>
+                    Navigator.of(context).pushNamed(AppRoutes.productList),
               ),
               const SizedBox(height: 8),
               _ProfileMenuItem(
@@ -248,13 +244,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 title: 'Batch Produksi',
                 subtitle:
                     '${context.appState.productionBatches.length} batch tercatat',
-                onTap: () => Navigator.of(
-                  context,
-                ).pushNamed(AppRoutes.productionBatches),
+                onTap: () =>
+                    Navigator.of(context).pushNamed(AppRoutes.productionBatches),
               ),
               const SizedBox(height: 8),
             ],
-            if (useFeature(Feature.production, profile)) ...[
+            if (profile.featureStock) ...[
               _ProfileMenuItem(
                 icon: Icons.warehouse_outlined,
                 title: context.t('profile.menu.inventory'),
@@ -264,35 +259,28 @@ class _ProfileScreenState extends State<ProfileScreen> {
               ),
               const SizedBox(height: 8),
             ],
-            if (profile.featureQuickSale) ...[
-              _ProfileMenuItem(
-                icon: Icons.point_of_sale,
-                title: context.t('profile.menu.quickSale'),
-                subtitle: context.t('profile.menu.quickSaleSubtitle'),
-                onTap: () =>
-                    Navigator.of(context).pushNamed(AppRoutes.quickSale),
-              ),
-              const SizedBox(height: 8),
-            ],
 
+            // ── Native Ad ─────────────────────────────────────────────────
+            _ProfileAdCard(),
+            const SizedBox(height: 8),
+
+            // ── Section: Pengaturan App ───────────────────────────────────
+            _SectionLabel('Pengaturan'),
+            const SizedBox(height: 10),
             _ProfileMenuItem(
               icon: Icons.category_outlined,
               title: 'Kelola Kategori',
               subtitle: 'Atur kategori pemasukan & pengeluaran',
-              onTap: () => Navigator.of(context).push(
-                MaterialPageRoute(
-                  builder: (_) => const ManageCategoriesScreen(),
-                ),
-              ),
+              onTap: () =>
+                  Navigator.of(context).pushNamed(AppRoutes.manageCategories),
             ),
             const SizedBox(height: 8),
             _ProfileMenuItem(
               icon: Icons.notifications_outlined,
               title: context.t('profile.menu.notifications'),
               subtitle: context.t('profile.menu.notificationsSubtitle'),
-              onTap: () => Navigator.of(
-                context,
-              ).pushNamed(AppRoutes.notificationSettings),
+              onTap: () => Navigator.of(context)
+                  .pushNamed(AppRoutes.notificationSettings),
             ),
             const SizedBox(height: 8),
             _ProfileMenuItem(
@@ -413,6 +401,30 @@ class _ProfileAdCard extends StatelessWidget {
       ),
       clipBehavior: Clip.hardEdge,
       child: const NativeAdCard(templateType: TemplateType.small),
+    );
+  }
+}
+
+// ── Section label ─────────────────────────────────────────────────────────────
+
+class _SectionLabel extends StatelessWidget {
+  const _SectionLabel(this.label);
+
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    return Align(
+      alignment: Alignment.centerLeft,
+      child: Text(
+        label.toUpperCase(),
+        style: TextStyle(
+          fontWeight: FontWeight.w700,
+          letterSpacing: 1.4,
+          fontSize: 11,
+          color: context.appColors.textSecondary,
+        ),
+      ),
     );
   }
 }
