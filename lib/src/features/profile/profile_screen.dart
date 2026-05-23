@@ -127,15 +127,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
               onTap: () => _openAccountSettings(context),
             ),
             const SizedBox(height: 8),
-            _ProfileMenuItem(
-              icon: Icons.tune_outlined,
-              title: 'Atur Fitur',
-              subtitle: 'Aktifkan atau nonaktifkan fitur sesuai kebutuhan',
-              onTap: () =>
-                  Navigator.of(context).pushNamed(AppRoutes.manageFeatures),
-            ),
-            const SizedBox(height: 8),
-
             // Dompet — hanya untuk personal & store (produksi pakai outlet)
             if (!profile.featureOutlets) ...[
               _ProfileMenuItem(
