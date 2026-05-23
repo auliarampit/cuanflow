@@ -184,3 +184,43 @@ WHERE s.user_id = t.user_id
     WHEN (SELECT subscription_tier FROM profiles WHERE id = t.user_id) = 'retail'     THEN 'store'
     ELSE 'personal'
   END;
+
+
+-- ============================================================
+-- MIGRATION 005 — Tandai Libur Outlet + outlet_id di Recurring
+-- Jalankan bersamaan dengan atau setelah fitur recurring outlet
+-- diimplementasi di Dart.
+-- Lihat docs/ERD.md bagian outlet_closures untuk detail logika.
+-- ============================================================
+
+-- 1. Tabel outlet_closures: tandai tanggal outlet tutup
+CREATE TABLE IF NOT EXISTS outlet_closures (
+  id         uuid        PRIMARY KEY DEFAULT gen_random_uuid(),
+  outlet_id  uuid        NOT NULL REFERENCES outlets(id) ON DELETE CASCADE,
+  user_id    uuid        NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  date       date        NOT NULL,
+  note       text,
+  created_at timestamptz NOT NULL DEFAULT now(),
+  UNIQUE (outlet_id, date)
+);
+
+ALTER TABLE outlet_closures ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "outlet_closures: own rows only" ON outlet_closures
+  USING  (auth.uid() = user_id)
+  WITH CHECK (auth.uid() = user_id);
+
+-- 2. Tambah outlet_id ke recurring_transactions
+--    Nullable: tidak semua recurring terikat ke outlet (sewa bulanan bisa tanpa outlet)
+ALTER TABLE recurring_transactions
+  ADD COLUMN IF NOT EXISTS outlet_id uuid REFERENCES outlets(id) ON DELETE SET NULL;
+
+-- ============================================================
+-- Logika skip di Dart (tidak ada SQL):
+-- Saat app dibuka dan recurring_transaction.next_execute <= now():
+--   IF outlet_id IS NOT NULL:
+--     cek outlet_closures WHERE outlet_id = rt.outlet_id AND date = today
+--     IF ada record → skip (jangan buat transaksi), advance next_execute saja
+--   ELSE:
+--     eksekusi normal
+-- ============================================================

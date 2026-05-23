@@ -1,7 +1,7 @@
 # Entity Relationship Diagram (ERD)
 ## Cuan Flow — Database Schema
 
-**Versi:** 3.0 | **Tanggal:** Mei 2026
+**Versi:** 3.1 | **Tanggal:** Mei 2026
 
 > Preview diagram: buka file ini di VSCode → klik kanan → **"Open Preview"**, atau tekan `Cmd+Shift+V` (Mac) / `Ctrl+Shift+V` (Windows).  
 > Butuh ekstensi **Markdown Preview Mermaid Support** (ID: `bierner.markdown-mermaid`) jika diagram tidak tampil.
@@ -30,6 +30,9 @@ erDiagram
 
     transactions }o--o| outlets : "tagged outlet_id"
     transactions }o--o| wallets : "from wallet_id"
+
+    outlets ||--o{ outlet_closures : "closed on dates"
+    recurring_transactions }o--o| outlets : "outlet_id (skip if closed)"
 
     quick_sale_presets }o--o| outlets : "for outlet_id"
     quick_sale_presets }o--o| wallets : "to wallet_id"
@@ -107,9 +110,19 @@ erDiagram
         text frequency
         int day_of_month
         text wallet_id FK
+        uuid outlet_id FK
         bool is_active
         timestamptz next_execute
         timestamptz last_executed
+        timestamptz created_at
+    }
+
+    outlet_closures {
+        uuid id PK
+        uuid outlet_id FK
+        uuid user_id FK
+        date date
+        text note
         timestamptz created_at
     }
 
@@ -305,9 +318,32 @@ Template transaksi yang berjalan otomatis saat app dibuka.
 |---|---|---|
 | `frequency` | TEXT | `'daily'` / `'weekly'` / `'monthly'` |
 | `day_of_month` | INTEGER | 1–28, hanya untuk monthly |
-| `is_active` | BOOL | Pause/resume |
+| `outlet_id` | UUID (FK, null) | Jika diisi, cek `outlet_closures` sebelum eksekusi |
+| `is_active` | BOOL | Pause/resume global |
 | `next_execute` | TIMESTAMPTZ | Kapan berikutnya akan berjalan |
 | `last_executed` | TIMESTAMPTZ | Terakhir kali dieksekusi |
+
+**Logika skip libur:** Saat app dibuka dan recurring siap dieksekusi — jika `outlet_id` diisi dan ada record di `outlet_closures` untuk outlet + tanggal hari ini → transaksi di-skip, `next_execute` tetap maju ke hari berikutnya.
+
+Use case utama: gaji harian karyawan per outlet. Jika outlet tutup, gaji tidak dibuat otomatis.
+
+---
+
+### `outlet_closures`
+Tanggal-tanggal outlet tutup (libur, force close, dll). Dipakai untuk skip recurring gaji otomatis.
+
+| Kolom | Tipe | Keterangan |
+|---|---|---|
+| `id` | UUID (PK) | |
+| `outlet_id` | UUID (FK) | Outlet yang tutup |
+| `user_id` | UUID (FK) | |
+| `date` | DATE | Tanggal tutup |
+| `note` | TEXT | Alasan tutup (opsional: libur, banjir, dll) |
+| `created_at` | TIMESTAMPTZ | |
+
+**Constraint:** `UNIQUE(outlet_id, date)` — tidak bisa double-mark tutup di hari yang sama.
+
+**Side effect:** Saat Multi-Space live, `outlet_closures` juga dapat `space_id` (ikut Migration 004).
 
 ---
 
@@ -419,6 +455,8 @@ Cabang / outlet bisnis. Aktif jika `featureOutlets = true`.
 | `name` | TEXT | Nama outlet |
 | `address` | TEXT | Alamat (opsional) |
 | `is_default` | BOOL | Outlet default saat input transaksi |
+
+Tiap outlet bisa punya daftar tanggal tutup di `outlet_closures`. Recurring transactions yang punya `outlet_id` akan otomatis di-skip pada tanggal tutup tersebut.
 
 ---
 
