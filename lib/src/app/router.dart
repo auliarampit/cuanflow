@@ -15,7 +15,6 @@ import '../features/auth/change_pin_screen.dart';
 import '../features/categories/manage_categories_screen.dart';
 import '../features/budget/budget_screen.dart';
 import '../features/notifications/notification_settings_screen.dart';
-import '../features/onboarding/mode_selection_screen.dart';
 import '../features/onboarding/setup_spaces_screen.dart';
 import '../features/splash/splash_screen.dart';
 import '../features/wallet/manage_wallets_screen.dart';
@@ -36,8 +35,6 @@ final class AppRouter {
     switch (settings.name) {
       case AppRoutes.splash:
         return MaterialPageRoute(builder: (_) => const SplashScreen());
-      case AppRoutes.modeSelection:
-        return MaterialPageRoute(builder: (_) => const ModeSelectionScreen());
       case AppRoutes.setupSpaces:
         return MaterialPageRoute(builder: (_) => const SetupSpacesScreen());
       case AppRoutes.login:

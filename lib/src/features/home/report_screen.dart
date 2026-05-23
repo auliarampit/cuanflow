@@ -5,6 +5,7 @@ import 'package:google_mobile_ads/google_mobile_ads.dart' show TemplateType;
 import 'package:intl/intl.dart';
 
 import '../../core/config/space_features.dart';
+import '../../core/models/space_model.dart';
 import '../../core/formatters/idr_formatter.dart';
 import '../../core/localization/transalation_extansions.dart';
 import '../../core/models/money_transaction.dart';
@@ -76,6 +77,7 @@ class _ReportScreenState extends State<ReportScreen> {
     final history = appState.historyForDate(DateRangeType.month, _selectedDate);
     final profile = appState.profile;
     final monthName = _formatMonth(_selectedDate);
+    final isProductionMode = SpaceFeatures.canUseHpp(appState.activeSpace, profile.isBusinessPremium);
 
     await ReportPdfService().generateAndShowPdf(
       monthName,
@@ -85,6 +87,7 @@ class _ReportScreenState extends State<ReportScreen> {
       locale: locale,
       outlets: appState.outlets,
       selectedOutletId: appState.selectedOutletId,
+      isProductionMode: isProductionMode,
     );
 
     if (mounted) LoadingDialog.hide(context);
@@ -281,7 +284,7 @@ class _ReportScreenState extends State<ReportScreen> {
                     amount: IdrFormatter.format(netProfit),
                     pctChange: profitPct,
                     isPositive: netProfit >= 0,
-                    isBusinessMode: appState.profile.isBusinessMode,
+                    isBusinessMode: space?.type != null && space!.type != SpaceType.personal,
                   ),
 
                   // ── Kesehatan bisnis ──────────────────────────────────────

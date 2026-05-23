@@ -43,7 +43,7 @@ class _SplashScreenState extends State<SplashScreen> {
       }
       final onboardingDone = context.appState.profile.onboardingComplete;
       Navigator.of(context).pushReplacementNamed(
-        onboardingDone ? AppRoutes.home : AppRoutes.modeSelection,
+        onboardingDone ? AppRoutes.home : AppRoutes.setupSpaces,
       );
     });
   }

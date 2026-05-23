@@ -251,11 +251,12 @@ class SpaceFeatures {
 - [ ] Integrasikan payment gateway (in-app purchase atau link ke Midtrans/Xendit) — SKIP (ditunda, butuh keputusan vendor)
 
 ### Phase 5 — Cleanup (setelah Phase 4 stabil)
-- [ ] Hapus semua `feature*` field dari `UserProfile` model
-- [ ] Hapus `feature_config.dart` dan semua `useFeature()` calls
-- [ ] Hapus `subscriptionTier` enum (ganti dengan `isBusinessPremium`)
-- [ ] Jalankan **Migration 004b** di Supabase: DROP COLUMN feature_* dari profiles
-- [ ] Update ERD.md — hapus feature flag columns dari dokumentasi
+- [x] Hapus semua `feature*` field dari `UserProfile` model
+- [x] Hapus `feature_config.dart` dan semua `useFeature()` calls
+- [x] Hapus `subscriptionTier` enum (ganti dengan `isBusinessPremium`)
+- [x] Hapus `mode_selection_screen.dart` dan route `/onboarding/mode`
+- [x] Tambah Migration 004b di docs/migrations.sql (siap dijalankan di Supabase)
+- [x] Update ERD.md — hapus feature flag columns dari dokumentasi
 
 ---
 

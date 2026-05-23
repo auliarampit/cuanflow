@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
 import '../../core/config/space_features.dart';
+import '../../core/models/space_model.dart';
 import '../../core/localization/transalation_extansions.dart';
 import '../../core/models/money_transaction.dart';
 import '../../core/models/outlet_model.dart';
@@ -489,7 +490,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
                       totalIncome: totalIncome,
                       totalExpense: totalExpense,
                       totalProfit: totalProfit,
-                      isProductionMode: context.appState.profile.isBusinessMode,
+                      isProductionMode: context.appState.activeSpace?.type != SpaceType.personal,
                     ),
                   ),
                 ),

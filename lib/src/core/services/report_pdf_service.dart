@@ -1,4 +1,3 @@
-import 'package:cari_untung/src/core/config/feature_config.dart';
 import 'package:intl/intl.dart';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
@@ -18,6 +17,7 @@ class ReportPdfService {
     String locale = 'id',
     List<OutletModel> outlets = const [],
     String? selectedOutletId,
+    bool isProductionMode = false,
   }) async {
     final isId = locale == 'id';
     final font = await PdfGoogleFonts.openSansRegular();
@@ -40,7 +40,7 @@ class ReportPdfService {
       'contact': isId ? 'Telp/WA' : 'Phone/WA',
       'income': isId ? 'Total Pemasukan' : 'Total Income',
       'expense': isId ? 'Total Pengeluaran' : 'Total Expense',
-      'net': useFeature(Feature.production, profile)
+      'net': isProductionMode
           ? (isId ? 'Keuntungan Bersih' : 'Net Profit')
           : (isId ? 'Sisa Uang' : 'Monthly Savings'),
       'detail': isId ? 'Detail Transaksi' : 'Transaction Details',
@@ -73,6 +73,7 @@ class ReportPdfService {
               labels,
               selectedOutletId: selectedOutletId,
               outletNames: outletNames,
+              isProductionMode: isProductionMode,
             ),
             pw.SizedBox(height: 20),
             showAllOutlets
@@ -82,6 +83,7 @@ class ReportPdfService {
                     currencyFormat,
                     labels,
                     profile,
+                    isProductionMode: isProductionMode,
                   )
                 : _buildSingleSummary(summary, currencyFormat, labels),
             pw.SizedBox(height: 20),
@@ -121,6 +123,7 @@ class ReportPdfService {
     Map<String, String> labels, {
     String? selectedOutletId,
     Map<String, String> outletNames = const {},
+    bool isProductionMode = false,
   }) {
     final outletLabel = selectedOutletId != null
         ? (outletNames[selectedOutletId] ?? selectedOutletId)
@@ -137,7 +140,7 @@ class ReportPdfService {
               crossAxisAlignment: pw.CrossAxisAlignment.start,
               children: [
                 pw.Text(
-                  useFeature(Feature.production, profile)
+                  isProductionMode
                       ? (profile.businessName.isNotEmpty
                             ? profile.businessName.toUpperCase()
                             : 'BISNIS')
@@ -230,8 +233,9 @@ class ReportPdfService {
     List<OutletModel> outlets,
     NumberFormat currencyFormat,
     Map<String, String> labels,
-    UserProfile profile,
-  ) {
+    UserProfile profile, {
+    bool isProductionMode = false,
+  }) {
     // Income per outlet
     final outletIncomes = <String, int>{};
     for (final outlet in outlets) {
@@ -385,9 +389,7 @@ class ReportPdfService {
                 pw.Text(
                   currencyFormat.format(netProfit.abs()) +
                       (netProfit < 0
-                          ? (useFeature(Feature.production, profile)
-                                ? ' (rugi)'
-                                : ' (defisit)')
+                          ? (isProductionMode ? ' (rugi)' : ' (defisit)')
                           : ''),
                   style: pw.TextStyle(
                     fontSize: 13,

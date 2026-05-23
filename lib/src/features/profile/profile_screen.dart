@@ -1,7 +1,6 @@
 import 'package:cari_untung/src/app/routes.dart';
 import 'package:cari_untung/src/core/config/space_features.dart';
 import 'package:cari_untung/src/core/models/space_model.dart';
-import 'package:cari_untung/src/core/models/subscription_tier.dart';
 import 'package:cari_untung/src/core/state/app_state.dart';
 import 'package:cari_untung/src/features/outlets/manage_outlets_screen.dart';
 import 'package:cari_untung/src/shared/widgets/loading_dialog.dart';
@@ -109,8 +108,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
             ],
             const SizedBox(height: 12),
 
-            // ── Tier badge ────────────────────────────────────────────────
-            _TierBadge(tier: profile.subscriptionTier),
+            // ── Premium badge ─────────────────────────────────────────────
+            _PremiumBadge(isPremium: profile.isBusinessPremium),
             const SizedBox(height: 16),
 
             // ── Section: Ruang Aktif ──────────────────────────────────────
@@ -122,8 +121,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
             ),
             const SizedBox(height: 16),
 
-            // ── Upgrade CTA (hanya untuk free tier) ───────────────────────
-            if (profile.subscriptionTier == SubscriptionTier.free) ...[
+            // ── Upgrade CTA (hanya untuk non-premium) ────────────────────
+            if (!profile.isBusinessPremium) ...[
               _UpgradeCtaCard(
                 onTap: () =>
                     Navigator.of(context).pushNamed(AppRoutes.upgrade),
@@ -434,38 +433,21 @@ class _SectionLabel extends StatelessWidget {
   }
 }
 
-// ── Tier badge ────────────────────────────────────────────────────────────────
+// ── Premium badge ─────────────────────────────────────────────────────────────
 
-class _TierBadge extends StatelessWidget {
-  const _TierBadge({required this.tier});
+class _PremiumBadge extends StatelessWidget {
+  const _PremiumBadge({required this.isPremium});
 
-  final SubscriptionTier tier;
-
-  Color _color() {
-    switch (tier) {
-      case SubscriptionTier.free:
-        return AppColors.brandBlue;
-      case SubscriptionTier.retail:
-        return AppColors.positive;
-      case SubscriptionTier.production:
-        return Colors.deepPurple;
-    }
-  }
-
-  IconData _icon() {
-    switch (tier) {
-      case SubscriptionTier.free:
-        return Icons.person_outline;
-      case SubscriptionTier.retail:
-        return Icons.store_outlined;
-      case SubscriptionTier.production:
-        return Icons.factory_outlined;
-    }
-  }
+  final bool isPremium;
 
   @override
   Widget build(BuildContext context) {
-    final color = _color();
+    final color = isPremium ? AppColors.positive : AppColors.brandBlue;
+    final icon = isPremium
+        ? Icons.workspace_premium_outlined
+        : Icons.person_outline;
+    final label = isPremium ? 'Business Premium' : 'Gratis';
+
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       decoration: BoxDecoration(
@@ -476,10 +458,10 @@ class _TierBadge extends StatelessWidget {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(_icon(), size: 14, color: color),
+          Icon(icon, size: 14, color: color),
           const SizedBox(width: 6),
           Text(
-            'Paket ${tier.label}',
+            label,
             style: TextStyle(
               fontSize: 12,
               fontWeight: FontWeight.w700,

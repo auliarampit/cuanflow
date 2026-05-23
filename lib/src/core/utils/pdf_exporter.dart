@@ -1,4 +1,3 @@
-import 'package:cari_untung/src/core/config/feature_config.dart';
 import 'package:collection/collection.dart';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
@@ -17,6 +16,7 @@ class PdfExporter {
     required String periodLabel,
     List<OutletModel> outlets = const [],
     String? selectedOutletId,
+    bool isProductionMode = false,
   }) async {
     final outletNames = {for (final o in outlets) o.id: o.name};
     int totalIncome = 0;
@@ -44,7 +44,7 @@ class PdfExporter {
         header: (_) => _buildHeader(profile, periodLabel),
         footer: (_) => _buildFooter(),
         build: (_) => [
-          _buildSummary(totalIncome, totalExpense, totalProfit, profile),
+          _buildSummary(totalIncome, totalExpense, totalProfit, isProductionMode: isProductionMode),
           pw.SizedBox(height: 20),
           ..._buildGroups(
             grouped,
@@ -142,12 +142,12 @@ class PdfExporter {
   static pw.Widget _buildSummary(
     int income,
     int expense,
-    int profit,
-    UserProfile profile,
-  ) {
+    int profit, {
+    bool isProductionMode = false,
+  }) {
     final isProfit = profit >= 0;
     final String netLabel;
-    if (useFeature(Feature.production, profile)) {
+    if (isProductionMode) {
       netLabel = isProfit ? 'Laba Bersih' : 'Rugi Bersih';
     } else {
       netLabel = isProfit ? 'Sisa Uang' : 'Defisit';

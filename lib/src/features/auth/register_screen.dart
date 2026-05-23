@@ -77,7 +77,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
       if (mounted) {
         LoadingDialog.hide(context);
-        Navigator.of(context).pushReplacementNamed(AppRoutes.modeSelection);
+        Navigator.of(context).pushReplacementNamed(AppRoutes.setupSpaces);
       }
     } on AuthException catch (e) {
       if (mounted) {

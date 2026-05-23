@@ -313,3 +313,27 @@ ALTER TABLE recurring_transactions
 --     // skip — advance next_execute saja, tidak buat transaksi
 --   }
 -- ============================================================
+
+
+-- ============================================================
+-- MIGRATION 004b — Hapus kolom feature flags & subscription_tier lama
+-- Phase 5 Multi-Space cleanup: semua feature gating sekarang via
+-- SpaceFeatures (space type + is_business_premium), bukan per-user flags.
+-- ============================================================
+
+ALTER TABLE profiles
+  DROP COLUMN IF EXISTS feature_product,
+  DROP COLUMN IF EXISTS feature_outlets,
+  DROP COLUMN IF EXISTS feature_budget,
+  DROP COLUMN IF EXISTS feature_production,
+  DROP COLUMN IF EXISTS feature_quick_sale,
+  DROP COLUMN IF EXISTS feature_top_categories,
+  DROP COLUMN IF EXISTS feature_busiest_day,
+  DROP COLUMN IF EXISTS feature_stock,
+  DROP COLUMN IF EXISTS feature_product_analytics,
+  DROP COLUMN IF EXISTS feature_debt,
+  DROP COLUMN IF EXISTS feature_recurring,
+  DROP COLUMN IF EXISTS subscription_tier,
+  DROP COLUMN IF EXISTS subscription_expiry;
+
+-- ============================================================
