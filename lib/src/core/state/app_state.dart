@@ -3,6 +3,7 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:uuid/uuid.dart';
 
 import 'package:collection/collection.dart';
 
@@ -33,6 +34,7 @@ import '../services/production_batch_sync_service.dart';
 import '../services/notification_service.dart';
 import '../services/outlet_service.dart';
 import '../services/profile_service.dart';
+import '../services/space_sync_service.dart';
 import '../services/transaction_sync_service.dart';
 import '../services/wallet_sync_service.dart';
 import '../storage/local_database.dart';
@@ -66,6 +68,7 @@ class AppState extends ChangeNotifier {
   late final _quickSaleSyncService = QuickSaleSyncService(supabase);
   late final _rawMaterialSyncService = RawMaterialSyncService(supabase);
   late final _productionBatchSyncService = ProductionBatchSyncService(supabase);
+  late final _spaceSyncService = SpaceSyncService(supabase);
 
   bool _initialized = false;
   bool _isSyncing = false;
@@ -234,6 +237,7 @@ class AppState extends ChangeNotifier {
     notifyListeners();
 
     if (currentUser != null) {
+      unawaited(syncSpaces());
       unawaited(syncTransactions());
       unawaited(fetchProfile());
       unawaited(syncCategories());
@@ -385,7 +389,7 @@ class AppState extends ChangeNotifier {
     // Satu user hanya boleh punya satu space per tipe
     if (_spaces.any((s) => s.type == type)) return;
     final space = SpaceModel(
-      id: 'space_${type.name}_${DateTime.now().millisecondsSinceEpoch}',
+      id: const Uuid().v4(),
       type: type,
       createdAt: DateTime.now(),
     );
@@ -393,6 +397,18 @@ class AppState extends ChangeNotifier {
     _activeSpaceId ??= space.id;
     await _persist();
     notifyListeners();
+    _spaceSyncService.upsertSpace(space).ignore();
+  }
+
+  Future<void> syncSpaces() async {
+    try {
+      final remote = await _spaceSyncService.fetchSpaces();
+      if (remote.isEmpty) return;
+      _spaces = remote;
+      _activeSpaceId ??= _spaces.first.id;
+      await _persist();
+      notifyListeners();
+    } catch (_) {}
   }
 
   Future<void> removeSpace(String spaceId) async {
