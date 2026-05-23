@@ -9,26 +9,26 @@ class RawMaterialSyncService {
 
   String? get _userId => _supabase.auth.currentUser?.id;
 
-  Future<List<RawMaterial>> fetchAll() async {
+  Future<List<RawMaterial>> fetchAll({String? spaceId}) async {
     final uid = _userId;
     if (uid == null) return [];
     try {
-      final rows = await _supabase
-          .from('raw_materials')
-          .select()
-          .eq('user_id', uid)
-          .order('name');
+      var query = _supabase.from('raw_materials').select().eq('user_id', uid);
+      if (spaceId != null && !spaceId.startsWith('space_')) {
+        query = query.eq('space_id', spaceId);
+      }
+      final rows = await query.order('name');
       return rows.map((r) => RawMaterial.fromJson(_toLocal(r))).toList();
     } catch (_) {
       return [];
     }
   }
 
-  Future<void> upsert(RawMaterial item) async {
+  Future<void> upsert(RawMaterial item, {String? spaceId}) async {
     final uid = _userId;
     if (uid == null) return;
     try {
-      await _supabase.from('raw_materials').upsert(_toRemote(item, uid));
+      await _supabase.from('raw_materials').upsert(_toRemote(item, uid, spaceId: spaceId));
     } catch (_) {}
   }
 
@@ -50,7 +50,7 @@ class RawMaterialSyncService {
         'createdAt': r['created_at'],
       };
 
-  Map<String, dynamic> _toRemote(RawMaterial item, String userId) => {
+  Map<String, dynamic> _toRemote(RawMaterial item, String userId, {String? spaceId}) => {
         'id': item.id,
         'user_id': userId,
         'name': item.name,
@@ -61,5 +61,6 @@ class RawMaterialSyncService {
         'supplier_name': item.supplierName,
         'category': item.category,
         'created_at': item.createdAt.toIso8601String(),
+        if (spaceId != null && !spaceId.startsWith('space_')) 'space_id': spaceId,
       };
 }

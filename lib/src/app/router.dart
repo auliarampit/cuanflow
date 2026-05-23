@@ -16,6 +16,7 @@ import '../features/categories/manage_categories_screen.dart';
 import '../features/budget/budget_screen.dart';
 import '../features/notifications/notification_settings_screen.dart';
 import '../features/onboarding/mode_selection_screen.dart';
+import '../features/onboarding/setup_spaces_screen.dart';
 import '../features/splash/splash_screen.dart';
 import '../features/wallet/manage_wallets_screen.dart';
 import '../features/debt/debt_screen.dart';
@@ -37,6 +38,8 @@ final class AppRouter {
         return MaterialPageRoute(builder: (_) => const SplashScreen());
       case AppRoutes.modeSelection:
         return MaterialPageRoute(builder: (_) => const ModeSelectionScreen());
+      case AppRoutes.setupSpaces:
+        return MaterialPageRoute(builder: (_) => const SetupSpacesScreen());
       case AppRoutes.login:
         return MaterialPageRoute(builder: (_) => const LoginScreen());
       case AppRoutes.register:

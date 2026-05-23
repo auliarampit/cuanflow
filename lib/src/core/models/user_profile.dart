@@ -22,6 +22,8 @@ class UserProfile implements HasFeatures {
     this.onboardingComplete = false,
     this.subscriptionTier = SubscriptionTier.free,
     this.subscriptionExpiry,
+    this.isBusinessPremium = false,
+    this.businessPremiumUntil,
   });
 
   final String fullName;
@@ -45,6 +47,8 @@ class UserProfile implements HasFeatures {
   final bool onboardingComplete;
   final SubscriptionTier subscriptionTier;
   final DateTime? subscriptionExpiry;
+  final bool isBusinessPremium;
+  final DateTime? businessPremiumUntil;
 
   // ============================================================================
   // HasFeatures Implementation - useFeature() Pattern
@@ -121,6 +125,9 @@ class UserProfile implements HasFeatures {
     SubscriptionTier? subscriptionTier,
     DateTime? subscriptionExpiry,
     bool clearSubscriptionExpiry = false,
+    bool? isBusinessPremium,
+    DateTime? businessPremiumUntil,
+    bool clearBusinessPremiumUntil = false,
   }) {
     return UserProfile(
       fullName: fullName ?? this.fullName,
@@ -142,6 +149,8 @@ class UserProfile implements HasFeatures {
       onboardingComplete: onboardingComplete ?? this.onboardingComplete,
       subscriptionTier: subscriptionTier ?? this.subscriptionTier,
       subscriptionExpiry: clearSubscriptionExpiry ? null : (subscriptionExpiry ?? this.subscriptionExpiry),
+      isBusinessPremium: isBusinessPremium ?? this.isBusinessPremium,
+      businessPremiumUntil: clearBusinessPremiumUntil ? null : (businessPremiumUntil ?? this.businessPremiumUntil),
     );
   }
 
@@ -166,6 +175,8 @@ class UserProfile implements HasFeatures {
       'onboardingComplete': onboardingComplete,
       'subscriptionTier': subscriptionTier.value,
       'subscriptionExpiry': subscriptionExpiry?.toIso8601String(),
+      'isBusinessPremium': isBusinessPremium,
+      'businessPremiumUntil': businessPremiumUntil?.toIso8601String(),
     };
   }
 
@@ -212,6 +223,13 @@ class UserProfile implements HasFeatures {
       subscriptionExpiry: json['subscriptionExpiry'] != null
           ? DateTime.tryParse(json['subscriptionExpiry'] as String)
           : null,
+      isBusinessPremium: json['is_business_premium'] as bool? ??
+          json['isBusinessPremium'] as bool? ?? false,
+      businessPremiumUntil: json['business_premium_until'] != null
+          ? DateTime.tryParse(json['business_premium_until'] as String)
+          : json['businessPremiumUntil'] != null
+              ? DateTime.tryParse(json['businessPremiumUntil'] as String)
+              : null,
     );
   }
 }

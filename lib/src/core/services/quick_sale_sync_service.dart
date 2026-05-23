@@ -9,26 +9,26 @@ class QuickSaleSyncService {
 
   String? get _userId => _supabase.auth.currentUser?.id;
 
-  Future<List<QuickSalePreset>> fetchAll() async {
+  Future<List<QuickSalePreset>> fetchAll({String? spaceId}) async {
     final uid = _userId;
     if (uid == null) return [];
     try {
-      final rows = await _supabase
-          .from('quick_sale_presets')
-          .select()
-          .eq('user_id', uid)
-          .order('sort_order');
+      var query = _supabase.from('quick_sale_presets').select().eq('user_id', uid);
+      if (spaceId != null && !spaceId.startsWith('space_')) {
+        query = query.eq('space_id', spaceId);
+      }
+      final rows = await query.order('sort_order');
       return rows.map((r) => QuickSalePreset.fromJson(_toLocal(r))).toList();
     } catch (_) {
       return [];
     }
   }
 
-  Future<void> upsert(QuickSalePreset p) async {
+  Future<void> upsert(QuickSalePreset p, {String? spaceId}) async {
     final uid = _userId;
     if (uid == null) return;
     try {
-      await _supabase.from('quick_sale_presets').upsert(_toRemote(p, uid));
+      await _supabase.from('quick_sale_presets').upsert(_toRemote(p, uid, spaceId: spaceId));
     } catch (_) {}
   }
 
@@ -49,7 +49,7 @@ class QuickSaleSyncService {
         'sortOrder': r['sort_order'],
       };
 
-  Map<String, dynamic> _toRemote(QuickSalePreset p, String userId) => {
+  Map<String, dynamic> _toRemote(QuickSalePreset p, String userId, {String? spaceId}) => {
         'id': p.id,
         'user_id': userId,
         'name': p.name,
@@ -59,5 +59,6 @@ class QuickSaleSyncService {
         'wallet_id': p.walletId,
         'outlet_id': p.outletId,
         'sort_order': p.sortOrder,
+        if (spaceId != null && !spaceId.startsWith('space_')) 'space_id': spaceId,
       };
 }

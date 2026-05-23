@@ -36,6 +36,7 @@ class TransactionSyncService {
   Future<void> pushPending({
     required List<MoneyTransaction> transactions,
     required String userId,
+    String? spaceId,
     required Future<void> Function(MoneyTransaction local, MoneyTransaction confirmed)
         onSuccess,
     required void Function(String error) onError,
@@ -47,7 +48,7 @@ class TransactionSyncService {
       try {
         final response = await _supabase
             .from('transactions')
-            .insert(_buildPayload(tx, userId))
+            .insert(_buildPayload(tx, userId, spaceId: spaceId))
             .select()
             .single();
 
@@ -99,7 +100,7 @@ class TransactionSyncService {
         .eq('user_id', userId);
   }
 
-  Map<String, dynamic> _buildPayload(MoneyTransaction tx, String userId) {
+  Map<String, dynamic> _buildPayload(MoneyTransaction tx, String userId, {String? spaceId}) {
     return {
       'user_id': userId,
       'type': tx.type.name,
@@ -107,9 +108,10 @@ class TransactionSyncService {
       'category': tx.category,
       'note': tx.note,
       'effective_date': tx.effectiveDate.toIso8601String(),
-      // Only include outlet_id if it's a server UUID — prevents FK violation
       if (tx.outletId != null && !tx.outletId!.startsWith('outlet_'))
         'outlet_id': tx.outletId,
+      if (spaceId != null && !spaceId.startsWith('space_'))
+        'space_id': spaceId,
     };
   }
 

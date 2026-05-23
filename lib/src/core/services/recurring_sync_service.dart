@@ -9,26 +9,26 @@ class RecurringSyncService {
 
   String? get _userId => _supabase.auth.currentUser?.id;
 
-  Future<List<RecurringTransactionModel>> fetchAll() async {
+  Future<List<RecurringTransactionModel>> fetchAll({String? spaceId}) async {
     final uid = _userId;
     if (uid == null) return [];
     try {
-      final rows = await _supabase
-          .from('recurring_transactions')
-          .select()
-          .eq('user_id', uid)
-          .order('created_at', ascending: false);
+      var query = _supabase.from('recurring_transactions').select().eq('user_id', uid);
+      if (spaceId != null && !spaceId.startsWith('space_')) {
+        query = query.eq('space_id', spaceId);
+      }
+      final rows = await query.order('created_at', ascending: false);
       return rows.map((r) => RecurringTransactionModel.fromJson(_toLocal(r))).toList();
     } catch (_) {
       return [];
     }
   }
 
-  Future<void> upsert(RecurringTransactionModel r) async {
+  Future<void> upsert(RecurringTransactionModel r, {String? spaceId}) async {
     final uid = _userId;
     if (uid == null) return;
     try {
-      await _supabase.from('recurring_transactions').upsert(_toRemote(r, uid));
+      await _supabase.from('recurring_transactions').upsert(_toRemote(r, uid, spaceId: spaceId));
     } catch (_) {}
   }
 
@@ -54,7 +54,7 @@ class RecurringSyncService {
         'nextExecute': r['next_execute'],
       };
 
-  Map<String, dynamic> _toRemote(RecurringTransactionModel r, String userId) => {
+  Map<String, dynamic> _toRemote(RecurringTransactionModel r, String userId, {String? spaceId}) => {
         'id': r.id,
         'user_id': userId,
         'name': r.name,
@@ -68,5 +68,6 @@ class RecurringSyncService {
         'day_of_month': r.dayOfMonth,
         'last_executed': r.lastExecuted?.toIso8601String(),
         'next_execute': r.nextExecute?.toIso8601String(),
+        if (spaceId != null && !spaceId.startsWith('space_')) 'space_id': spaceId,
       };
 }

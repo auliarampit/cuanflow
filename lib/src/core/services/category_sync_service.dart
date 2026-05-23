@@ -27,15 +27,15 @@ class CategorySyncService {
   static const _table = 'user_categories';
 
   /// Fetch all custom categories for the current user from Supabase.
-  Future<List<UserCategory>> fetchAll() async {
+  Future<List<UserCategory>> fetchAll({String? spaceId}) async {
     final userId = _client.auth.currentUser?.id;
     if (userId == null) return [];
 
-    final rows = await _client
-        .from(_table)
-        .select('id, name, type')
-        .eq('user_id', userId)
-        .order('created_at');
+    var query = _client.from(_table).select('id, name, type').eq('user_id', userId);
+    if (spaceId != null && !spaceId.startsWith('space_')) {
+      query = query.eq('space_id', spaceId);
+    }
+    final rows = await query.order('created_at');
 
     return (rows as List)
         .map((row) => _fromRow(row as Map<String, dynamic>))
@@ -43,7 +43,7 @@ class CategorySyncService {
   }
 
   /// Insert or update a single category.
-  Future<void> upsert(UserCategory category) async {
+  Future<void> upsert(UserCategory category, {String? spaceId}) async {
     final userId = _client.auth.currentUser?.id;
     if (userId == null) return;
 
@@ -52,6 +52,7 @@ class CategorySyncService {
       'user_id': userId,
       'name': category.name,
       'type': category.type.name,
+      if (spaceId != null && !spaceId.startsWith('space_')) 'space_id': spaceId,
     });
   }
 

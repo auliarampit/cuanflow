@@ -9,28 +9,28 @@ class WalletSyncService {
 
   String? get _userId => _supabase.auth.currentUser?.id;
 
-  Future<List<WalletModel>> fetchWallets() async {
+  Future<List<WalletModel>> fetchWallets({String? spaceId}) async {
     final uid = _userId;
     if (uid == null) return [];
     try {
-      final rows = await _supabase
-          .from('wallets')
-          .select()
-          .eq('user_id', uid)
-          .order('created_at');
+      var query = _supabase.from('wallets').select().eq('user_id', uid);
+      if (spaceId != null && !spaceId.startsWith('space_')) {
+        query = query.eq('space_id', spaceId);
+      }
+      final rows = await query.order('created_at');
       return rows.map((r) => WalletModel.fromJson(r)).toList();
     } catch (_) {
       return [];
     }
   }
 
-  Future<WalletModel?> insertWallet(WalletModel wallet) async {
+  Future<WalletModel?> insertWallet(WalletModel wallet, {String? spaceId}) async {
     final uid = _userId;
     if (uid == null) return null;
     try {
       final rows = await _supabase
           .from('wallets')
-          .insert(_buildPayload(wallet, uid))
+          .insert(_buildPayload(wallet, uid, spaceId: spaceId))
           .select();
       if (rows.isEmpty) return null;
       return WalletModel.fromJson(rows.first);
@@ -59,7 +59,7 @@ class WalletSyncService {
     } catch (_) {}
   }
 
-  Map<String, dynamic> _buildPayload(WalletModel w, String userId) => {
+  Map<String, dynamic> _buildPayload(WalletModel w, String userId, {String? spaceId}) => {
         'id': w.id,
         'user_id': userId,
         'name': w.name,
@@ -67,5 +67,6 @@ class WalletSyncService {
         'initial_balance': w.initialBalance,
         'is_default': w.isDefault,
         'created_at': w.createdAt.toIso8601String(),
+        if (spaceId != null && !spaceId.startsWith('space_')) 'space_id': spaceId,
       };
 }

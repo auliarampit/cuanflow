@@ -1,4 +1,5 @@
 import 'package:cari_untung/src/app/routes.dart';
+import 'package:cari_untung/src/core/models/space_model.dart';
 import 'package:cari_untung/src/core/models/subscription_tier.dart';
 import 'package:cari_untung/src/core/state/app_state.dart';
 import 'package:cari_untung/src/features/outlets/manage_outlets_screen.dart';
@@ -106,6 +107,15 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
             // ── Tier badge ────────────────────────────────────────────────
             _TierBadge(tier: profile.subscriptionTier),
+            const SizedBox(height: 16),
+
+            // ── Section: Ruang Aktif ──────────────────────────────────────
+            _SpacesSection(
+              spaces: context.appState.spaces,
+              activeSpaceId: context.appState.activeSpaceId,
+              onSwitch: (id) => context.appState.switchSpace(id),
+              onAdd: () => Navigator.of(context).pushNamed(AppRoutes.setupSpaces),
+            ),
             const SizedBox(height: 16),
 
             // ── Upgrade CTA (hanya untuk free tier) ───────────────────────
@@ -534,6 +544,106 @@ class _UpgradeCtaCard extends StatelessWidget {
           ],
         ),
       ),
+    );
+  }
+}
+
+// ─── Ruang Aktif section ──────────────────────────────────────────────────────
+
+class _SpacesSection extends StatelessWidget {
+  const _SpacesSection({
+    required this.spaces,
+    required this.activeSpaceId,
+    required this.onSwitch,
+    required this.onAdd,
+  });
+
+  final List<SpaceModel> spaces;
+  final String? activeSpaceId;
+  final void Function(String id) onSwitch;
+  final VoidCallback onAdd;
+
+  Color _accentColor(SpaceType type) => switch (type) {
+        SpaceType.personal => AppColors.brandBlue,
+        SpaceType.store => AppColors.positive,
+        SpaceType.production => Colors.deepPurple,
+      };
+
+  String _emoji(SpaceType type) => switch (type) {
+        SpaceType.personal => '💰',
+        SpaceType.store => '🏪',
+        SpaceType.production => '🏭',
+      };
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(
+              'Ruang Aktif',
+              style: TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.w700,
+                color: context.appColors.textSecondary,
+              ),
+            ),
+            if (spaces.length < 3)
+              TextButton.icon(
+                onPressed: onAdd,
+                icon: const Icon(Icons.add, size: 16),
+                label: const Text('Tambah Ruang', style: TextStyle(fontSize: 13)),
+                style: TextButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                ),
+              ),
+          ],
+        ),
+        const SizedBox(height: 8),
+        ...spaces.map((space) {
+          final isActive = space.id == activeSpaceId;
+          final accent = _accentColor(space.type);
+          return GestureDetector(
+            onTap: () => onSwitch(space.id),
+            child: Container(
+              margin: const EdgeInsets.only(bottom: 8),
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+              decoration: BoxDecoration(
+                color: isActive
+                    ? accent.withValues(alpha: 0.08)
+                    : context.appColors.card,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(
+                  color: isActive ? accent : context.appColors.outline,
+                  width: isActive ? 1.5 : 1,
+                ),
+              ),
+              child: Row(
+                children: [
+                  Text(_emoji(space.type),
+                      style: const TextStyle(fontSize: 20)),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Text(
+                      space.type.displayName,
+                      style: TextStyle(
+                        fontWeight: FontWeight.w600,
+                        color: isActive ? accent : context.appColors.textPrimary,
+                      ),
+                    ),
+                  ),
+                  if (isActive)
+                    Icon(Icons.check_circle, color: accent, size: 18),
+                ],
+              ),
+            ),
+          );
+        }),
+      ],
     );
   }
 }

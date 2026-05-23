@@ -19,6 +19,7 @@ Jika tidak ada argumen → tampilkan daftar perintah di bawah dan tunggu pilihan
 | `diskusi` | `/skill diskusi gimana handle outlet schedule` | Diskusi arsitektur/desain |
 | `roadmap` | `/skill roadmap` | Lihat status fitur & prioritas |
 | `flags` | `/skill flags` | Cek atau ubah feature flags |
+| `refactor` | `/skill refactor` | Status & langkah berikutnya Multi-Space refactor |
 
 ---
 
@@ -59,6 +60,13 @@ Tutup dengan satu pertanyaan: **Hari ini mau ngerjain apa?**
 
 Dari hasil di atas, tentukan konteks pekerjaan terakhir.
 Baru baca file/docs yang relevan dengan konteks tersebut — jangan load semua.
+
+**Panduan load kondisional (cek keyword di git log):**
+- Ada `model`, `ERD`, `migration`, `schema`, `db`, `sync` → baca `docs/ERD.md` (section yang relevan saja)
+- Ada `fitur`, `feature`, `flag`, `mode` → baca `lib/src/core/config/feature_config.dart`
+- Ada `roadmap`, `BRD`, `phase` → baca section Phase aktif di `docs/BRD.md`
+- Ada `refactor`, `multi-space`, `ruang` → baca `docs/MULTI_SPACE_REFACTOR.md` section Checklist
+- Tidak ada keyword di atas → jangan baca docs apapun, cukup dari git log
 
 **Tampilkan:**
 ```
@@ -165,6 +173,50 @@ Ringkas: total fitur, berapa sudah done, berapa yang blockers.
 Jika DETAIL berisi **nama fitur** → jelaskan aktif di mode mana + cara pakai di widget.
 Jika DETAIL berisi **"tambah"** → tampilkan perubahan yang perlu dilakukan, konfirmasi dulu.
 Jika DETAIL berisi **"aktifkan"** → tampilkan perubahan spesifik, konfirmasi dulu.
+
+---
+
+### `refactor` — Multi-Space Refactor Tracker
+
+**Tujuan:** Sambung pekerjaan refactor Multi-Space tanpa perlu ingat sudah sampai mana.
+
+**SELALU load dulu:**
+- `docs/MULTI_SPACE_REFACTOR.md` — section **Checklist Implementasi** saja
+- Jalankan: `git log --oneline -5`
+
+**Tentukan phase aktif:** Phase pertama yang masih punya `[ ]` (belum selesai) = phase aktif.
+
+**Load tambahan berdasarkan phase aktif:**
+- Phase 1 (Data & Model) → baca `lib/src/core/models/` (list file) + `lib/src/core/state/app_state.dart` (hanya bagian fields & _persist)
+- Phase 2 (Sync Layer) → baca `docs/migrations.sql` (section Migration 004 saja) + `lib/src/core/services/` (list file)
+- Phase 3 (UI) → baca `lib/src/features/onboarding/` + `lib/src/app/` (routes & router)
+- Phase 4 (Feature Locking) → baca `lib/src/core/config/feature_config.dart`
+- Phase 5 (Cleanup) → baca `lib/src/core/models/user_profile.dart`
+
+**Tampilkan:**
+```
+### Multi-Space Refactor — Phase [N]: [nama phase]
+Progress: [X/Y item selesai di phase ini]
+
+✅ [item done]
+⬜ [item belum — INI YANG DIKERJAKAN SELANJUTNYA]
+⬜ [item belum]
+
+File yang perlu disentuh:
+  - [file konkret berdasarkan item berikutnya]
+
+Catatan penting:
+  - [constraint atau warning relevan dari MULTI_SPACE_REFACTOR.md]
+```
+
+**Setelah user selesai 1 item:**
+- Update `[ ]` → `[x]` di `docs/MULTI_SPACE_REFACTOR.md`
+- Commit dengan prefix `refactor(space):`
+- Tampilkan item berikutnya
+
+**Jika DETAIL berisi angka phase** (misal `/skill refactor 2`) → langsung tampilkan status phase tersebut, skip deteksi otomatis.
+
+**Jangan mulai coding** sebelum tampilkan status dulu. Konfirmasi item mana yang akan dikerjakan.
 
 ---
 

@@ -98,12 +98,14 @@ class OutletService {
     required String? address,
     required bool isDefault,
     required String userId,
+    String? spaceId,
   }) async {
     final response = await _supabase.from('outlets').insert({
       'user_id': userId,
       'name': name,
       'address': address,
       'is_default': isDefault,
+      if (spaceId != null && !spaceId.startsWith('space_')) 'space_id': spaceId,
     }).select().single();
     return OutletModel.fromJson(Map<String, dynamic>.from(response as Map));
   }

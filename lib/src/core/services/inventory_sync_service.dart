@@ -9,26 +9,26 @@ class InventorySyncService {
 
   String? get _userId => _supabase.auth.currentUser?.id;
 
-  Future<List<InventoryItem>> fetchAll() async {
+  Future<List<InventoryItem>> fetchAll({String? spaceId}) async {
     final uid = _userId;
     if (uid == null) return [];
     try {
-      final rows = await _supabase
-          .from('inventory_items')
-          .select()
-          .eq('user_id', uid)
-          .order('name');
+      var query = _supabase.from('inventory_items').select().eq('user_id', uid);
+      if (spaceId != null && !spaceId.startsWith('space_')) {
+        query = query.eq('space_id', spaceId);
+      }
+      final rows = await query.order('name');
       return rows.map((r) => InventoryItem.fromJson(_toLocal(r))).toList();
     } catch (_) {
       return [];
     }
   }
 
-  Future<void> upsert(InventoryItem item) async {
+  Future<void> upsert(InventoryItem item, {String? spaceId}) async {
     final uid = _userId;
     if (uid == null) return;
     try {
-      await _supabase.from('inventory_items').upsert(_toRemote(item, uid));
+      await _supabase.from('inventory_items').upsert(_toRemote(item, uid, spaceId: spaceId));
     } catch (_) {}
   }
 
@@ -50,7 +50,7 @@ class InventorySyncService {
         'createdAt': r['created_at'],
       };
 
-  Map<String, dynamic> _toRemote(InventoryItem item, String userId) => {
+  Map<String, dynamic> _toRemote(InventoryItem item, String userId, {String? spaceId}) => {
         'id': item.id,
         'user_id': userId,
         'name': item.name,
@@ -61,5 +61,6 @@ class InventorySyncService {
         'sell_price': item.sellPrice,
         'category': item.category,
         'created_at': item.createdAt.toIso8601String(),
+        if (spaceId != null && !spaceId.startsWith('space_')) 'space_id': spaceId,
       };
 }

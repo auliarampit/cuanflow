@@ -71,6 +71,71 @@ ALTER TABLE profiles
 
 
 -- ============================================================
+-- MIGRATION 004a — Buat tabel production jika belum ada
+-- Jalankan SEBELUM Migration 004 jika tabel ini belum ada di Supabase.
+-- (Tabel ini mungkin belum dibuat jika mode production belum pernah dipakai)
+-- ============================================================
+
+CREATE TABLE IF NOT EXISTS products (
+  id            uuid        PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id       uuid        NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  name          text        NOT NULL,
+  yield_qty     integer     NOT NULL DEFAULT 1,
+  yield_unit    text        NOT NULL DEFAULT 'Porsi',
+  selling_price integer     NOT NULL DEFAULT 0,
+  ingredients   jsonb       NOT NULL DEFAULT '[]',
+  other_costs   jsonb       NOT NULL DEFAULT '[]',
+  created_at    timestamptz NOT NULL DEFAULT now()
+);
+
+ALTER TABLE products ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "products: own rows only" ON products;
+CREATE POLICY "products: own rows only" ON products
+  USING  (auth.uid() = user_id)
+  WITH CHECK (auth.uid() = user_id);
+
+CREATE TABLE IF NOT EXISTS raw_materials (
+  id            text        PRIMARY KEY,
+  user_id       uuid        NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  name          text        NOT NULL,
+  unit          text        NOT NULL DEFAULT 'pcs',
+  current_stock double precision NOT NULL DEFAULT 0,
+  min_stock     double precision NOT NULL DEFAULT 0,
+  cost_per_unit double precision NOT NULL DEFAULT 0,
+  supplier_name text,
+  category      text,
+  created_at    timestamptz NOT NULL DEFAULT now()
+);
+
+ALTER TABLE raw_materials ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "raw_materials: own rows only" ON raw_materials;
+CREATE POLICY "raw_materials: own rows only" ON raw_materials
+  USING  (auth.uid() = user_id)
+  WITH CHECK (auth.uid() = user_id);
+
+CREATE TABLE IF NOT EXISTS production_batches (
+  id             text        PRIMARY KEY,
+  user_id        uuid        NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  product_id     text,
+  product_name   text        NOT NULL,
+  date           timestamptz NOT NULL,
+  qty_produced   double precision NOT NULL DEFAULT 0,
+  materials_used jsonb       NOT NULL DEFAULT '[]',
+  notes          text,
+  created_at     timestamptz NOT NULL DEFAULT now()
+);
+
+ALTER TABLE production_batches ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "production_batches: own rows only" ON production_batches;
+CREATE POLICY "production_batches: own rows only" ON production_batches
+  USING  (auth.uid() = user_id)
+  WITH CHECK (auth.uid() = user_id);
+
+
+-- ============================================================
 -- MIGRATION 004 — Multi-Space (Ruang)
 -- Jalankan saat Phase 2 implementasi Multi-Space dimulai.
 -- Lihat docs/MULTI_SPACE_REFACTOR.md untuk checklist lengkap.
@@ -87,6 +152,7 @@ CREATE TABLE IF NOT EXISTS spaces (
 
 ALTER TABLE spaces ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS "spaces: own rows only" ON spaces;
 CREATE POLICY "spaces: own rows only" ON spaces
   USING  (auth.uid() = user_id)
   WITH CHECK (auth.uid() = user_id);

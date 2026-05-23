@@ -2,6 +2,7 @@ final class AppRoutes {
   static const splash = '/';
   static const login = '/login';
   static const modeSelection = '/onboarding/mode';
+  static const setupSpaces = '/onboarding/setup-spaces';
   static const register = '/register';
   static const home = '/home';
   static const productList = '/product/list';

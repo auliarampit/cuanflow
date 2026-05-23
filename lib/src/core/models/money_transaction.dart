@@ -13,6 +13,7 @@ class MoneyTransaction {
     this.category,
     this.outletId,
     this.walletId,
+    this.spaceId,
   });
 
   final String id;
@@ -22,6 +23,7 @@ class MoneyTransaction {
   final String? category;
   final String? outletId;
   final String? walletId;
+  final String? spaceId;
   final DateTime effectiveDate;
   final DateTime createdAt;
 
@@ -35,6 +37,7 @@ class MoneyTransaction {
     String? category,
     String? outletId,
     String? walletId,
+    String? spaceId,
     DateTime? effectiveDate,
     DateTime? createdAt,
   }) {
@@ -46,6 +49,7 @@ class MoneyTransaction {
       category: category ?? this.category,
       outletId: outletId ?? this.outletId,
       walletId: walletId ?? this.walletId,
+      spaceId: spaceId ?? this.spaceId,
       effectiveDate: effectiveDate ?? this.effectiveDate,
       createdAt: createdAt ?? this.createdAt,
     );
@@ -60,6 +64,7 @@ class MoneyTransaction {
       'category': category,
       'outletId': outletId,
       'walletId': walletId,
+      'spaceId': spaceId,
       'effectiveDate': effectiveDate.toIso8601String(),
       'createdAt': createdAt.toIso8601String(),
     };
@@ -79,6 +84,7 @@ class MoneyTransaction {
       category: jsonMap['category'] as String?,
       outletId: jsonMap['outletId'] as String? ?? jsonMap['outlet_id'] as String?,
       walletId: jsonMap['walletId'] as String? ?? jsonMap['wallet_id'] as String?,
+      spaceId: jsonMap['spaceId'] as String? ?? jsonMap['space_id'] as String?,
       effectiveDate: DateTime.parse(
         jsonMap['effectiveDate'] as String? ??
             jsonMap['effective_date'] as String? ??

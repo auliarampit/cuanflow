@@ -9,13 +9,13 @@ class BudgetSyncService {
 
   final SupabaseClient _supabase;
 
-  Future<List<BudgetModel>> fetchBudgets(String userId) async {
+  Future<List<BudgetModel>> fetchBudgets(String userId, {String? spaceId}) async {
     try {
-      final response = await _supabase
-          .from('budgets')
-          .select()
-          .eq('user_id', userId)
-          .order('created_at', ascending: false);
+      var query = _supabase.from('budgets').select().eq('user_id', userId);
+      if (spaceId != null && !spaceId.startsWith('space_')) {
+        query = query.eq('space_id', spaceId);
+      }
+      final response = await query.order('created_at', ascending: false);
       return (response as List)
           .map((e) => _fromRow(Map<String, dynamic>.from(e as Map)))
           .toList();
@@ -25,7 +25,7 @@ class BudgetSyncService {
     }
   }
 
-  Future<void> upsertBudget(String userId, BudgetModel budget) async {
+  Future<void> upsertBudget(String userId, BudgetModel budget, {String? spaceId}) async {
     await _supabase.from('budgets').upsert({
       'id': budget.id,
       'user_id': userId,
@@ -34,6 +34,7 @@ class BudgetSyncService {
       'target_amount': budget.targetAmount,
       'month_year': budget.monthYear,
       'created_at': budget.createdAt.toIso8601String(),
+      if (spaceId != null && !spaceId.startsWith('space_')) 'space_id': spaceId,
     });
   }
 

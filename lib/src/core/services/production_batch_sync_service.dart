@@ -11,28 +11,28 @@ class ProductionBatchSyncService {
 
   String? get _userId => _supabase.auth.currentUser?.id;
 
-  Future<List<ProductionBatch>> fetchAll() async {
+  Future<List<ProductionBatch>> fetchAll({String? spaceId}) async {
     final uid = _userId;
     if (uid == null) return [];
     try {
-      final rows = await _supabase
-          .from('production_batches')
-          .select()
-          .eq('user_id', uid)
-          .order('date', ascending: false);
+      var query = _supabase.from('production_batches').select().eq('user_id', uid);
+      if (spaceId != null && !spaceId.startsWith('space_')) {
+        query = query.eq('space_id', spaceId);
+      }
+      final rows = await query.order('date', ascending: false);
       return rows.map((r) => ProductionBatch.fromJson(_toLocal(r))).toList();
     } catch (_) {
       return [];
     }
   }
 
-  Future<void> upsert(ProductionBatch batch) async {
+  Future<void> upsert(ProductionBatch batch, {String? spaceId}) async {
     final uid = _userId;
     if (uid == null) return;
     try {
       await _supabase
           .from('production_batches')
-          .upsert(_toRemote(batch, uid));
+          .upsert(_toRemote(batch, uid, spaceId: spaceId));
     } catch (_) {}
   }
 
@@ -55,7 +55,7 @@ class ProductionBatchSyncService {
         'createdAt': r['created_at'],
       };
 
-  Map<String, dynamic> _toRemote(ProductionBatch batch, String userId) => {
+  Map<String, dynamic> _toRemote(ProductionBatch batch, String userId, {String? spaceId}) => {
         'id': batch.id,
         'user_id': userId,
         'product_id': batch.productId,
@@ -66,5 +66,6 @@ class ProductionBatchSyncService {
             jsonEncode(batch.materialsUsed.map((m) => m.toJson()).toList()),
         'notes': batch.notes,
         'created_at': batch.createdAt.toIso8601String(),
+        if (spaceId != null && !spaceId.startsWith('space_')) 'space_id': spaceId,
       };
 }

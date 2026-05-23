@@ -43,6 +43,8 @@ class ProfileService {
       'subscription_tier': profile.subscriptionTier.name,
       'subscription_expiry': profile.subscriptionExpiry?.toIso8601String(),
       'onboarding_complete': profile.onboardingComplete,
+      'is_business_premium': profile.isBusinessPremium,
+      'business_premium_until': profile.businessPremiumUntil?.toIso8601String(),
     });
   }
 

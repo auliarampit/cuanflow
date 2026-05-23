@@ -11,26 +11,26 @@ class ProductSyncService {
 
   String? get _userId => _supabase.auth.currentUser?.id;
 
-  Future<List<ProductModel>> fetchAll() async {
+  Future<List<ProductModel>> fetchAll({String? spaceId}) async {
     final uid = _userId;
     if (uid == null) return [];
     try {
-      final rows = await _supabase
-          .from('products')
-          .select()
-          .eq('user_id', uid)
-          .order('name');
+      var query = _supabase.from('products').select().eq('user_id', uid);
+      if (spaceId != null && !spaceId.startsWith('space_')) {
+        query = query.eq('space_id', spaceId);
+      }
+      final rows = await query.order('name');
       return rows.map((r) => ProductModel.fromJson(_toLocal(r))).toList();
     } catch (_) {
       return [];
     }
   }
 
-  Future<void> upsert(ProductModel item) async {
+  Future<void> upsert(ProductModel item, {String? spaceId}) async {
     final uid = _userId;
     if (uid == null) return;
     try {
-      await _supabase.from('products').upsert(_toRemote(item, uid));
+      await _supabase.from('products').upsert(_toRemote(item, uid, spaceId: spaceId));
     } catch (_) {}
   }
 
@@ -54,7 +54,7 @@ class ProductSyncService {
             : r['other_costs'] ?? [],
       };
 
-  Map<String, dynamic> _toRemote(ProductModel item, String userId) => {
+  Map<String, dynamic> _toRemote(ProductModel item, String userId, {String? spaceId}) => {
         'id': item.id,
         'user_id': userId,
         'name': item.name,
@@ -63,5 +63,6 @@ class ProductSyncService {
         'selling_price': item.sellingPrice.round(),
         'ingredients': item.ingredients.map((e) => e.toJson()).toList(),
         'other_costs': item.otherCosts.map((e) => e.toJson()).toList(),
+        if (spaceId != null && !spaceId.startsWith('space_')) 'space_id': spaceId,
       };
 }

@@ -5,6 +5,7 @@ import 'package:cari_untung/src/core/theme/app_colors.dart';
 import 'package:cari_untung/src/core/theme/app_dynamic_colors.dart';
 import 'package:cari_untung/src/core/ui/app_gradient_scaffold.dart';
 import 'package:cari_untung/src/core/ui/responsive_utils.dart';
+import 'package:cari_untung/src/core/ui/space_switcher_bar.dart';
 import 'package:cari_untung/src/features/history/history_screen.dart';
 import 'package:cari_untung/src/features/home/home_screen.dart';
 import 'package:flutter/material.dart';
@@ -249,6 +250,7 @@ class _HomeShellScreenState extends State<HomeShellScreen> {
 
     final contentColumn = Column(
       children: [
+        const SpaceSwitcherBar(),
         if (appState.profile.featureOutlets && appState.outlets.isNotEmpty)
           _OutletSwitcherBar(
             selectedOutlet: selectedOutlet,

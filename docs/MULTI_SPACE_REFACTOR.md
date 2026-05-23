@@ -216,31 +216,31 @@ class SpaceFeatures {
 > Kerjakan per phase. Jangan mulai phase berikutnya sebelum phase sebelumnya selesai dan di-commit.
 
 ### Phase 1 — Data & Model Layer (tidak ada UI change)
-- [ ] Buat `SpaceModel` + `SpaceType` enum di `core/models/space_model.dart`
-- [ ] Update `UserProfile`: tambah `isBusinessPremium`, `businessPremiumUntil`; hapus semua `feature*` fields
-- [ ] Update `UserProfile.fromJson` / `toJson` untuk field baru
-- [ ] Tambah `_spaces` list dan `_activeSpaceId` ke `AppState`
-- [ ] Tambah `addSpace()`, `removeSpace()`, `switchSpace()` ke `AppState`
-- [ ] Update `_persist()` untuk include `spaces` dan `activeSpaceId`
-- [ ] Update `LocalDatabase` keys jika ada naming conflict
-- [ ] Buat `SpaceSyncService` di `core/services/space_sync_service.dart` (ikuti pola yang ada)
+- [x] Buat `SpaceModel` + `SpaceType` enum di `core/models/space_model.dart`
+- [x] Update `UserProfile`: tambah `isBusinessPremium`, `businessPremiumUntil`; hapus semua `feature*` fields
+- [x] Update `UserProfile.fromJson` / `toJson` untuk field baru
+- [x] Tambah `_spaces` list dan `_activeSpaceId` ke `AppState`
+- [x] Tambah `addSpace()`, `removeSpace()`, `switchSpace()` ke `AppState`
+- [x] Update `_persist()` untuk include `spaces` dan `activeSpaceId`
+- [x] Update `LocalDatabase` keys jika ada naming conflict
+- [x] Buat `SpaceSyncService` di `core/services/space_sync_service.dart` (ikuti pola yang ada)
 
 ### Phase 2 — Sync Layer
-- [ ] Jalankan **Migration 004** di Supabase (lihat `migrations.sql`)
-- [ ] Update `ProfileService.upsert()`: ganti `feature_*` payload → `is_business_premium`, `business_premium_until`
-- [ ] Update `ProfileService.fetchProfile()`: map field baru ke `UserProfile`
-- [ ] Update `TransactionSyncService`: tambah `space_id` ke payload & filter fetch
-- [ ] Update semua sync service lain: `WalletSyncService`, `BudgetSyncService`, `DebtSyncService`, `RecurringSyncService`, `InventorySyncService`, `QuickSaleSyncService`, `CategorySyncService`, `OutletSyncService`, `ProductSyncService`, `RawMaterialSyncService`, `ProductionBatchSyncService`
-- [ ] Migrasi data lama: untuk user lama, buat 1 space default berdasarkan `subscription_tier` lama
+- [x] Jalankan **Migration 004** di Supabase (lihat `migrations.sql`)
+- [x] Update `ProfileService.upsert()`: ganti `feature_*` payload → `is_business_premium`, `business_premium_until`
+- [x] Update `ProfileService.fetchProfile()`: map field baru ke `UserProfile`
+- [x] Update `TransactionSyncService`: tambah `space_id` ke payload & filter fetch
+- [x] Update semua sync service lain: `WalletSyncService`, `BudgetSyncService`, `DebtSyncService`, `RecurringSyncService`, `InventorySyncService`, `QuickSaleSyncService`, `CategorySyncService`, `OutletSyncService`, `ProductSyncService`, `RawMaterialSyncService`, `ProductionBatchSyncService`
+- [x] Migrasi data lama: untuk user lama, buat 1 space default berdasarkan `subscription_tier` lama
 
 ### Phase 3 — UI: Space Switcher & Onboarding
-- [ ] Buat `SpaceSwitcherBar` widget: tab Pribadi/Warung/Produksi sesuai `appState.spaces`
-- [ ] Integrasikan `SpaceSwitcherBar` ke scaffold utama (di atas bottom nav atau sebagai AppBar subtitle)
-- [ ] Update `HomeScreen`: semua data filter by `activeSpaceId`
-- [ ] Update `HistoryScreen`: filter by `activeSpaceId`
-- [ ] Update `ProfileScreen`: tampilkan daftar Ruang aktif + tombol tambah Ruang
-- [ ] Buat `SetupSpacesScreen` untuk onboarding user baru (pilih ruang mana yang ingin diaktifkan)
-- [ ] Update `OnboardingScreen` untuk arahkan ke `SetupSpacesScreen` bukan mode picker lama
+- [x] Buat `SpaceSwitcherBar` widget: tab Pribadi/Warung/Produksi sesuai `appState.spaces`
+- [x] Integrasikan `SpaceSwitcherBar` ke scaffold utama (di atas bottom nav atau sebagai AppBar subtitle)
+- [x] Update `HomeScreen`: semua data filter by `activeSpaceId`
+- [x] Update `HistoryScreen`: filter by `activeSpaceId`
+- [x] Update `ProfileScreen`: tampilkan daftar Ruang aktif + tombol tambah Ruang
+- [x] Buat `SetupSpacesScreen` untuk onboarding user baru (pilih ruang mana yang ingin diaktifkan)
+- [x] Update `OnboardingScreen` untuk arahkan ke `SetupSpacesScreen` bukan mode picker lama
 
 ### Phase 4 — Feature Locking UI
 - [ ] Buat `SpaceFeatures` helper class (lihat contoh di atas)

@@ -19,6 +19,7 @@ import '../models/quick_sale_preset.dart';
 import '../models/recurring_transaction_model.dart';
 import '../models/summary.dart';
 import '../models/user_category.dart';
+import '../models/space_model.dart';
 import '../models/user_profile.dart';
 import '../models/wallet_model.dart';
 import '../services/budget_sync_service.dart';
@@ -83,6 +84,8 @@ class AppState extends ChangeNotifier {
   List<RawMaterial> _rawMaterials = [];
   List<ProductionBatch> _productionBatches = [];
   String? _selectedOutletId;
+  List<SpaceModel> _spaces = [];
+  String? _activeSpaceId;
   UserProfile _profile = UserProfile.empty();
   AppSettings _settings = AppSettings.defaults();
   String? _lastSyncError;
@@ -92,7 +95,11 @@ class AppState extends ChangeNotifier {
   User? get currentUser => supabase.auth.currentUser;
 
   List<MoneyTransaction> get transactions => _filteredTransactions;
-  List<MoneyTransaction> get allTransactions => _transactions;
+  List<MoneyTransaction> get allTransactions => _activeSpaceId == null
+      ? _transactions
+      : _transactions
+          .where((t) => t.spaceId == null || t.spaceId == _activeSpaceId)
+          .toList();
   List<ProductModel> get products => _products;
   List<OutletModel> get outlets => _outlets;
   List<UserCategory> get categories => _categories;
@@ -109,6 +116,10 @@ class AppState extends ChangeNotifier {
   List<RawMaterial> get lowStockRawMaterials =>
       _rawMaterials.where((m) => m.isLowStock || m.isOutOfStock).toList();
   String? get selectedOutletId => _selectedOutletId;
+  List<SpaceModel> get spaces => _spaces;
+  String? get activeSpaceId => _activeSpaceId;
+  SpaceModel? get activeSpace =>
+      _spaces.firstWhereOrNull((s) => s.id == _activeSpaceId);
 
   /// Saldo total kumulatif dari semua transaksi (atau per dompet jika ada).
   int get totalBalance {
@@ -161,10 +172,15 @@ class AppState extends ChangeNotifier {
       _transactions.where((t) => t.id.startsWith('tx_')).length;
 
   List<MoneyTransaction> get _filteredTransactions {
-    if (_selectedOutletId == null) return _transactions;
-    return _transactions
-        .where((t) => t.outletId == _selectedOutletId)
-        .toList();
+    var txs = _transactions;
+    // Filter per Ruang — transaksi tanpa spaceId (data lama) tetap tampil di semua Ruang
+    if (_activeSpaceId != null) {
+      txs = txs
+          .where((t) => t.spaceId == null || t.spaceId == _activeSpaceId)
+          .toList();
+    }
+    if (_selectedOutletId == null) return txs;
+    return txs.where((t) => t.outletId == _selectedOutletId).toList();
   }
 
   // ─── Lifecycle ───────────────────────────────────────────────────────────────
@@ -185,6 +201,9 @@ class AppState extends ChangeNotifier {
     _quickSalePresets   = _parseList(raw['quickSalePresets'],   QuickSalePreset.fromJson);
     _rawMaterials       = _parseList(raw['rawMaterials'],       RawMaterial.fromJson);
     _productionBatches  = _parseList(raw['productionBatches'],  ProductionBatch.fromJson);
+
+    _spaces = _parseList(raw['spaces'], SpaceModel.fromJson);
+    _activeSpaceId = raw['activeSpaceId'] as String?;
 
     final profileMap = raw['profile'];
     if (profileMap is Map<String, dynamic>) {
@@ -356,6 +375,38 @@ class AppState extends ChangeNotifier {
       rethrow;
     }
     _profile = UserProfile.empty();
+    await _persist();
+    notifyListeners();
+  }
+
+  // ─── Space CRUD ──────────────────────────────────────────────────────────────
+
+  Future<void> addSpace(SpaceType type) async {
+    // Satu user hanya boleh punya satu space per tipe
+    if (_spaces.any((s) => s.type == type)) return;
+    final space = SpaceModel(
+      id: 'space_${type.name}_${DateTime.now().millisecondsSinceEpoch}',
+      type: type,
+      createdAt: DateTime.now(),
+    );
+    _spaces.add(space);
+    _activeSpaceId ??= space.id;
+    await _persist();
+    notifyListeners();
+  }
+
+  Future<void> removeSpace(String spaceId) async {
+    _spaces.removeWhere((s) => s.id == spaceId);
+    if (_activeSpaceId == spaceId) {
+      _activeSpaceId = _spaces.isNotEmpty ? _spaces.first.id : null;
+    }
+    await _persist();
+    notifyListeners();
+  }
+
+  Future<void> switchSpace(String spaceId) async {
+    if (!_spaces.any((s) => s.id == spaceId)) return;
+    _activeSpaceId = spaceId;
     await _persist();
     notifyListeners();
   }
@@ -1182,6 +1233,8 @@ class AppState extends ChangeNotifier {
         'quickSalePresets': _quickSalePresets.map((e) => e.toJson()).toList(),
         'rawMaterials': _rawMaterials.map((e) => e.toJson()).toList(),
         'productionBatches': _productionBatches.map((e) => e.toJson()).toList(),
+        'spaces': _spaces.map((e) => e.toJson()).toList(),
+        'activeSpaceId': _activeSpaceId,
         'profile': _profile.toJson(),
         'settings': _settings.toJson(),
       });
