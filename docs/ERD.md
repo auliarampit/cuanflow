@@ -409,6 +409,58 @@ Cabang / outlet bisnis. Aktif jika `featureOutlets = true`.
 
 ---
 
+## Field & Data yang Belum Di-sync ke Supabase
+
+> ⚠️ Bagian ini wajib dibaca sebelum release atau saat menambah fitur monetisasi.
+
+### 1. `subscription_tier` + `subscription_expiry` — belum ada di Supabase
+
+**Model Dart:** `UserProfile.subscriptionTier` (enum: free/retail/production) dan `UserProfile.subscriptionExpiry` (DateTime?)
+
+**Status:** Tersimpan di **local JSON saja**. `ProfileService.updateProfile()` tidak menyertakan field ini di payload upsert ke Supabase.
+
+**Supabase `profiles` table:** Kolom `subscription_tier` dan `subscription_expiry` **belum dibuat**.
+
+**Action saat billing live:**
+1. Tambah kolom ke tabel `profiles` di Supabase:
+   ```sql
+   ALTER TABLE profiles ADD COLUMN subscription_tier text DEFAULT 'free';
+   ALTER TABLE profiles ADD COLUMN subscription_expiry timestamptz;
+   ```
+2. Update `ProfileService.updateProfile()` — tambah kedua field ke payload upsert.
+3. Update `ProfileService.fetchProfile()` — pastikan `fromJson` sudah handle field ini (sudah ada di `UserProfile.fromJson`).
+
+---
+
+### 2. `products` — local JSON only, belum ada sync service
+
+**Model Dart:** `ProductModel` (HPP Calculator)
+
+**Status:** `AppState.addProduct()` / `updateProduct()` / `deleteProduct()` hanya panggil `_persist()` → local JSON. **Tidak ada `ProductSyncService`.**
+
+**Supabase `products` table:** Ada di ERD, tapi tidak dipakai oleh sync layer saat ini.
+
+**Konsekuensi:** Data produk (HPP, bahan baku resep) tidak tersync antar device. Jika user ganti HP, data produk hilang.
+
+**Action saat ingin sync:**
+1. Buat `ProductSyncService` mengikuti pola `RawMaterialSyncService`.
+2. Panggil `productSyncService.upsert(product).ignore()` setelah `_persist()` di AppState.
+
+---
+
+### 3. `wallet_id` di `transactions` — tidak terkirim ke Supabase
+
+**Status:** Field `wallet_id` tersimpan di lokal tapi payload sync transaksi tidak menyertakannya.
+(Sudah didokumentasikan di bagian transactions di atas.)
+
+---
+
+### 4. `AppSettings` — murni local, tidak akan pernah di-sync
+
+`AppSettings` (tema, bahasa, PIN, reminder notifikasi) by design hanya di device. Tidak ada rencana sync ke Supabase.
+
+---
+
 ## Storage Architecture
 
 ```mermaid
