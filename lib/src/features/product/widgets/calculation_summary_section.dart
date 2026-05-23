@@ -28,7 +28,7 @@ class CalculationSummarySection extends StatelessWidget {
             decoration: BoxDecoration(
               color: const Color(0xFF16262E),
               borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: Colors.white.withOpacity(0.05)),
+              border: Border.all(color: Colors.white.withValues(alpha:0.05)),
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -36,7 +36,7 @@ class CalculationSummarySection extends StatelessWidget {
                 Text(
                   context.t('product.calc.hppPerUnit').toUpperCase(),
                   style: TextStyle(
-                    color: Colors.white.withOpacity(0.5),
+                    color: Colors.white.withValues(alpha:0.5),
                     fontSize: 10,
                     fontWeight: FontWeight.bold,
                     letterSpacing: 0.5,
@@ -63,7 +63,7 @@ class CalculationSummarySection extends StatelessWidget {
             decoration: BoxDecoration(
               color: const Color(0xFF16262E),
               borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: AppColors.brandBlue.withOpacity(0.3)),
+              border: Border.all(color: AppColors.brandBlue.withValues(alpha:0.3)),
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,

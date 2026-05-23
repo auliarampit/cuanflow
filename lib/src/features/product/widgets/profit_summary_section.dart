@@ -20,14 +20,14 @@ class ProfitSummarySection extends StatelessWidget {
       decoration: BoxDecoration(
         gradient: LinearGradient(
           colors: [
-            AppColors.brandGreen.withOpacity(0.2),
+            AppColors.brandGreen.withValues(alpha:0.2),
             const Color(0xFF0D1F16),
           ],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
         borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: AppColors.brandGreen.withOpacity(0.3)),
+        border: Border.all(color: AppColors.brandGreen.withValues(alpha:0.3)),
       ),
       child: Column(
         children: [
@@ -78,7 +78,7 @@ class ProfitSummarySection extends StatelessWidget {
                 '/ ${context.t('product.calc.unit')}',
                 style: TextStyle(
                   fontSize: 16,
-                  color: Colors.white.withOpacity(0.5),
+                  color: Colors.white.withValues(alpha:0.5),
                   fontWeight: FontWeight.w500,
                 ),
               ),

@@ -109,7 +109,40 @@ class _ProductListScreenState extends State<ProductListScreen> {
                         marginLabel = 'RUGI';
                       }
 
-                      return Card(
+                      return Dismissible(
+                        key: Key(product.id),
+                        direction: DismissDirection.endToStart,
+                        background: Container(
+                          margin: const EdgeInsets.only(bottom: 12),
+                          alignment: Alignment.centerRight,
+                          padding: const EdgeInsets.only(right: 20),
+                          decoration: BoxDecoration(
+                            color: AppColors.negative,
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: const Icon(Icons.delete_outline, color: Colors.white, size: 24),
+                        ),
+                        confirmDismiss: (_) async {
+                          return await showDialog<bool>(
+                            context: context,
+                            builder: (ctx) => AlertDialog(
+                              title: const Text('Hapus produk?'),
+                              content: Text('${product.name} akan dihapus permanen.'),
+                              actions: [
+                                TextButton(
+                                  onPressed: () => Navigator.pop(ctx, false),
+                                  child: const Text('Batal'),
+                                ),
+                                TextButton(
+                                  onPressed: () => Navigator.pop(ctx, true),
+                                  child: Text('Hapus', style: TextStyle(color: AppColors.negative)),
+                                ),
+                              ],
+                            ),
+                          ) ?? false;
+                        },
+                        onDismissed: (_) => appState.deleteProduct(product.id),
+                        child: Card(
                         color: context.appColors.card,
                         margin: const EdgeInsets.only(bottom: 12),
                         shape: RoundedRectangleBorder(
@@ -209,6 +242,7 @@ class _ProductListScreenState extends State<ProductListScreen> {
                               ],
                             ),
                           ),
+                        ),
                         ),
                       );
                     },

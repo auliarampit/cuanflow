@@ -29,6 +29,11 @@ class _HppCalculatorScreenState extends State<HppCalculatorScreen> {
 
   List<ProductIngredient> _ingredients = [];
   List<ProductCost> _costs = [];
+  String _yieldUnit = 'Porsi';
+
+  static const _yieldUnits = [
+    'Porsi', 'Pcs', 'Loyang', 'Bungkus', 'Botol', 'Toples', 'Kg', 'Liter',
+  ];
 
   @override
   void initState() {
@@ -41,6 +46,7 @@ class _HppCalculatorScreenState extends State<HppCalculatorScreen> {
           CurrencyInputFormatter.formatVal(p.sellingPrice.toInt());
       _ingredients = List.from(p.ingredients);
       _costs = List.from(p.otherCosts);
+      _yieldUnit = _yieldUnits.contains(p.yieldUnit) ? p.yieldUnit : 'Porsi';
     }
   }
 
@@ -167,7 +173,7 @@ class _HppCalculatorScreenState extends State<HppCalculatorScreen> {
     final product = ProductModel.create(
       name: _nameController.text,
       yieldAmount: _yieldAmount,
-      yieldUnit: context.t('product.calc.yieldUnit'),
+      yieldUnit: _yieldUnit,
       ingredients: _ingredients,
       otherCosts: _costs,
       sellingPrice: _sellingPrice,
@@ -206,6 +212,43 @@ class _HppCalculatorScreenState extends State<HppCalculatorScreen> {
           icon: const Icon(Icons.arrow_back),
           onPressed: () => Navigator.pop(context),
         ),
+        actions: [
+          if (widget.product != null)
+            IconButton(
+              icon: const Icon(Icons.delete_outline, color: AppColors.negative),
+              tooltip: 'Hapus produk',
+              onPressed: () async {
+                final appState = context.appState;
+                final nav = Navigator.of(context);
+                final confirm = await showDialog<bool>(
+                  context: context,
+                  builder: (ctx) => AlertDialog(
+                    title: const Text('Hapus produk?'),
+                    content: Text(
+                      '${widget.product!.name} akan dihapus permanen.',
+                    ),
+                    actions: [
+                      TextButton(
+                        onPressed: () => Navigator.pop(ctx, false),
+                        child: const Text('Batal'),
+                      ),
+                      TextButton(
+                        onPressed: () => Navigator.pop(ctx, true),
+                        child: Text(
+                          'Hapus',
+                          style: TextStyle(color: AppColors.negative),
+                        ),
+                      ),
+                    ],
+                  ),
+                );
+                if (confirm == true && mounted) {
+                  await appState.deleteProduct(widget.product!.id);
+                  if (mounted) nav.pop();
+                }
+              },
+            ),
+        ],
       ),
       body: Column(
         children: [
@@ -240,9 +283,30 @@ class _HppCalculatorScreenState extends State<HppCalculatorScreen> {
                         ),
                       ),
                       const SizedBox(width: 12),
-                      Text(
-                        context.t('product.calc.yieldUnit'),
-                        style: const TextStyle(color: AppColors.textSecondary),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF16262E),
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
+                        ),
+                        child: DropdownButtonHideUnderline(
+                          child: DropdownButton<String>(
+                            value: _yieldUnit,
+                            isDense: true,
+                            dropdownColor: const Color(0xFF16262E),
+                            style: const TextStyle(
+                              color: AppColors.textSecondary,
+                              fontSize: 14,
+                              fontWeight: FontWeight.w600,
+                            ),
+                            items: _yieldUnits.map((u) => DropdownMenuItem(
+                              value: u,
+                              child: Text(u),
+                            )).toList(),
+                            onChanged: (v) => setState(() => _yieldUnit = v!),
+                          ),
+                        ),
                       ),
                     ],
                   ),
@@ -286,6 +350,17 @@ class _HppCalculatorScreenState extends State<HppCalculatorScreen> {
                     sellingPriceController: _sellingPriceController,
                     onChanged: () => setState(() {}),
                   ),
+                  if (_hppPerUnit > 0) ...[
+                    const SizedBox(height: 12),
+                    _PriceSuggestionRow(
+                      hpp: _hppPerUnit,
+                      onSelect: (price) {
+                        _sellingPriceController.text =
+                            CurrencyInputFormatter.formatVal(price);
+                        setState(() {});
+                      },
+                    ),
+                  ],
                   const SizedBox(height: 24),
                 ],
               ),
@@ -406,4 +481,138 @@ class _HppCalculatorScreenState extends State<HppCalculatorScreen> {
         fontSize: 12,
         letterSpacing: 0.5,
       );
+}
+
+// ─── Price suggestion row ─────────────────────────────────────────────────────
+
+class _PriceSuggestionRow extends StatelessWidget {
+  const _PriceSuggestionRow({required this.hpp, required this.onSelect});
+
+  final double hpp;
+  final ValueChanged<int> onSelect;
+
+  static int _roundUp500(double val) => ((val / 500).ceil() * 500).toInt();
+
+  @override
+  Widget build(BuildContext context) {
+    final breakEven = _roundUp500(hpp);
+    final target30 = _roundUp500(hpp / 0.70);
+    final premium50 = _roundUp500(hpp / 0.50);
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'SARAN HARGA JUAL',
+          style: TextStyle(
+            fontSize: 10,
+            fontWeight: FontWeight.bold,
+            letterSpacing: 0.8,
+            color: Colors.white.withValues(alpha: 0.4),
+          ),
+        ),
+        const SizedBox(height: 8),
+        Row(
+          children: [
+            _SuggestionChip(
+              label: 'BEP',
+              sublabel: 'Balik modal',
+              price: breakEven,
+              color: Colors.white54,
+              onTap: () => onSelect(breakEven),
+            ),
+            const SizedBox(width: 8),
+            _SuggestionChip(
+              label: '30%',
+              sublabel: 'Target wajar',
+              price: target30,
+              color: const Color(0xFFF59E0B),
+              onTap: () => onSelect(target30),
+            ),
+            const SizedBox(width: 8),
+            _SuggestionChip(
+              label: '50%',
+              sublabel: 'Premium',
+              price: premium50,
+              color: AppColors.brandGreen,
+              onTap: () => onSelect(premium50),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+}
+
+class _SuggestionChip extends StatelessWidget {
+  const _SuggestionChip({
+    required this.label,
+    required this.sublabel,
+    required this.price,
+    required this.color,
+    required this.onTap,
+  });
+
+  final String label;
+  final String sublabel;
+  final int price;
+  final Color color;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Expanded(
+      child: GestureDetector(
+        onTap: onTap,
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+          decoration: BoxDecoration(
+            color: color.withValues(alpha: 0.08),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: color.withValues(alpha: 0.25)),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                    decoration: BoxDecoration(
+                      color: color.withValues(alpha: 0.15),
+                      borderRadius: BorderRadius.circular(6),
+                    ),
+                    child: Text(
+                      label,
+                      style: TextStyle(
+                        fontSize: 10,
+                        fontWeight: FontWeight.w800,
+                        color: color,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 6),
+              Text(
+                IdrFormatter.format(price),
+                style: TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w800,
+                  color: color,
+                ),
+              ),
+              Text(
+                sublabel,
+                style: TextStyle(
+                  fontSize: 10,
+                  color: Colors.white.withValues(alpha: 0.4),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
 }
