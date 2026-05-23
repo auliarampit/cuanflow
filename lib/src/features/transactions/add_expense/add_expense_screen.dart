@@ -45,8 +45,10 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
   final _amountController = TextEditingController();
   final _noteController = TextEditingController();
   final _amountFocus = FocusNode();
+  final _noteFocus = FocusNode();
 
   UserCategory? _selectedCategory;
+  bool _categoryTouched = false;
   String? _selectedOutletId;
   String? _selectedWalletId;
   DateTime _selectedDate = DateTime.now();
@@ -96,6 +98,7 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
     _amountController.dispose();
     _noteController.dispose();
     _amountFocus.dispose();
+    _noteFocus.dispose();
     super.dispose();
   }
 
@@ -105,6 +108,18 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
   void _addToList() {
     final rawAmount = _amountController.text.replaceAll('.', '');
     final amount = int.tryParse(rawAmount) ?? 0;
+    final note = _noteController.text.trim();
+
+    if (note.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Isi nama barang dulu'),
+          backgroundColor: AppColors.negative,
+        ),
+      );
+      _noteFocus.requestFocus();
+      return;
+    }
 
     if (amount <= 0) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -113,13 +128,20 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
           backgroundColor: AppColors.negative,
         ),
       );
+      _amountFocus.requestFocus();
       return;
     }
 
-    // Note dan kategori opsional — tidak wajib diisi
-    final note = _noteController.text.trim().isEmpty
-        ? null
-        : _noteController.text.trim();
+    if (!_categoryTouched) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Pilih kategori dulu'),
+          backgroundColor: AppColors.negative,
+        ),
+      );
+      return;
+    }
+
     final categoryLabel = _selectedCategory?.label ?? 'Lainnya';
 
     setState(() {
@@ -136,10 +158,11 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
       _amountController.clear();
       _noteController.clear();
       _selectedCategory = null;
+      _categoryTouched = false;
       // outlet dan wallet tetap terpilih untuk kenyamanan
     });
 
-    _amountFocus.requestFocus();
+    _noteFocus.requestFocus();
   }
 
   void _saveAll() {
@@ -482,6 +505,7 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
               _selectedCategory = categories.firstWhereOrNull(
                 (c) => c.label == item.category,
               );
+              _categoryTouched = true;
               _amountController.text =
                   CurrencyInputFormatter.formatVal(item.amount);
               _noteController.text = item.note ?? '';
@@ -513,10 +537,15 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
         _CompactInputRow(
           amountController: _amountController,
           noteController: _noteController,
+          noteFocus: _noteFocus,
           amountFocus: _amountFocus,
           categories: categories,
           selectedCategory: _selectedCategory,
-          onCategoryChanged: (c) => setState(() => _selectedCategory = c),
+          categoryTouched: _categoryTouched,
+          onCategoryChanged: (c) => setState(() {
+            _selectedCategory = c;
+            _categoryTouched = true;
+          }),
           onAdd: _addToList,
           accentColor: AppColors.negative,
         ),
@@ -659,9 +688,11 @@ class _CompactInputRow extends StatelessWidget {
   const _CompactInputRow({
     required this.amountController,
     required this.noteController,
+    required this.noteFocus,
     required this.amountFocus,
     required this.categories,
     required this.selectedCategory,
+    required this.categoryTouched,
     required this.onCategoryChanged,
     required this.onAdd,
     required this.accentColor,
@@ -669,9 +700,11 @@ class _CompactInputRow extends StatelessWidget {
 
   final TextEditingController amountController;
   final TextEditingController noteController;
+  final FocusNode noteFocus;
   final FocusNode amountFocus;
   final List<UserCategory> categories;
   final UserCategory? selectedCategory;
+  final bool categoryTouched;
   final ValueChanged<UserCategory?> onCategoryChanged;
   final VoidCallback onAdd;
   final Color accentColor;
@@ -693,15 +726,50 @@ class _CompactInputRow extends StatelessWidget {
               Row(
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
-                  // Amount field
+                  // Nama barang — field utama, fokus pertama
+                  Expanded(
+                    child: TextField(
+                      controller: noteController,
+                      focusNode: noteFocus,
+                      textInputAction: TextInputAction.next,
+                      onSubmitted: (_) => amountFocus.requestFocus(),
+                      textCapitalization: TextCapitalization.sentences,
+                      decoration: InputDecoration(
+                        hintText: 'Nama barang',
+                        hintStyle: TextStyle(
+                          fontSize: 13,
+                          color: context.appColors.textSecondary,
+                        ),
+                        enabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(10),
+                          borderSide:
+                              BorderSide(color: context.appColors.outline),
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(10),
+                          borderSide:
+                              BorderSide(color: accentColor, width: 1.5),
+                        ),
+                        isDense: true,
+                        contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 11,
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  // Harga
                   SizedBox(
-                    width: 118,
+                    width: 112,
                     child: TextField(
                       controller: amountController,
                       focusNode: amountFocus,
                       keyboardType: TextInputType.number,
+                      textInputAction: TextInputAction.done,
+                      onSubmitted: (_) => onAdd(),
                       style: const TextStyle(
-                        fontSize: 17,
+                        fontSize: 16,
                         fontWeight: FontWeight.w800,
                       ),
                       inputFormatters: [
@@ -711,14 +779,14 @@ class _CompactInputRow extends StatelessWidget {
                       decoration: InputDecoration(
                         hintText: '0',
                         hintStyle: TextStyle(
-                          fontSize: 17,
+                          fontSize: 16,
                           fontWeight: FontWeight.w800,
                           color: context.appColors.textPrimary
                               .withValues(alpha: 0.25),
                         ),
                         prefixText: 'Rp ',
                         prefixStyle: TextStyle(
-                          fontSize: 13,
+                          fontSize: 12,
                           fontWeight: FontWeight.w600,
                           color: accentColor,
                         ),
@@ -738,37 +806,6 @@ class _CompactInputRow extends StatelessWidget {
                         isDense: true,
                         contentPadding: const EdgeInsets.symmetric(
                           horizontal: 10,
-                          vertical: 11,
-                        ),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  // Note / nama barang field
-                  Expanded(
-                    child: TextField(
-                      controller: noteController,
-                      textInputAction: TextInputAction.done,
-                      onSubmitted: (_) => onAdd(),
-                      decoration: InputDecoration(
-                        hintText: 'Nama barang... (opsional)',
-                        hintStyle: TextStyle(
-                          fontSize: 13,
-                          color: context.appColors.textSecondary,
-                        ),
-                        enabledBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(10),
-                          borderSide:
-                              BorderSide(color: context.appColors.outline),
-                        ),
-                        focusedBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(10),
-                          borderSide:
-                              BorderSide(color: accentColor, width: 1.5),
-                        ),
-                        isDense: true,
-                        contentPadding: const EdgeInsets.symmetric(
-                          horizontal: 12,
                           vertical: 11,
                         ),
                       ),
@@ -796,10 +833,11 @@ class _CompactInputRow extends StatelessWidget {
                 ],
               ),
               const SizedBox(height: 8),
-              // Chip kategori (opsional, scroll horizontal)
+              // Chip kategori — wajib dipilih
               _CategoryChipsRow(
                 categories: categories,
                 selected: selectedCategory,
+                categoryTouched: categoryTouched,
                 onChanged: onCategoryChanged,
                 accentColor: accentColor,
               ),
@@ -816,12 +854,14 @@ class _CategoryChipsRow extends StatelessWidget {
   const _CategoryChipsRow({
     required this.categories,
     required this.selected,
+    required this.categoryTouched,
     required this.onChanged,
     required this.accentColor,
   });
 
   final List<UserCategory> categories;
   final UserCategory? selected;
+  final bool categoryTouched;
   final ValueChanged<UserCategory?> onChanged;
   final Color accentColor;
 
@@ -834,7 +874,7 @@ class _CategoryChipsRow extends StatelessWidget {
         children: [
           _Chip(
             label: 'Lainnya',
-            isSelected: selected == null,
+            isSelected: selected == null && categoryTouched,
             onTap: () => onChanged(null),
             accentColor: accentColor,
           ),
@@ -924,7 +964,7 @@ class _EmptyShoppingList extends StatelessWidget {
           ),
           const SizedBox(height: 6),
           Text(
-            'Ketik nominal lalu tap + untuk menambah',
+            'Ketik nama barang, harga, pilih kategori, lalu tap +',
             textAlign: TextAlign.center,
             style: TextStyle(
               fontSize: 12,
