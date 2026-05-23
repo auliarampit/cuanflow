@@ -6,10 +6,12 @@ Ritual awal setiap sesi. Load konteks penuh, tampilkan status, tanya mau ngerjai
 
 Lakukan langkah berikut secara berurutan:
 
-## 1. Load Konteks Bisnis
-Baca file-file ini:
+## 1. Load Konteks Bisnis & Arsitektur
+Baca file-file ini secara paralel:
 - `docs/BRD.md` — visi produk, 3 segmen, prioritas phase
 - `docs/AI_CONTEXT.md` — rules, anti-pattern, vibe coding workflow
+- `docs/ERD.md` — skema database terkini (v3.0 sudah ada tabel spaces)
+- `docs/MULTI_SPACE_REFACTOR.md` — desain Ruang: 3 tipe, checklist 5 phase, SQL migration 004
 
 ## 2. Load Konteks Teknikal
 - Baca `lib/src/core/config/feature_config.dart` — feature flags saat ini
