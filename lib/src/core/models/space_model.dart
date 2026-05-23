@@ -19,16 +19,26 @@ class SpaceModel {
     required this.id,
     required this.type,
     required this.createdAt,
+    this.isActive = true,
   });
 
   final String id;
   final SpaceType type;
   final DateTime createdAt;
+  final bool isActive;
+
+  SpaceModel copyWith({bool? isActive}) => SpaceModel(
+        id: id,
+        type: type,
+        createdAt: createdAt,
+        isActive: isActive ?? this.isActive,
+      );
 
   Map<String, dynamic> toJson() => {
         'id': id,
         'type': type.name,
         'createdAt': createdAt.toIso8601String(),
+        'isActive': isActive,
       };
 
   factory SpaceModel.fromJson(Map<String, dynamic> json) => SpaceModel(
@@ -39,5 +49,8 @@ class SpaceModel {
                     json['created_at'] as String? ??
                     '') ??
             DateTime.now(),
+        isActive: json['isActive'] as bool? ??
+            json['is_active'] as bool? ??
+            true,
       );
 }

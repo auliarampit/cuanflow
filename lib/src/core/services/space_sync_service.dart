@@ -42,6 +42,7 @@ class SpaceSyncService {
         'id': s.id,
         'user_id': userId,
         'type': s.type.name,
+        'is_active': s.isActive,
         'created_at': s.createdAt.toIso8601String(),
       };
 }

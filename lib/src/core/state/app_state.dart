@@ -426,10 +426,33 @@ class AppState extends ChangeNotifier {
   }
 
   Future<void> switchSpace(String spaceId) async {
-    if (!_spaces.any((s) => s.id == spaceId)) return;
+    if (!_spaces.any((s) => s.id == spaceId && s.isActive)) return;
     _activeSpaceId = spaceId;
     await _persist();
     notifyListeners();
+  }
+
+  Future<void> toggleSpaceActive(String spaceId) async {
+    final idx = _spaces.indexWhere((s) => s.id == spaceId);
+    if (idx == -1) return;
+
+    final space = _spaces[idx];
+    final activeSpaces = _spaces.where((s) => s.isActive).toList();
+
+    // Tidak bisa non-aktifkan satu-satunya ruang yang aktif
+    if (space.isActive && activeSpaces.length <= 1) return;
+
+    final updated = space.copyWith(isActive: !space.isActive);
+    _spaces[idx] = updated;
+
+    // Kalau ruang yang aktif di-non-aktifkan, pindah ke ruang aktif lain
+    if (!updated.isActive && _activeSpaceId == spaceId) {
+      _activeSpaceId = _spaces.firstWhere((s) => s.isActive).id;
+    }
+
+    await _persist();
+    notifyListeners();
+    _spaceSyncService.upsertSpace(updated).ignore();
   }
 
   // ─── Outlet CRUD ─────────────────────────────────────────────────────────────

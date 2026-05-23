@@ -117,6 +117,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
               spaces: context.appState.spaces,
               activeSpaceId: context.appState.activeSpaceId,
               onSwitch: (id) => context.appState.switchSpace(id),
+              onToggleActive: (id) => context.appState.toggleSpaceActive(id),
               onAdd: () => Navigator.of(context).pushNamed(AppRoutes.setupSpaces),
             ),
             const SizedBox(height: 16),
@@ -541,12 +542,14 @@ class _SpacesSection extends StatelessWidget {
     required this.spaces,
     required this.activeSpaceId,
     required this.onSwitch,
+    required this.onToggleActive,
     required this.onAdd,
   });
 
   final List<SpaceModel> spaces;
   final String? activeSpaceId;
   final void Function(String id) onSwitch;
+  final void Function(String id) onToggleActive;
   final VoidCallback onAdd;
 
   Color _accentColor(SpaceType type) => switch (type) {
@@ -563,6 +566,8 @@ class _SpacesSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final activeCount = spaces.where((s) => s.isActive).length;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -591,39 +596,91 @@ class _SpacesSection extends StatelessWidget {
         ),
         const SizedBox(height: 8),
         ...spaces.map((space) {
-          final isActive = space.id == activeSpaceId;
+          final isCurrent = space.id == activeSpaceId;
+          final isEnabled = space.isActive;
           final accent = _accentColor(space.type);
+          final canDeactivate = isEnabled && activeCount > 1;
+
           return GestureDetector(
-            onTap: () => onSwitch(space.id),
+            onTap: isEnabled ? () => onSwitch(space.id) : null,
             child: Container(
               margin: const EdgeInsets.only(bottom: 8),
-              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
               decoration: BoxDecoration(
-                color: isActive
+                color: isCurrent
                     ? accent.withValues(alpha: 0.08)
                     : context.appColors.card,
                 borderRadius: BorderRadius.circular(12),
                 border: Border.all(
-                  color: isActive ? accent : context.appColors.outline,
-                  width: isActive ? 1.5 : 1,
+                  color: isCurrent
+                      ? accent
+                      : isEnabled
+                          ? context.appColors.outline
+                          : context.appColors.outline.withValues(alpha: 0.4),
+                  width: isCurrent ? 1.5 : 1,
                 ),
               ),
               child: Row(
                 children: [
-                  Text(_emoji(space.type),
-                      style: const TextStyle(fontSize: 20)),
+                  Text(
+                    _emoji(space.type),
+                    style: TextStyle(
+                      fontSize: 20,
+                      color: isEnabled ? null : const Color(0x66000000),
+                    ),
+                  ),
                   const SizedBox(width: 12),
                   Expanded(
-                    child: Text(
-                      space.type.displayName,
-                      style: TextStyle(
-                        fontWeight: FontWeight.w600,
-                        color: isActive ? accent : context.appColors.textPrimary,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          space.type.displayName,
+                          style: TextStyle(
+                            fontWeight: FontWeight.w600,
+                            color: isEnabled
+                                ? (isCurrent
+                                    ? accent
+                                    : context.appColors.textPrimary)
+                                : context.appColors.textSecondary,
+                          ),
+                        ),
+                        if (!isEnabled)
+                          Text(
+                            'Non-aktif • Tap untuk aktifkan',
+                            style: TextStyle(
+                              fontSize: 11,
+                              color: context.appColors.textSecondary,
+                            ),
+                          ),
+                      ],
+                    ),
+                  ),
+                  if (isCurrent)
+                    Padding(
+                      padding: const EdgeInsets.only(right: 4),
+                      child: Icon(Icons.check_circle, color: accent, size: 18),
+                    ),
+                  // Tombol non-aktifkan / aktifkan
+                  GestureDetector(
+                    onTap: (!isEnabled || canDeactivate)
+                        ? () => onToggleActive(space.id)
+                        : null,
+                    child: Padding(
+                      padding: const EdgeInsets.all(4),
+                      child: Icon(
+                        isEnabled
+                            ? Icons.pause_circle_outline
+                            : Icons.play_circle_outline,
+                        size: 20,
+                        color: !isEnabled
+                            ? AppColors.positive
+                            : canDeactivate
+                                ? context.appColors.textSecondary
+                                : context.appColors.outline,
                       ),
                     ),
                   ),
-                  if (isActive)
-                    Icon(Icons.check_circle, color: accent, size: 18),
                 ],
               ),
             ),
