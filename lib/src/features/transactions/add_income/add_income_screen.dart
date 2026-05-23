@@ -460,23 +460,22 @@ class _AddIncomeScreenState extends State<AddIncomeScreen> {
                       ),
                       const SizedBox(height: 14),
 
-                      // Note (optional, only when outlet feature is off)
-                      if (!featureOutlets) ...[
-                        TextField(
-                          controller: _noteController,
-                          decoration: InputDecoration(
-                            prefixIcon: Icon(
-                              Icons.edit_outlined,
-                              size: 18,
-                              color: context.appColors.textSecondary,
-                            ),
-                            hintText: context.t('income.add.noteHint'),
-                            labelText: context.t('common.noteOptional'),
-                            isDense: true,
+                      // Keterangan sumber pemasukan (selalu tampil)
+                      TextField(
+                        controller: _noteController,
+                        textCapitalization: TextCapitalization.sentences,
+                        decoration: InputDecoration(
+                          prefixIcon: Icon(
+                            Icons.edit_outlined,
+                            size: 18,
+                            color: context.appColors.textSecondary,
                           ),
+                          hintText: context.t('income.add.noteHint'),
+                          labelText: context.t('common.noteOptional'),
+                          isDense: true,
                         ),
-                        const SizedBox(height: 14),
-                      ],
+                      ),
+                      const SizedBox(height: 14),
 
                       // Categories
                       CategoryDropdown(
