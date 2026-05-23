@@ -13,7 +13,6 @@ import '../../../core/theme/app_dynamic_colors.dart';
 import '../../../core/ui/app_gradient_scaffold.dart';
 import '../../../shared/widgets/category_dropdown.dart';
 import '../../../shared/widgets/native_ad_card.dart';
-import '../../../shared/widgets/recent_items_bar.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart' show TemplateType;
 
 // ─── Bulk item model ────────────────────────────────────────────────────────
@@ -495,23 +494,9 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
           selectedOutletId: _selectedOutletId,
           onOutletChanged: (id) => setState(() => _selectedOutletId = id),
         ),
-        // Recent/frequent items
-        RecentItemsBar(
-          type: MoneyTransactionType.expense,
-          accentColor: AppColors.negative,
-          onSelect: (item) {
-            setState(() {
-              _selectedCategory = categories.firstWhereOrNull(
-                (c) => c.label == item.category,
-              );
-              _categoryTouched = true;
-              _amountController.text =
-                  CurrencyInputFormatter.formatVal(item.amount);
-              _noteController.text = item.note ?? '';
-              if (item.outletId != null) _selectedOutletId = item.outletId;
-              if (item.walletId != null) _selectedWalletId = item.walletId;
-            });
-          },
+        ClipRRect(
+          borderRadius: BorderRadius.circular(12),
+          child: const NativeAdCard(templateType: TemplateType.small),
         ),
         // Daftar item yang sudah ditambahkan (tumbuh di sini)
         Expanded(

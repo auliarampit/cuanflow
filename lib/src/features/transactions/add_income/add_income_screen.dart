@@ -14,7 +14,6 @@ import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_dynamic_colors.dart';
 import '../../../shared/widgets/category_dropdown.dart';
 import '../../../shared/widgets/native_ad_card.dart';
-import '../../../shared/widgets/recent_items_bar.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart' show TemplateType;
 
 // ─── Bulk item model ────────────────────────────────────────────────────────
@@ -370,30 +369,11 @@ class _AddIncomeScreenState extends State<AddIncomeScreen> {
               ),
               const SizedBox(height: 14),
 
-              // Recent/frequent items
-              RecentItemsBar(
-                type: MoneyTransactionType.income,
-                accentColor: AppColors.positive,
-                onSelect: (item) {
-                  setState(() {
-                    _selectedCategory = categories.firstWhereOrNull(
-                      (c) => c.label == item.category,
-                    );
-                    _amountController.text =
-                        CurrencyInputFormatter.formatVal(item.amount);
-                    if (item.note != null && item.note!.isNotEmpty) {
-                      _noteController.text = item.note!;
-                    }
-                    if (item.outletId != null) {
-                      _selectedOutletId = item.outletId;
-                    }
-                    if (item.walletId != null) {
-                      _selectedWalletId = item.walletId;
-                    }
-                  });
-                },
+              ClipRRect(
+                borderRadius: BorderRadius.circular(12),
+                child: const NativeAdCard(templateType: TemplateType.small),
               ),
-              const SizedBox(height: 4),
+              const SizedBox(height: 12),
 
               // Form card
               Card(
