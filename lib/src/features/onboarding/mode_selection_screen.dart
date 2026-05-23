@@ -6,6 +6,9 @@ import '../../core/state/app_state.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_dynamic_colors.dart';
 
+// Tiga situasi yang bisa dipilih user — bukan "mode" teknikal
+enum _Situation { personal, store, production }
+
 class ModeSelectionScreen extends StatefulWidget {
   const ModeSelectionScreen({super.key});
 
@@ -14,47 +17,30 @@ class ModeSelectionScreen extends StatefulWidget {
 }
 
 class _ModeSelectionScreenState extends State<ModeSelectionScreen> {
-  String? _selected;
-
-  // Feature flags — bisnis
-  bool _featureBudget = true;
-  bool _featureOutlets = false;
-  bool _featureProduct = false;
-  final bool _featureQuickSale = false;
-
-  // Feature flags — produksi (mode ke-3)
-  final bool _featureProduction = true;
-  bool _featureProductionBudget = true;
-  bool _featureProductionOutlets = false;
-
-  bool get _isBusiness => _selected == 'business';
-  bool get _isProduction => _selected == 'production';
+  _Situation? _selected;
 
   Future<void> _confirm() async {
     if (_selected == null) return;
     final profile = context.appState.profile;
+
+    // Set semua feature flags sesuai featureConfig — tidak ada yang terlewat
     await context.appState.updateProfile(
       profile.copyWith(
-        featureProduct: _isBusiness
-            ? _featureProduct
-            : _isProduction
-                ? true
-                : false,
-        featureOutlets: _isBusiness
-            ? _featureOutlets
-            : _isProduction
-                ? _featureProductionOutlets
-                : false,
-        featureBudget: _isBusiness
-            ? _featureBudget
-            : _isProduction
-                ? _featureProductionBudget
-                : false,
-        featureProduction: _isProduction ? _featureProduction : false,
-        featureQuickSale: _isBusiness ? _featureQuickSale : false,
+        featureProduct: _selected == _Situation.production,
+        featureOutlets: _selected == _Situation.production,
+        featureBudget: _selected == _Situation.production,
+        featureProduction: _selected == _Situation.production,
+        featureQuickSale: _selected == _Situation.store,
+        featureTopCategories: _selected == _Situation.store,
+        featureBusiestDay: _selected == _Situation.store,
+        featureStock: _selected == _Situation.store,
+        featureProductAnalytics: _selected == _Situation.store,
+        featureDebt: _selected == _Situation.store,
+        featureRecurring: true, // aktif di semua mode
         onboardingComplete: true,
       ),
     );
+
     if (!mounted) return;
     Navigator.of(context).pushReplacementNamed(AppRoutes.home);
   }
@@ -63,350 +49,106 @@ class _ModeSelectionScreenState extends State<ModeSelectionScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.fromLTRB(24, 40, 24, 32),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const SizedBox(height: 12),
-              Text(
-                context.t('onboarding.question'),
-                style: const TextStyle(
-                  fontSize: 26,
-                  fontWeight: FontWeight.w800,
-                  height: 1.3,
-                ),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                context.t('onboarding.subtitle'),
-                style: TextStyle(
-                  color: context.appColors.textSecondary,
-                  fontSize: 14,
-                ),
-              ),
-              const SizedBox(height: 40),
-              _ModeCard(
-                selected: _selected == 'personal',
-                icon: Icons.account_balance_wallet_outlined,
-                title: context.t('onboarding.personalTitle'),
-                subtitle: context.t('onboarding.personalSubtitle'),
-                features: [
-                  context.t('onboarding.personalFeature1'),
-                  context.t('onboarding.personalFeature2'),
-                  context.t('onboarding.personalFeature3'),
-                  context.t('onboarding.personalFeature4'),
-                ],
-                onTap: () => setState(() => _selected = 'personal'),
-              ),
-              const SizedBox(height: 16),
-              _ModeCard(
-                selected: _selected == 'business',
-                icon: Icons.storefront_outlined,
-                title: context.t('onboarding.businessTitle'),
-                subtitle: context.t('onboarding.businessSubtitle'),
-                features: [
-                  context.t('onboarding.businessFeature1'),
-                  context.t('onboarding.businessFeature2'),
-                  context.t('onboarding.businessFeature3'),
-                  context.t('onboarding.businessFeature4'),
-                ],
-                onTap: () => setState(() => _selected = 'business'),
-              ),
-
-              // ── Feature selection — muncul saat bisnis dipilih ─────────────
-              AnimatedSize(
-                duration: const Duration(milliseconds: 250),
-                curve: Curves.easeInOut,
-                child: _isBusiness
-                    ? Padding(
-                        padding: const EdgeInsets.only(top: 16),
-                        child: _FeatureSelector(
-                          featureBudget: _featureBudget,
-                          featureOutlets: _featureOutlets,
-                          featureProduct: _featureProduct,
-                          onBudgetChanged: (v) =>
-                              setState(() => _featureBudget = v),
-                          onOutletsChanged: (v) =>
-                              setState(() => _featureOutlets = v),
-                          onProductChanged: (v) =>
-                              setState(() => _featureProduct = v),
-                        ),
-                      )
-                    : const SizedBox.shrink(),
-              ),
-
-              const SizedBox(height: 16),
-              _ModeCard(
-                selected: _selected == 'production',
-                icon: Icons.precision_manufacturing_outlined,
-                title: 'Mode Produksi',
-                subtitle: 'Untuk usaha yang memproduksi barang sendiri',
-                features: [
-                  'HPP & kalkulasi harga pokok produksi',
-                  'Manajemen bahan baku & stok',
-                  'Pencatatan batch produksi',
-                  'Analitik margin & breakeven',
-                ],
-                onTap: () => setState(() => _selected = 'production'),
-              ),
-
-              // ── Feature selection — muncul saat produksi dipilih ──────────
-              AnimatedSize(
-                duration: const Duration(milliseconds: 250),
-                curve: Curves.easeInOut,
-                child: _isProduction
-                    ? Padding(
-                        padding: const EdgeInsets.only(top: 16),
-                        child: _ProductionFeatureSelector(
-                          featureBudget: _featureProductionBudget,
-                          featureOutlets: _featureProductionOutlets,
-                          onBudgetChanged: (v) =>
-                              setState(() => _featureProductionBudget = v),
-                          onOutletsChanged: (v) =>
-                              setState(() => _featureProductionOutlets = v),
-                        ),
-                      )
-                    : const SizedBox.shrink(),
-              ),
-
-              const SizedBox(height: 40),
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton(
-                  onPressed: _selected != null ? _confirm : null,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.brandBlue,
-                    foregroundColor: Colors.white,
-                    disabledBackgroundColor:
-                        AppColors.brandBlue.withValues(alpha: 0.3),
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(14),
-                    ),
-                  ),
-                  child: Text(
-                    context.t('onboarding.start'),
-                    style: const TextStyle(
-                        fontSize: 16, fontWeight: FontWeight.w700),
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-// ── Feature selector — ditampilkan saat mode bisnis dipilih ──────────────────
-
-class _FeatureSelector extends StatelessWidget {
-  const _FeatureSelector({
-    required this.featureBudget,
-    required this.featureOutlets,
-    required this.featureProduct,
-    required this.onBudgetChanged,
-    required this.onOutletsChanged,
-    required this.onProductChanged,
-  });
-
-  final bool featureBudget;
-  final bool featureOutlets;
-  final bool featureProduct;
-  final ValueChanged<bool> onBudgetChanged;
-  final ValueChanged<bool> onOutletsChanged;
-  final ValueChanged<bool> onProductChanged;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: AppColors.brandBlue.withValues(alpha: 0.05),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-            color: AppColors.brandBlue.withValues(alpha: 0.2)),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            context.t('onboarding.featureSelectTitle'),
-            style: const TextStyle(
-              fontSize: 13,
-              fontWeight: FontWeight.w700,
-            ),
-          ),
-          const SizedBox(height: 2),
-          Text(
-            context.t('onboarding.featureSelectHint'),
-            style: TextStyle(
-              fontSize: 11,
-              color: context.appColors.textSecondary,
-            ),
-          ),
-          const SizedBox(height: 12),
-          _FeatureToggleRow(
-            icon: Icons.savings_outlined,
-            title: context.t('settings.featureBudget'),
-            subtitle: context.t('settings.featureBudgetSubtitle'),
-            value: featureBudget,
-            onChanged: onBudgetChanged,
-          ),
-          const SizedBox(height: 8),
-          _FeatureToggleRow(
-            icon: Icons.store_outlined,
-            title: context.t('settings.featureOutlets'),
-            subtitle: context.t('settings.featureOutletsSubtitle'),
-            value: featureOutlets,
-            onChanged: onOutletsChanged,
-          ),
-          const SizedBox(height: 8),
-          _FeatureToggleRow(
-            icon: Icons.inventory_2_outlined,
-            title: context.t('settings.featureProduct'),
-            subtitle: context.t('settings.featureProductSubtitle'),
-            value: featureProduct,
-            onChanged: onProductChanged,
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _ProductionFeatureSelector extends StatelessWidget {
-  const _ProductionFeatureSelector({
-    required this.featureBudget,
-    required this.featureOutlets,
-    required this.onBudgetChanged,
-    required this.onOutletsChanged,
-  });
-
-  final bool featureBudget;
-  final bool featureOutlets;
-  final ValueChanged<bool> onBudgetChanged;
-  final ValueChanged<bool> onOutletsChanged;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: AppColors.brandGreen.withValues(alpha: 0.05),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.brandGreen.withValues(alpha: 0.2)),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text(
-            'Fitur tambahan (opsional)',
-            style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700),
-          ),
-          const SizedBox(height: 2),
-          Text(
-            'HPP, Bahan Baku, dan Batch Produksi sudah aktif otomatis.',
-            style: TextStyle(
-              fontSize: 11,
-              color: context.appColors.textSecondary,
-            ),
-          ),
-          const SizedBox(height: 12),
-          _FeatureToggleRow(
-            icon: Icons.savings_outlined,
-            title: context.t('settings.featureBudget'),
-            subtitle: context.t('settings.featureBudgetSubtitle'),
-            value: featureBudget,
-            onChanged: onBudgetChanged,
-          ),
-          const SizedBox(height: 8),
-          _FeatureToggleRow(
-            icon: Icons.store_outlined,
-            title: context.t('settings.featureOutlets'),
-            subtitle: context.t('settings.featureOutletsSubtitle'),
-            value: featureOutlets,
-            onChanged: onOutletsChanged,
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _FeatureToggleRow extends StatelessWidget {
-  const _FeatureToggleRow({
-    required this.icon,
-    required this.title,
-    required this.subtitle,
-    required this.value,
-    required this.onChanged,
-  });
-
-  final IconData icon;
-  final String title;
-  final String subtitle;
-  final bool value;
-  final ValueChanged<bool> onChanged;
-
-  @override
-  Widget build(BuildContext context) {
-    return InkWell(
-      borderRadius: BorderRadius.circular(10),
-      onTap: () => onChanged(!value),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-        decoration: BoxDecoration(
-          color: value
-              ? AppColors.brandBlue.withValues(alpha: 0.08)
-              : context.appColors.card,
-          borderRadius: BorderRadius.circular(10),
-          border: Border.all(
-            color: value
-                ? AppColors.brandBlue.withValues(alpha: 0.35)
-                : context.appColors.outline,
-          ),
-        ),
-        child: Row(
+        child: Column(
           children: [
-            Icon(
-              icon,
-              size: 20,
-              color:
-                  value ? AppColors.brandBlue : context.appColors.textSecondary,
-            ),
-            const SizedBox(width: 10),
             Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    title,
-                    style: TextStyle(
-                      fontSize: 13,
-                      fontWeight: FontWeight.w600,
-                      color: value
-                          ? AppColors.brandBlue
-                          : context.appColors.textPrimary,
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.fromLTRB(24, 40, 24, 24),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Header
+                    const SizedBox(height: 8),
+                    Text(
+                      context.t('onboarding.question'),
+                      style: const TextStyle(
+                        fontSize: 26,
+                        fontWeight: FontWeight.w800,
+                        height: 1.3,
+                      ),
                     ),
-                  ),
-                  Text(
-                    subtitle,
-                    style: TextStyle(
-                      fontSize: 11,
-                      color: context.appColors.textSecondary,
+                    const SizedBox(height: 8),
+                    Text(
+                      context.t('onboarding.subtitle'),
+                      style: TextStyle(
+                        color: context.appColors.textSecondary,
+                        fontSize: 14,
+                      ),
                     ),
-                  ),
-                ],
+                    const SizedBox(height: 36),
+
+                    // Kartu situasi 1: Personal
+                    _SituationCard(
+                      selected: _selected == _Situation.personal,
+                      emoji: '💰',
+                      title: 'Keuangan pribadi',
+                      subtitle: 'Pantau pengeluaran & pemasukan sehari-hari',
+                      benefits: const [
+                        'Catat pemasukan & pengeluaran',
+                        'Lihat sisa uang & tren bulanan',
+                        'Atur transaksi berulang (cicilan, dll)',
+                      ],
+                      accentColor: AppColors.brandBlue,
+                      onTap: () =>
+                          setState(() => _selected = _Situation.personal),
+                    ),
+                    const SizedBox(height: 14),
+
+                    // Kartu situasi 2: Warung/Toko
+                    _SituationCard(
+                      selected: _selected == _Situation.store,
+                      emoji: '🏪',
+                      title: 'Warung atau toko',
+                      subtitle: 'Pantau omzet harian, tahu untung atau rugi',
+                      benefits: const [
+                        'Jual cepat dengan preset produk',
+                        'Pantau stok & analitik barang',
+                        'Laporan harian & bulanan',
+                      ],
+                      accentColor: AppColors.positive,
+                      onTap: () =>
+                          setState(() => _selected = _Situation.store),
+                    ),
+                    const SizedBox(height: 14),
+
+                    // Kartu situasi 3: Usaha Produksi
+                    _SituationCard(
+                      selected: _selected == _Situation.production,
+                      emoji: '🏭',
+                      title: 'Usaha produksi',
+                      subtitle:
+                          'Hitung HPP, kelola bahan baku, pantau margin',
+                      benefits: const [
+                        'Kalkulator HPP & harga pokok produksi',
+                        'Manajemen bahan baku & batch produksi',
+                        'Analitik profit per produk',
+                      ],
+                      accentColor: Colors.deepPurple,
+                      onTap: () =>
+                          setState(() => _selected = _Situation.production),
+                    ),
+                    const SizedBox(height: 24),
+
+                    // Catatan kecil
+                    Center(
+                      child: Text(
+                        'Bisa diubah kapan saja di Pengaturan',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: context.appColors.textSecondary,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                  ],
+                ),
               ),
             ),
-            Switch(
-              value: value,
-              onChanged: onChanged,
-              activeThumbColor: AppColors.brandBlue,
-              materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+
+            // Tombol CTA — pinned di bawah
+            _ConfirmButton(
+              enabled: _selected != null,
+              onTap: _confirm,
             ),
           ],
         ),
@@ -415,104 +157,117 @@ class _FeatureToggleRow extends StatelessWidget {
   }
 }
 
-// ── Mode card ─────────────────────────────────────────────────────────────────
-
-class _ModeCard extends StatelessWidget {
-  const _ModeCard({
+// ─── Situation card ──────────────────────────────────────────────────────────
+class _SituationCard extends StatelessWidget {
+  const _SituationCard({
     required this.selected,
-    required this.icon,
+    required this.emoji,
     required this.title,
     required this.subtitle,
-    required this.features,
+    required this.benefits,
+    required this.accentColor,
     required this.onTap,
   });
 
   final bool selected;
-  final IconData icon;
+  final String emoji;
   final String title;
   final String subtitle;
-  final List<String> features;
+  final List<String> benefits;
+  final Color accentColor;
   final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
-    final borderColor =
-        selected ? AppColors.brandBlue : context.appColors.outline;
-    final bgColor = selected
-        ? AppColors.brandBlue.withValues(alpha: 0.07)
-        : context.appColors.card;
-
     return InkWell(
-      borderRadius: BorderRadius.circular(16),
+      borderRadius: BorderRadius.circular(18),
       onTap: onTap,
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
-        padding: const EdgeInsets.all(18),
+        padding: const EdgeInsets.all(20),
         decoration: BoxDecoration(
-          color: bgColor,
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: borderColor, width: selected ? 2 : 1),
+          color: selected
+              ? accentColor.withValues(alpha: 0.07)
+              : context.appColors.card,
+          borderRadius: BorderRadius.circular(18),
+          border: Border.all(
+            color: selected ? accentColor : context.appColors.outline,
+            width: selected ? 2 : 1,
+          ),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Row(
               children: [
+                // Emoji icon
                 Container(
-                  width: 44,
-                  height: 44,
+                  width: 48,
+                  height: 48,
                   decoration: BoxDecoration(
                     color: selected
-                        ? AppColors.brandBlue.withValues(alpha: 0.15)
+                        ? accentColor.withValues(alpha: 0.15)
                         : context.appColors.cardSoft,
-                    borderRadius: BorderRadius.circular(12),
+                    borderRadius: BorderRadius.circular(14),
                   ),
-                  child: Icon(
-                    icon,
-                    color: selected
-                        ? AppColors.brandBlue
-                        : context.appColors.textSecondary,
-                  ),
+                  alignment: Alignment.center,
+                  child: Text(emoji, style: const TextStyle(fontSize: 24)),
                 ),
                 const SizedBox(width: 14),
                 Expanded(
-                  child: Text(
-                    title,
-                    style: TextStyle(
-                      fontSize: 15,
-                      fontWeight: FontWeight.w700,
-                      color: selected
-                          ? AppColors.brandBlue
-                          : context.appColors.textPrimary,
-                    ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        title,
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w800,
+                          color: selected
+                              ? accentColor
+                              : context.appColors.textPrimary,
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        subtitle,
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: context.appColors.textSecondary,
+                          height: 1.3,
+                        ),
+                      ),
+                    ],
                   ),
                 ),
                 if (selected)
-                  const Icon(Icons.check_circle,
-                      color: AppColors.brandBlue, size: 22),
+                  Icon(Icons.check_circle, color: accentColor, size: 22),
               ],
             ),
-            const SizedBox(height: 10),
-            Text(
-              subtitle,
-              style: TextStyle(
-                color: context.appColors.textSecondary,
-                fontSize: 13,
-              ),
-            ),
-            const SizedBox(height: 10),
-            ...features.map(
-              (f) => Padding(
-                padding: const EdgeInsets.only(top: 4),
+            const SizedBox(height: 14),
+            // Benefits
+            ...benefits.map(
+              (b) => Padding(
+                padding: const EdgeInsets.only(top: 5),
                 child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Icon(Icons.check, size: 14, color: AppColors.positive),
-                    const SizedBox(width: 6),
-                    Text(
-                      f,
-                      style: TextStyle(
-                        fontSize: 13,
-                        color: context.appColors.textSecondary,
+                    Icon(
+                      Icons.check_rounded,
+                      size: 15,
+                      color: selected
+                          ? accentColor
+                          : context.appColors.textSecondary,
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        b,
+                        style: TextStyle(
+                          fontSize: 13,
+                          color: context.appColors.textSecondary,
+                          height: 1.3,
+                        ),
                       ),
                     ),
                   ],
@@ -520,6 +275,66 @@ class _ModeCard extends StatelessWidget {
               ),
             ),
           ],
+        ),
+      ),
+    );
+  }
+}
+
+// ─── Confirm button (pinned bottom) ─────────────────────────────────────────
+class _ConfirmButton extends StatelessWidget {
+  const _ConfirmButton({required this.enabled, required this.onTap});
+
+  final bool enabled;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: EdgeInsets.fromLTRB(
+        24,
+        12,
+        24,
+        MediaQuery.of(context).padding.bottom > 0
+            ? MediaQuery.of(context).padding.bottom
+            : 24,
+      ),
+      decoration: BoxDecoration(
+        color: context.appColors.card,
+        border: Border(top: BorderSide(color: context.appColors.outline)),
+      ),
+      child: SizedBox(
+        width: double.infinity,
+        child: AnimatedOpacity(
+          duration: const Duration(milliseconds: 200),
+          opacity: enabled ? 1.0 : 0.4,
+          child: ElevatedButton(
+            onPressed: enabled ? onTap : null,
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.brandBlue,
+              foregroundColor: Colors.white,
+              disabledBackgroundColor: AppColors.brandBlue,
+              disabledForegroundColor: Colors.white,
+              padding: const EdgeInsets.symmetric(vertical: 16),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(14),
+              ),
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Text(
+                  context.t('onboarding.start'),
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                const SizedBox(width: 8),
+                const Icon(Icons.arrow_forward_rounded, size: 18),
+              ],
+            ),
+          ),
         ),
       ),
     );
