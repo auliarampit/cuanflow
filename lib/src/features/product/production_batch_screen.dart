@@ -6,6 +6,7 @@ import '../../core/state/app_state.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_dynamic_colors.dart';
 import '../../core/ui/app_gradient_scaffold.dart';
+import 'batch_report_screen.dart';
 
 class ProductionBatchScreen extends StatelessWidget {
   const ProductionBatchScreen({super.key});
@@ -22,6 +23,16 @@ class ProductionBatchScreen extends StatelessWidget {
         elevation: 0,
         title: const Text('Batch Produksi',
             style: TextStyle(fontWeight: FontWeight.bold)),
+        actions: [
+          if (batches.isNotEmpty)
+            IconButton(
+              icon: const Icon(Icons.bar_chart_rounded),
+              tooltip: 'Laporan Profit',
+              onPressed: () => Navigator.of(context).push(
+                MaterialPageRoute(builder: (_) => const BatchReportScreen()),
+              ),
+            ),
+        ],
       ),
       body: batches.isEmpty
           ? _EmptyState(onRecord: () => _openForm(context))
