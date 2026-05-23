@@ -187,20 +187,29 @@ WHERE s.user_id = t.user_id
 
 
 -- ============================================================
--- MIGRATION 005 — Tandai Libur Outlet + outlet_id di Recurring
--- Jalankan bersamaan dengan atau setelah fitur recurring outlet
+-- MIGRATION 005 — Jadwal Outlet + outlet_id di Recurring
+-- Jalankan bersamaan dengan atau setelah fitur outlet schedule
 -- diimplementasi di Dart.
--- Lihat docs/ERD.md bagian outlet_closures untuk detail logika.
+-- Lihat docs/ERD.md bagian outlets & outlet_closures untuk detail.
 -- ============================================================
 
--- 1. Tabel outlet_closures: tandai tanggal outlet tutup
+-- 1. Tambah operating_days ke outlets
+--    JSON array of int: [1,2,3,4,5,6] = Sen-Sab, [0] = Minggu saja
+--    Kosong ([]) atau null = tidak ada pembatasan hari
+ALTER TABLE outlets
+  ADD COLUMN IF NOT EXISTS operating_days jsonb NOT NULL DEFAULT '[]';
+
+-- 2. Tabel outlet_closures: pengecualian tanggal spesifik
+--    is_open_override = true  → paksa buka meski operating_days bilang tutup
+--    is_open_override = false → paksa tutup meski seharusnya buka
 CREATE TABLE IF NOT EXISTS outlet_closures (
-  id         uuid        PRIMARY KEY DEFAULT gen_random_uuid(),
-  outlet_id  uuid        NOT NULL REFERENCES outlets(id) ON DELETE CASCADE,
-  user_id    uuid        NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
-  date       date        NOT NULL,
-  note       text,
-  created_at timestamptz NOT NULL DEFAULT now(),
+  id               uuid        PRIMARY KEY DEFAULT gen_random_uuid(),
+  outlet_id        uuid        NOT NULL REFERENCES outlets(id) ON DELETE CASCADE,
+  user_id          uuid        NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  date             date        NOT NULL,
+  is_open_override boolean     NOT NULL DEFAULT false,
+  note             text,
+  created_at       timestamptz NOT NULL DEFAULT now(),
   UNIQUE (outlet_id, date)
 );
 
@@ -210,17 +219,31 @@ CREATE POLICY "outlet_closures: own rows only" ON outlet_closures
   USING  (auth.uid() = user_id)
   WITH CHECK (auth.uid() = user_id);
 
--- 2. Tambah outlet_id ke recurring_transactions
---    Nullable: tidak semua recurring terikat ke outlet (sewa bulanan bisa tanpa outlet)
+-- 3. Tambah outlet_id ke recurring_transactions
+--    Nullable: tidak semua recurring terikat ke outlet
+--    (sewa bulanan bisa tanpa outlet, gaji harian harus punya outlet_id)
 ALTER TABLE recurring_transactions
   ADD COLUMN IF NOT EXISTS outlet_id uuid REFERENCES outlets(id) ON DELETE SET NULL;
 
 -- ============================================================
--- Logika skip di Dart (tidak ada SQL):
--- Saat app dibuka dan recurring_transaction.next_execute <= now():
---   IF outlet_id IS NOT NULL:
---     cek outlet_closures WHERE outlet_id = rt.outlet_id AND date = today
---     IF ada record → skip (jangan buat transaksi), advance next_execute saja
---   ELSE:
---     eksekusi normal
+-- Logika isOutletOpenToday di Dart (tidak ada SQL):
+--
+-- bool isOutletOpenToday(OutletModel outlet, DateTime today) {
+--   final dayIndex = today.weekday % 7; // 0=Sun, 1=Mon, ..., 6=Sat
+--
+--   // 1. Cek pengecualian tanggal spesifik (prioritas tertinggi)
+--   final override = outletClosures
+--       .where((c) => c.outletId == outlet.id && isSameDay(c.date, today))
+--       .firstOrNull;
+--   if (override != null) return override.isOpenOverride;
+--
+--   // 2. Cek jadwal mingguan
+--   if (outlet.operatingDays.isEmpty) return true; // tidak ada pembatasan
+--   return outlet.operatingDays.contains(dayIndex);
+-- }
+--
+-- Sebelum eksekusi recurring:
+--   if (rt.outletId != null && !isOutletOpenToday(outlet, today)) {
+--     // skip — advance next_execute saja, tidak buat transaksi
+--   }
 -- ============================================================

@@ -231,9 +231,13 @@ class _HomeScreenState extends State<HomeScreen> {
     final dateLabel = _formatDate(DateTime.now());
 
     final dailySummary = context.appState.summaryFor(DateRangeType.day);
-    final prevDailySummary = context.appState.previousSummaryFor(DateRangeType.day);
+    final prevDailySummary = context.appState.previousSummaryFor(
+      DateRangeType.day,
+    );
     final weeklySummary = context.appState.summaryFor(DateRangeType.week);
-    final prevWeeklySummary = context.appState.previousSummaryFor(DateRangeType.week);
+    final prevWeeklySummary = context.appState.previousSummaryFor(
+      DateRangeType.week,
+    );
 
     final activeSummary = _isWeekly ? weeklySummary : dailySummary;
     final prevSummary = _isWeekly ? prevWeeklySummary : prevDailySummary;
@@ -244,15 +248,20 @@ class _HomeScreenState extends State<HomeScreen> {
     final isFastSaleEnabled = useFeature(Feature.quickSale, profile);
     final profitCard = _buildProfitCard(
       title: activeSummary.netProfit < 0
-          ? context.t(useFeature(Feature.stock, profile)
-              ? (_isWeekly ? 'home.weeklyLoss' : 'home.todayLoss')
-              : (_isWeekly ? 'home.weeklyDeficit' : 'home.todayDeficit'))
-          : context.t(useFeature(Feature.stock, profile)
-              ? (_isWeekly ? 'home.weeklyProfit' : 'home.todayProfit')
-              : (_isWeekly ? 'home.weeklyBalance' : 'home.todayBalance')),
+          ? context.t(
+              useFeature(Feature.stock, profile)
+                  ? (_isWeekly ? 'home.weeklyLoss' : 'home.todayLoss')
+                  : (_isWeekly ? 'home.weeklyDeficit' : 'home.todayDeficit'),
+            )
+          : context.t(
+              useFeature(Feature.stock, profile)
+                  ? (_isWeekly ? 'home.weeklyProfit' : 'home.todayProfit')
+                  : (_isWeekly ? 'home.weeklyBalance' : 'home.todayBalance'),
+            ),
       currentProfit: activeSummary.netProfit,
       prevProfit: prevSummary.netProfit,
-      comparisonLabel: 'vs ${context.t(_isWeekly ? 'home.lastWeek' : 'home.yesterday')}',
+      comparisonLabel:
+          'vs ${context.t(_isWeekly ? 'home.lastWeek' : 'home.yesterday')}',
     );
 
     return SingleChildScrollView(

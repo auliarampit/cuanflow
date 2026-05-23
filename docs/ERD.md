@@ -1,7 +1,7 @@
 # Entity Relationship Diagram (ERD)
 ## Cuan Flow — Database Schema
 
-**Versi:** 3.1 | **Tanggal:** Mei 2026
+**Versi:** 3.2 | **Tanggal:** Mei 2026
 
 > Preview diagram: buka file ini di VSCode → klik kanan → **"Open Preview"**, atau tekan `Cmd+Shift+V` (Mac) / `Ctrl+Shift+V` (Windows).  
 > Butuh ekstensi **Markdown Preview Mermaid Support** (ID: `bierner.markdown-mermaid`) jika diagram tidak tampil.
@@ -122,6 +122,7 @@ erDiagram
         uuid outlet_id FK
         uuid user_id FK
         date date
+        bool is_open_override
         text note
         timestamptz created_at
     }
@@ -219,6 +220,7 @@ erDiagram
         text name
         text address
         bool is_default
+        json operating_days
         timestamptz created_at
     }
 ```
@@ -330,18 +332,23 @@ Use case utama: gaji harian karyawan per outlet. Jika outlet tutup, gaji tidak d
 ---
 
 ### `outlet_closures`
-Tanggal-tanggal outlet tutup (libur, force close, dll). Dipakai untuk skip recurring gaji otomatis.
+Pengecualian tutup pada tanggal spesifik — di luar jadwal mingguan `operating_days`. Dipakai untuk libur nasional, force close dadakan, atau sebaliknya: **buka di hari yang normalnya tutup** (misalnya event khusus).
 
 | Kolom | Tipe | Keterangan |
 |---|---|---|
 | `id` | UUID (PK) | |
-| `outlet_id` | UUID (FK) | Outlet yang tutup |
+| `outlet_id` | UUID (FK) | Outlet yang terdampak |
 | `user_id` | UUID (FK) | |
-| `date` | DATE | Tanggal tutup |
-| `note` | TEXT | Alasan tutup (opsional: libur, banjir, dll) |
+| `date` | DATE | Tanggal pengecualian |
+| `is_open_override` | BOOL | `true` = paksa buka meski `operating_days` bilang tutup; `false` = paksa tutup meski seharusnya buka |
+| `note` | TEXT | Alasan (opsional: libur nasional, banjir, event khusus, dll) |
 | `created_at` | TIMESTAMPTZ | |
 
-**Constraint:** `UNIQUE(outlet_id, date)` — tidak bisa double-mark tutup di hari yang sama.
+**Constraint:** `UNIQUE(outlet_id, date)` — satu pengecualian per tanggal per outlet.
+
+**Logika prioritas:** `outlet_closures` selalu menang atas `operating_days`.
+- `is_open_override = true` → paksa buka walau hari itu biasanya tutup
+- `is_open_override = false` → paksa tutup walau hari itu biasanya buka
 
 **Side effect:** Saat Multi-Space live, `outlet_closures` juga dapat `space_id` (ikut Migration 004).
 
@@ -455,8 +462,20 @@ Cabang / outlet bisnis. Aktif jika `featureOutlets = true`.
 | `name` | TEXT | Nama outlet |
 | `address` | TEXT | Alamat (opsional) |
 | `is_default` | BOOL | Outlet default saat input transaksi |
+| `operating_days` | JSON | Array int hari operasi: `[1,2,3,4,5,6]` = Sen–Sab, `[0]` = Minggu saja. Kosong/null = selalu buka |
 
-Tiap outlet bisa punya daftar tanggal tutup di `outlet_closures`. Recurring transactions yang punya `outlet_id` akan otomatis di-skip pada tanggal tutup tersebut.
+**Konvensi hari:** 0 = Minggu, 1 = Senin, ..., 6 = Sabtu (mengikuti Dart `DateTime.weekday % 7`).
+
+**Contoh konfigurasi:**
+- Lapak USK: `[1,2,3,4,5,6]` → buka Senin–Sabtu, tutup otomatis setiap Minggu
+- Outlet CFD: `[0]` → hanya buka Minggu
+- Outlet tanpa jadwal: `[]` / null → tidak ada pembatasan otomatis
+
+**Logika tutup:** Outlet dianggap tutup pada hari tertentu jika:
+1. Hari tersebut **tidak ada** di `operating_days` (jadwal mingguan), **ATAU**
+2. Tanggalnya ada di `outlet_closures` (pengecualian tanggal spesifik)
+
+Jika salah satu terpenuhi → semua recurring yang punya `outlet_id` ini di-skip hari itu.
 
 ---
 
