@@ -5,13 +5,16 @@
 
 
 -- ============================================================
--- MIGRATION 001 — Subscription tier di profiles
--- Jalankan saat billing/paywall siap diluncurkan.
+-- MIGRATION 001 — Tambah kolom yang belum ada di profiles
+-- Jalankan sekarang agar ProfileService bisa sync semua field.
 -- ============================================================
 
 ALTER TABLE profiles
-  ADD COLUMN IF NOT EXISTS subscription_tier text NOT NULL DEFAULT 'free',
-  ADD COLUMN IF NOT EXISTS subscription_expiry timestamptz;
+  ADD COLUMN IF NOT EXISTS feature_stock             boolean NOT NULL DEFAULT false,
+  ADD COLUMN IF NOT EXISTS feature_product_analytics boolean NOT NULL DEFAULT false,
+  ADD COLUMN IF NOT EXISTS feature_debt              boolean NOT NULL DEFAULT false,
+  ADD COLUMN IF NOT EXISTS subscription_tier         text    NOT NULL DEFAULT 'free',
+  ADD COLUMN IF NOT EXISTS subscription_expiry       timestamptz;
 
 -- Validasi nilai tier yang diizinkan
 ALTER TABLE profiles

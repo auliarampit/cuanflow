@@ -37,6 +37,11 @@ class ProfileService {
       'feature_quick_sale': profile.featureQuickSale,
       'feature_top_categories': profile.featureTopCategories,
       'feature_busiest_day': profile.featureBusiestDay,
+      'feature_stock': profile.featureStock,
+      'feature_product_analytics': profile.featureProductAnalytics,
+      'feature_debt': profile.featureDebt,
+      'subscription_tier': profile.subscriptionTier.name,
+      'subscription_expiry': profile.subscriptionExpiry?.toIso8601String(),
       'onboarding_complete': profile.onboardingComplete,
     });
   }
