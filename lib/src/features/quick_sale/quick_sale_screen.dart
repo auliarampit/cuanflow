@@ -8,9 +8,6 @@ import '../../core/state/app_state.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_dynamic_colors.dart';
 
-// Set true saat sudah adopsi POS + payment gateway
-const bool _kEnableWalletSelector = false;
-
 class QuickSaleScreen extends StatefulWidget {
   const QuickSaleScreen({super.key});
 
@@ -20,88 +17,99 @@ class QuickSaleScreen extends StatefulWidget {
 
 class _QuickSaleScreenState extends State<QuickSaleScreen> {
   bool _manageMode = false;
+  String? _selectedCategory; // null = Semua
+  final Map<String, int> _cart = {}; // presetId → qty
 
-  @override
-  Widget build(BuildContext context) {
-    final appState = context.appState;
-    final presets = appState.quickSalePresets;
+  // ── Helpers ────────────────────────────────────────────────────────────────
 
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(context.t('quickSale.title')),
-        actions: [
-          IconButton(
-            icon: Icon(_manageMode ? Icons.check : Icons.edit_outlined),
-            tooltip: _manageMode
-                ? context.t('quickSale.doneManage')
-                : context.t('quickSale.manage'),
-            onPressed: () => setState(() => _manageMode = !_manageMode),
-          ),
-          if (_manageMode)
-            IconButton(
-              icon: const Icon(Icons.add),
-              tooltip: context.t('quickSale.add.button'),
-              onPressed: () => _showForm(context, null),
-            ),
-        ],
+  List<String> _categories(List<QuickSalePreset> presets) {
+    final cats = presets
+        .map((p) => p.category)
+        .where((c) => c.isNotEmpty)
+        .toSet()
+        .toList()
+      ..sort();
+    return cats;
+  }
+
+  List<QuickSalePreset> _filtered(List<QuickSalePreset> presets) {
+    if (_selectedCategory == null) return presets;
+    return presets.where((p) => p.category == _selectedCategory).toList();
+  }
+
+  QuickSalePreset? _presetById(List<QuickSalePreset> all, String id) {
+    for (final p in all) {
+      if (p.id == id) return p;
+    }
+    return null;
+  }
+
+  int _cartTotal(List<QuickSalePreset> all) {
+    var total = 0;
+    for (final entry in _cart.entries) {
+      final preset = _presetById(all, entry.key);
+      if (preset != null) total += preset.price * entry.value;
+    }
+    return total;
+  }
+
+  int get _cartItemCount => _cart.values.fold(0, (s, q) => s + q);
+
+  // ── Cart actions ───────────────────────────────────────────────────────────
+
+  void _addToCart(String presetId) {
+    setState(() => _cart[presetId] = (_cart[presetId] ?? 0) + 1);
+  }
+
+  void _removeFromCart(String presetId) {
+    setState(() {
+      final current = _cart[presetId] ?? 0;
+      if (current <= 1) {
+        _cart.remove(presetId);
+      } else {
+        _cart[presetId] = current - 1;
+      }
+    });
+  }
+
+  void _clearCart() => setState(() => _cart.clear());
+
+  void _recordCart() {
+    if (_cart.isEmpty) return;
+    final presets = context.appState.quickSalePresets;
+    var totalAmount = 0;
+    final cartSnapshot = Map<String, int>.from(_cart);
+
+    for (final entry in cartSnapshot.entries) {
+      final preset = _presetById(presets, entry.key);
+      if (preset == null) continue;
+      final qty = entry.value;
+      final total = preset.price * qty;
+      context.appState.addIncome(
+        amount: total,
+        category: preset.category,
+        note: '${preset.name} x$qty',
+        effectiveDate: DateTime.now(),
+        walletId: preset.walletId,
+        outletId: preset.outletId,
+      );
+      totalAmount += total;
+    }
+
+    setState(() => _cart.clear());
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          '${cartSnapshot.length} item tercatat · ${IdrFormatter.format(totalAmount)}',
+        ),
+        backgroundColor: AppColors.positive,
+        duration: const Duration(seconds: 2),
       ),
-      body: presets.isEmpty
-          ? _EmptyState(onAdd: () => _showForm(context, null))
-          : Column(
-              children: [
-                if (!_manageMode)
-                  Padding(
-                    padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
-                    child: Text(
-                      context.t('quickSale.tapHint'),
-                      style: TextStyle(
-                        color: context.appColors.textSecondary,
-                        fontSize: 12,
-                      ),
-                    ),
-                  ),
-                Expanded(
-                  child: GridView.builder(
-                    padding: const EdgeInsets.fromLTRB(16, 8, 16, 80),
-                    gridDelegate:
-                        const SliverGridDelegateWithFixedCrossAxisCount(
-                      crossAxisCount: 2,
-                      crossAxisSpacing: 12,
-                      mainAxisSpacing: 12,
-                      childAspectRatio: 1.4,
-                    ),
-                    itemCount: presets.length,
-                    itemBuilder: (context, i) => _PresetCard(
-                      preset: presets[i],
-                      manageMode: _manageMode,
-                      onTap: _manageMode
-                          ? null
-                          : () => _confirmSale(context, presets[i]),
-                      onEdit: () => _showForm(context, presets[i]),
-                      onDelete: () => _confirmDelete(context, presets[i]),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-      floatingActionButton: _manageMode
-          ? FloatingActionButton.extended(
-              onPressed: () => _showForm(context, null),
-              icon: const Icon(Icons.add),
-              label: Text(context.t('quickSale.add.button')),
-              backgroundColor: AppColors.brandBlue,
-              foregroundColor: Colors.white,
-            )
-          : null,
     );
   }
 
-  void _confirmSale(BuildContext context, QuickSalePreset preset) {
-    showDialog(
-      context: context,
-      builder: (ctx) => _SaleConfirmDialog(preset: preset),
-    );
-  }
+  // ── Form & dialogs ─────────────────────────────────────────────────────────
 
   void _showForm(BuildContext context, QuickSalePreset? existing) {
     showModalBottomSheet(
@@ -120,8 +128,8 @@ class _QuickSaleScreenState extends State<QuickSaleScreen> {
       context: context,
       builder: (ctx) => AlertDialog(
         title: Text(context.t('quickSale.delete.title')),
-        content: Text(context.t('quickSale.delete.content',
-            {'name': preset.name})),
+        content: Text(
+            context.t('quickSale.delete.content', {'name': preset.name})),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
@@ -130,6 +138,7 @@ class _QuickSaleScreenState extends State<QuickSaleScreen> {
           TextButton(
             onPressed: () {
               context.appState.deleteQuickSalePreset(preset.id);
+              _cart.remove(preset.id);
               Navigator.pop(ctx);
             },
             style: TextButton.styleFrom(foregroundColor: AppColors.negative),
@@ -139,202 +148,366 @@ class _QuickSaleScreenState extends State<QuickSaleScreen> {
       ),
     );
   }
-}
 
-// ─── Sale Confirm Dialog ───────────────────────────────────────────────────────
-class _SaleConfirmDialog extends StatefulWidget {
-  const _SaleConfirmDialog({required this.preset});
-  final QuickSalePreset preset;
-
-  @override
-  State<_SaleConfirmDialog> createState() => _SaleConfirmDialogState();
-}
-
-class _SaleConfirmDialogState extends State<_SaleConfirmDialog> {
-  int _qty = 1;
-  String? _walletId;
-
-  @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    if (_walletId == null) {
-      final presetWallet = widget.preset.walletId;
-      if (presetWallet != null) {
-        _walletId = presetWallet;
-      } else {
-        final wallets = context.appState.wallets;
-        if (wallets.isNotEmpty) {
-          final def = wallets.where((w) => w.isDefault).firstOrNull;
-          _walletId = def?.id ?? wallets.first.id;
-        }
-      }
-    }
-  }
-
-  void _record() {
-    final appState = context.appState;
-    final total = widget.preset.price * _qty;
-    final walletId = _walletId;
-    appState.addIncome(
-      amount: total,
-      category: widget.preset.category,
-      note: widget.preset.note != null && widget.preset.note!.isNotEmpty
-          ? '${widget.preset.name} x$_qty${widget.preset.note!.isNotEmpty ? ' — ${widget.preset.note}' : ''}'
-          : '${widget.preset.name} x$_qty',
-      effectiveDate: DateTime.now(),
-      walletId: walletId,
-      outletId: widget.preset.outletId,
-    );
-    Navigator.pop(context);
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(context.t('quickSale.recorded',
-            {'name': widget.preset.name, 'amount': IdrFormatter.format(total)})),
-        backgroundColor: AppColors.positive,
-        duration: const Duration(seconds: 2),
-      ),
-    );
-  }
+  // ── Build ──────────────────────────────────────────────────────────────────
 
   @override
   Widget build(BuildContext context) {
-    final wallets = context.appState.wallets;
-    final total = widget.preset.price * _qty;
+    final appState = context.appState;
+    final allPresets = appState.quickSalePresets;
+    final categories = _categories(allPresets);
+    final filtered = _filtered(allPresets);
+    final hasCart = _cart.isNotEmpty && !_manageMode;
 
-    return AlertDialog(
-      title: Text(widget.preset.name),
-      content: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            IdrFormatter.format(widget.preset.price),
-            style: const TextStyle(
-                fontWeight: FontWeight.w800,
-                fontSize: 20,
-                color: AppColors.positive),
+    return Scaffold(
+      appBar: AppBar(
+        title: Text(context.t('quickSale.title')),
+        actions: [
+          if (_cart.isNotEmpty && !_manageMode)
+            IconButton(
+              icon: const Icon(Icons.delete_outline),
+              tooltip: 'Kosongkan keranjang',
+              onPressed: _clearCart,
+            ),
+          IconButton(
+            icon: Icon(_manageMode ? Icons.check : Icons.edit_outlined),
+            tooltip: _manageMode
+                ? context.t('quickSale.doneManage')
+                : context.t('quickSale.manage'),
+            onPressed: () => setState(() {
+              _manageMode = !_manageMode;
+              if (_manageMode) _cart.clear();
+            }),
           ),
-          if (widget.preset.note != null && widget.preset.note!.isNotEmpty) ...[
-            const SizedBox(height: 4),
-            Text(
-              widget.preset.note!,
-              style: TextStyle(
-                  color: context.appColors.textSecondary, fontSize: 13),
+          if (_manageMode)
+            IconButton(
+              icon: const Icon(Icons.add),
+              tooltip: context.t('quickSale.add.button'),
+              onPressed: () => _showForm(context, null),
             ),
-          ],
-          const SizedBox(height: 16),
-          // Qty selector
-          Row(
-            children: [
-              Text(context.t('quickSale.qty'),
-                  style: const TextStyle(fontWeight: FontWeight.w600)),
-              const Spacer(),
-              IconButton(
-                onPressed: _qty > 1 ? () => setState(() => _qty--) : null,
-                icon: const Icon(Icons.remove_circle_outline),
-                color: AppColors.negative,
-              ),
-              Text(
-                '$_qty',
-                style: const TextStyle(
-                    fontWeight: FontWeight.w800, fontSize: 18),
-              ),
-              IconButton(
-                onPressed: () => setState(() => _qty++),
-                icon: const Icon(Icons.add_circle_outline),
-                color: AppColors.positive,
-              ),
-            ],
-          ),
-          // Total
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
-            decoration: BoxDecoration(
-              color: AppColors.positive.withValues(alpha: 0.1),
-              borderRadius: BorderRadius.circular(10),
-            ),
-            child: Text(
-              context.t('quickSale.total',
-                  {'amount': IdrFormatter.format(total)}),
-              style: const TextStyle(
-                  fontWeight: FontWeight.w800,
-                  fontSize: 16,
-                  color: AppColors.positive),
-              textAlign: TextAlign.center,
-            ),
-          ),
-          // Wallet selector — aktifkan _kEnableWalletSelector saat adopsi POS
-          if (_kEnableWalletSelector && wallets.isNotEmpty) ...[
-            const SizedBox(height: 12),
-            DropdownButtonFormField<String>(
-              initialValue: _walletId,
-              decoration: InputDecoration(
-                labelText: context.t('wallet.selector'),
-                isDense: true,
-                contentPadding:
-                    const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-              ),
-              items: wallets
-                  .map((w) => DropdownMenuItem(
-                        value: w.id,
-                        child: Text(w.name),
-                      ))
-                  .toList(),
-              onChanged: (v) => setState(() => _walletId = v),
-            ),
-          ],
         ],
       ),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.pop(context),
-          child: Text(context.t('common.cancel')),
-        ),
-        ElevatedButton(
-          onPressed: _record,
-          style: ElevatedButton.styleFrom(
-            backgroundColor: AppColors.positive,
-            foregroundColor: Colors.white,
+      body: allPresets.isEmpty
+          ? _EmptyState(onAdd: () => _showForm(context, null))
+          : Stack(
+              children: [
+                Column(
+                  children: [
+                    // ── Category filter ─────────────────────────────────────
+                    if (!_manageMode && categories.length > 1)
+                      _CategoryFilterRow(
+                        categories: categories,
+                        selected: _selectedCategory,
+                        onSelect: (cat) =>
+                            setState(() => _selectedCategory = cat),
+                      ),
+
+                    // ── Hint text ───────────────────────────────────────────
+                    if (!_manageMode)
+                      Padding(
+                        padding: const EdgeInsets.fromLTRB(16, 10, 16, 2),
+                        child: Row(
+                          children: [
+                            Icon(
+                              _cart.isEmpty
+                                  ? Icons.touch_app_outlined
+                                  : Icons.shopping_cart_outlined,
+                              size: 13,
+                              color: context.appColors.textSecondary,
+                            ),
+                            const SizedBox(width: 4),
+                            Text(
+                              _cart.isEmpty
+                                  ? 'Tap untuk tambah ke keranjang'
+                                  : 'Tap tambah · tahan untuk kurangi',
+                              style: TextStyle(
+                                color: context.appColors.textSecondary,
+                                fontSize: 12,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+
+                    // ── Grid ────────────────────────────────────────────────
+                    Expanded(
+                      child: GridView.builder(
+                        padding: EdgeInsets.fromLTRB(
+                            16, 8, 16, hasCart ? 80 : 16),
+                        gridDelegate:
+                            const SliverGridDelegateWithFixedCrossAxisCount(
+                          crossAxisCount: 2,
+                          crossAxisSpacing: 12,
+                          mainAxisSpacing: 12,
+                          childAspectRatio: 1.4,
+                        ),
+                        itemCount: filtered.length,
+                        itemBuilder: (context, i) {
+                          final preset = filtered[i];
+                          final qty = _cart[preset.id] ?? 0;
+                          return _PresetCard(
+                            preset: preset,
+                            manageMode: _manageMode,
+                            qty: qty,
+                            onTap: _manageMode
+                                ? null
+                                : () => _addToCart(preset.id),
+                            onLongPress: (!_manageMode && qty > 0)
+                                ? () => _removeFromCart(preset.id)
+                                : null,
+                            onEdit: () => _showForm(context, preset),
+                            onDelete: () => _confirmDelete(context, preset),
+                          );
+                        },
+                      ),
+                    ),
+                  ],
+                ),
+
+                // ── Cart bar ────────────────────────────────────────────────
+                if (hasCart)
+                  Positioned(
+                    bottom: 0,
+                    left: 0,
+                    right: 0,
+                    child: _CartBar(
+                      itemCount: _cartItemCount,
+                      total: _cartTotal(allPresets),
+                      onRecord: _recordCart,
+                    ),
+                  ),
+              ],
+            ),
+      floatingActionButton: _manageMode
+          ? FloatingActionButton.extended(
+              onPressed: () => _showForm(context, null),
+              icon: const Icon(Icons.add),
+              label: Text(context.t('quickSale.add.button')),
+              backgroundColor: AppColors.brandBlue,
+              foregroundColor: Colors.white,
+            )
+          : null,
+    );
+  }
+}
+
+// ─── Category filter row ───────────────────────────────────────────────────────
+
+class _CategoryFilterRow extends StatelessWidget {
+  const _CategoryFilterRow({
+    required this.categories,
+    required this.selected,
+    required this.onSelect,
+  });
+
+  final List<String> categories;
+  final String? selected;
+  final ValueChanged<String?> onSelect;
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      height: 44,
+      child: ListView(
+        scrollDirection: Axis.horizontal,
+        padding: const EdgeInsets.symmetric(horizontal: 16),
+        children: [
+          _CategoryChip(
+            label: 'Semua',
+            selected: selected == null,
+            onTap: () => onSelect(null),
           ),
-          child: Text(context.t('quickSale.record')),
+          ...categories.map(
+            (cat) => _CategoryChip(
+              label: cat,
+              selected: selected == cat,
+              onTap: () => onSelect(cat),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _CategoryChip extends StatelessWidget {
+  const _CategoryChip({
+    required this.label,
+    required this.selected,
+    required this.onTap,
+  });
+
+  final String label;
+  final bool selected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(right: 8, top: 8, bottom: 8),
+      child: GestureDetector(
+        onTap: onTap,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 150),
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
+          decoration: BoxDecoration(
+            color: selected
+                ? AppColors.brandBlue
+                : context.appColors.cardSoft,
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(
+              color: selected
+                  ? AppColors.brandBlue
+                  : context.appColors.outline,
+            ),
+          ),
+          child: Text(
+            label,
+            style: TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+              color: selected
+                  ? Colors.white
+                  : context.appColors.textSecondary,
+            ),
+          ),
         ),
-      ],
+      ),
+    );
+  }
+}
+
+// ─── Cart bar ─────────────────────────────────────────────────────────────────
+
+class _CartBar extends StatelessWidget {
+  const _CartBar({
+    required this.itemCount,
+    required this.total,
+    required this.onRecord,
+  });
+
+  final int itemCount;
+  final int total;
+  final VoidCallback onRecord;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: EdgeInsets.fromLTRB(
+        16,
+        12,
+        16,
+        MediaQuery.of(context).padding.bottom > 0
+            ? MediaQuery.of(context).padding.bottom
+            : 16,
+      ),
+      decoration: BoxDecoration(
+        color: context.appColors.card,
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.10),
+            blurRadius: 12,
+            offset: const Offset(0, -4),
+          ),
+        ],
+      ),
+      child: Row(
+        children: [
+          // Info
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  '$itemCount item',
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: context.appColors.textSecondary,
+                  ),
+                ),
+                Text(
+                  IdrFormatter.format(total),
+                  style: const TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w800,
+                    color: AppColors.positive,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          // Tombol catat
+          ElevatedButton.icon(
+            onPressed: onRecord,
+            icon: const Icon(Icons.check_rounded, size: 18),
+            label: const Text(
+              'Catat Penjualan',
+              style: TextStyle(fontWeight: FontWeight.w700),
+            ),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.positive,
+              foregroundColor: Colors.white,
+              padding:
+                  const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(14),
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
 
 // ─── Preset Card ──────────────────────────────────────────────────────────────
+
 class _PresetCard extends StatelessWidget {
   const _PresetCard({
     required this.preset,
     required this.manageMode,
     required this.onEdit,
     required this.onDelete,
+    required this.qty,
     this.onTap,
+    this.onLongPress,
   });
 
   final QuickSalePreset preset;
   final bool manageMode;
+  final int qty;
   final VoidCallback? onTap;
+  final VoidCallback? onLongPress;
   final VoidCallback onEdit;
   final VoidCallback onDelete;
 
+  bool get _inCart => qty > 0;
+
   @override
   Widget build(BuildContext context) {
+    final borderColor = manageMode
+        ? AppColors.brandBlue.withValues(alpha: 0.4)
+        : _inCart
+            ? AppColors.positive
+            : context.appColors.outline;
+
     return GestureDetector(
       onTap: onTap,
-      child: Container(
+      onLongPress: onLongPress,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 150),
         padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
-          color: context.appColors.card,
+          color: _inCart && !manageMode
+              ? AppColors.positive.withValues(alpha: 0.06)
+              : context.appColors.card,
           borderRadius: BorderRadius.circular(16),
           border: Border.all(
-            color: manageMode
-                ? AppColors.brandBlue.withValues(alpha: 0.4)
-                : context.appColors.outline,
+            color: borderColor,
+            width: _inCart && !manageMode ? 2 : 1,
           ),
-          boxShadow: manageMode
+          boxShadow: (manageMode || _inCart)
               ? []
               : [
                   BoxShadow(
@@ -375,6 +548,8 @@ class _PresetCard extends StatelessWidget {
                   ),
               ],
             ),
+
+            // Manage mode: edit + delete buttons
             if (manageMode)
               Positioned(
                 top: 0,
@@ -410,18 +585,26 @@ class _PresetCard extends StatelessWidget {
                   ],
                 ),
               ),
+
+            // Cart qty badge
             if (!manageMode)
               Positioned(
                 top: 0,
                 right: 0,
-                child: Container(
-                  padding: const EdgeInsets.all(4),
-                  decoration: BoxDecoration(
-                    color: AppColors.positive.withValues(alpha: 0.12),
-                    borderRadius: BorderRadius.circular(6),
-                  ),
-                  child: const Icon(Icons.point_of_sale,
-                      size: 14, color: AppColors.positive),
+                child: AnimatedSwitcher(
+                  duration: const Duration(milliseconds: 200),
+                  child: _inCart
+                      ? _QtyBadge(qty: qty, key: ValueKey(qty))
+                      : Container(
+                          key: const ValueKey('icon'),
+                          padding: const EdgeInsets.all(4),
+                          decoration: BoxDecoration(
+                            color: AppColors.positive.withValues(alpha: 0.12),
+                            borderRadius: BorderRadius.circular(6),
+                          ),
+                          child: const Icon(Icons.add,
+                              size: 14, color: AppColors.positive),
+                        ),
                 ),
               ),
           ],
@@ -431,7 +614,35 @@ class _PresetCard extends StatelessWidget {
   }
 }
 
-// ─── Empty State ─────────────────────────────────────────────────────────────
+class _QtyBadge extends StatelessWidget {
+  const _QtyBadge({required this.qty, super.key});
+
+  final int qty;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      constraints: const BoxConstraints(minWidth: 24),
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
+      decoration: BoxDecoration(
+        color: AppColors.positive,
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Text(
+        '$qty',
+        textAlign: TextAlign.center,
+        style: const TextStyle(
+          color: Colors.white,
+          fontSize: 11,
+          fontWeight: FontWeight.w800,
+        ),
+      ),
+    );
+  }
+}
+
+// ─── Empty State ──────────────────────────────────────────────────────────────
+
 class _EmptyState extends StatelessWidget {
   const _EmptyState({required this.onAdd});
   final VoidCallback onAdd;
@@ -449,8 +660,7 @@ class _EmptyState extends StatelessWidget {
             const SizedBox(height: 16),
             Text(
               context.t('quickSale.emptyTitle'),
-              style: const TextStyle(
-                  fontWeight: FontWeight.w700, fontSize: 16),
+              style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 16),
             ),
             const SizedBox(height: 8),
             Text(
@@ -476,6 +686,7 @@ class _EmptyState extends StatelessWidget {
 }
 
 // ─── Preset Form ──────────────────────────────────────────────────────────────
+
 class _PresetForm extends StatefulWidget {
   const _PresetForm({this.existing});
   final QuickSalePreset? existing;
@@ -490,31 +701,16 @@ class _PresetFormState extends State<_PresetForm> {
   late final TextEditingController _priceCtrl;
   late final TextEditingController _categoryCtrl;
   late final TextEditingController _noteCtrl;
-  String? _walletId;
 
   @override
   void initState() {
     super.initState();
     final e = widget.existing;
     _nameCtrl = TextEditingController(text: e?.name ?? '');
-    _priceCtrl = TextEditingController(
-        text: e?.price != null ? e!.price.toString() : '');
-    _categoryCtrl =
-        TextEditingController(text: e?.category ?? '');
+    _priceCtrl =
+        TextEditingController(text: e?.price != null ? e!.price.toString() : '');
+    _categoryCtrl = TextEditingController(text: e?.category ?? '');
     _noteCtrl = TextEditingController(text: e?.note ?? '');
-    _walletId = e?.walletId;
-  }
-
-  @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    if (_walletId == null && widget.existing == null) {
-      final wallets = context.appState.wallets;
-      if (wallets.isNotEmpty) {
-        final def = wallets.where((w) => w.isDefault).firstOrNull;
-        _walletId = def?.id ?? wallets.first.id;
-      }
-    }
   }
 
   @override
@@ -540,7 +736,6 @@ class _PresetFormState extends State<_PresetForm> {
         price: price,
         category: _categoryCtrl.text.trim(),
         note: _noteCtrl.text.trim().isEmpty ? null : _noteCtrl.text.trim(),
-        walletId: _walletId,
         sortOrder: nextOrder,
       ));
     } else {
@@ -549,7 +744,6 @@ class _PresetFormState extends State<_PresetForm> {
         price: price,
         category: _categoryCtrl.text.trim(),
         note: _noteCtrl.text.trim().isEmpty ? null : _noteCtrl.text.trim(),
-        walletId: _walletId,
       ));
     }
     Navigator.pop(context);
@@ -558,7 +752,14 @@ class _PresetFormState extends State<_PresetForm> {
   @override
   Widget build(BuildContext context) {
     final isEdit = widget.existing != null;
-    final wallets = context.appState.wallets;
+
+    // Saran kategori dari preset yang sudah ada
+    final existingCategories = context.appState.quickSalePresets
+        .map((p) => p.category)
+        .where((c) => c.isNotEmpty)
+        .toSet()
+        .toList()
+      ..sort();
 
     return Padding(
       padding: EdgeInsets.fromLTRB(
@@ -571,11 +772,10 @@ class _PresetFormState extends State<_PresetForm> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                context.t(isEdit
-                    ? 'quickSale.edit.title'
-                    : 'quickSale.add.title'),
-                style: const TextStyle(
-                    fontWeight: FontWeight.w800, fontSize: 16),
+                context.t(
+                    isEdit ? 'quickSale.edit.title' : 'quickSale.add.title'),
+                style:
+                    const TextStyle(fontWeight: FontWeight.w800, fontSize: 16),
               ),
               const SizedBox(height: 16),
               TextFormField(
@@ -584,10 +784,9 @@ class _PresetFormState extends State<_PresetForm> {
                   labelText: context.t('quickSale.nameLabel'),
                   hintText: context.t('quickSale.nameHint'),
                 ),
-                validator: (v) =>
-                    (v == null || v.trim().isEmpty)
-                        ? context.t('quickSale.nameRequired')
-                        : null,
+                validator: (v) => (v == null || v.trim().isEmpty)
+                    ? context.t('quickSale.nameRequired')
+                    : null,
                 textCapitalization: TextCapitalization.words,
               ),
               const SizedBox(height: 12),
@@ -602,10 +801,13 @@ class _PresetFormState extends State<_PresetForm> {
                 validator: (v) {
                   final raw = (v ?? '').replaceAll(RegExp(r'[^0-9]'), '');
                   final val = int.tryParse(raw) ?? 0;
-                  return val <= 0 ? context.t('quickSale.priceRequired') : null;
+                  return val <= 0
+                      ? context.t('quickSale.priceRequired')
+                      : null;
                 },
               ),
               const SizedBox(height: 12),
+              // Kategori dengan saran chip
               TextFormField(
                 controller: _categoryCtrl,
                 decoration: InputDecoration(
@@ -614,6 +816,25 @@ class _PresetFormState extends State<_PresetForm> {
                 ),
                 textCapitalization: TextCapitalization.words,
               ),
+              if (existingCategories.isNotEmpty) ...[
+                const SizedBox(height: 8),
+                Wrap(
+                  spacing: 6,
+                  children: existingCategories.map((cat) {
+                    return GestureDetector(
+                      onTap: () =>
+                          setState(() => _categoryCtrl.text = cat),
+                      child: Chip(
+                        label: Text(cat,
+                            style: const TextStyle(fontSize: 11)),
+                        padding: EdgeInsets.zero,
+                        materialTapTargetSize:
+                            MaterialTapTargetSize.shrinkWrap,
+                      ),
+                    );
+                  }).toList(),
+                ),
+              ],
               const SizedBox(height: 12),
               TextFormField(
                 controller: _noteCtrl,
@@ -622,26 +843,6 @@ class _PresetFormState extends State<_PresetForm> {
                   hintText: context.t('quickSale.noteHint'),
                 ),
               ),
-              if (_kEnableWalletSelector && wallets.isNotEmpty) ...[
-                const SizedBox(height: 12),
-                DropdownButtonFormField<String?>(
-                  initialValue: _walletId,
-                  decoration: InputDecoration(
-                    labelText: context.t('wallet.selector'),
-                  ),
-                  items: [
-                    DropdownMenuItem(
-                      value: null,
-                      child: Text(context.t('wallet.noWallet')),
-                    ),
-                    ...wallets.map((w) => DropdownMenuItem(
-                          value: w.id,
-                          child: Text(w.name),
-                        )),
-                  ],
-                  onChanged: (v) => setState(() => _walletId = v),
-                ),
-              ],
               const SizedBox(height: 20),
               SizedBox(
                 width: double.infinity,

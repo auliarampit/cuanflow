@@ -13,6 +13,7 @@ import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_dynamic_colors.dart';
 import 'widgets/monthly_bar_chart.dart';
 import 'widgets/outlet_contribution_chart.dart';
+import 'widgets/outlet_health_card.dart';
 import 'widgets/outlet_trend_chart.dart';
 
 class ReportScreen extends StatefulWidget {
@@ -278,6 +279,15 @@ class _ReportScreenState extends State<ReportScreen> {
                     pctChange: profitPct,
                     isPositive: netProfit >= 0,
                     isBusinessMode: appState.profile.isBusinessMode,
+                  ),
+
+                  // ── Kesehatan bisnis ──────────────────────────────────────
+                  const SizedBox(height: 10),
+                  OutletHealthCard(
+                    summary: summary,
+                    selectedDate: _selectedDate,
+                    appState: appState,
+                    history: history,
                   ),
 
                   // ── Rincian pengeluaran: operasional vs stok ─────────────
