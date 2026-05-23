@@ -405,7 +405,12 @@ class AppState extends ChangeNotifier {
       final remote = await _spaceSyncService.fetchSpaces();
       if (remote.isEmpty) return;
       _spaces = remote;
-      _activeSpaceId ??= _spaces.first.id;
+      // Reset activeSpaceId jika null atau tidak cocok dengan space manapun
+      // (menangani kasus ID lokal lama seperti 'space_production_<timestamp>')
+      if (_activeSpaceId == null ||
+          !_spaces.any((s) => s.id == _activeSpaceId)) {
+        _activeSpaceId = _spaces.first.id;
+      }
       await _persist();
       notifyListeners();
     } catch (_) {}
