@@ -1,7 +1,6 @@
 import 'package:cari_untung/src/app/routes.dart';
 import 'package:cari_untung/src/core/formatters/idr_formatter.dart';
 import 'package:cari_untung/src/core/localization/transalation_extansions.dart';
-import 'package:cari_untung/src/core/ui/responsive_utils.dart';
 import 'package:flutter/material.dart';
 
 import '../../core/state/app_state.dart';
@@ -105,14 +104,7 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  final PageController _pageController = PageController();
-  int _currentPage = 0;
-
-  @override
-  void dispose() {
-    _pageController.dispose();
-    super.dispose();
-  }
+  bool _isWeekly = false;
 
   void _goAddIncome() {
     Navigator.of(context).pushNamed(AppRoutes.addIncome);
@@ -239,37 +231,28 @@ class _HomeScreenState extends State<HomeScreen> {
     final dateLabel = _formatDate(DateTime.now());
 
     final dailySummary = context.appState.summaryFor(DateRangeType.day);
-    final prevDailySummary = context.appState.previousSummaryFor(
-      DateRangeType.day,
-    );
-
+    final prevDailySummary = context.appState.previousSummaryFor(DateRangeType.day);
     final weeklySummary = context.appState.summaryFor(DateRangeType.week);
-    final prevWeeklySummary = context.appState.previousSummaryFor(
-      DateRangeType.week,
-    );
+    final prevWeeklySummary = context.appState.previousSummaryFor(DateRangeType.week);
 
-    final income = dailySummary.totalIncome;
-    final expense = dailySummary.totalExpense;
+    final activeSummary = _isWeekly ? weeklySummary : dailySummary;
+    final prevSummary = _isWeekly ? prevWeeklySummary : prevDailySummary;
 
-    final isTablet = context.isTablet;
+    final income = activeSummary.totalIncome;
+    final expense = activeSummary.totalExpense;
 
     final isFastSaleEnabled = useFeature(Feature.quickSale, profile);
-    final dailyCard = _buildProfitCard(
-      title: dailySummary.netProfit < 0
-          ? context.t(useFeature(Feature.stock, profile) ? 'home.todayLoss' : 'home.todayDeficit')
-          : context.t(useFeature(Feature.stock, profile) ? 'home.todayProfit' : 'home.todayBalance'),
-      currentProfit: dailySummary.netProfit,
-      prevProfit: prevDailySummary.netProfit,
-      comparisonLabel: 'vs ${context.t('home.yesterday')}',
-    );
-
-    final weeklyCard = _buildProfitCard(
-      title: weeklySummary.netProfit < 0
-          ? context.t(useFeature(Feature.stock, profile) ? 'home.weeklyLoss' : 'home.weeklyDeficit')
-          : context.t(useFeature(Feature.stock, profile) ? 'home.weeklyProfit' : 'home.weeklyBalance'),
-      currentProfit: weeklySummary.netProfit,
-      prevProfit: prevWeeklySummary.netProfit,
-      comparisonLabel: 'vs ${context.t('home.lastWeek')}',
+    final profitCard = _buildProfitCard(
+      title: activeSummary.netProfit < 0
+          ? context.t(useFeature(Feature.stock, profile)
+              ? (_isWeekly ? 'home.weeklyLoss' : 'home.todayLoss')
+              : (_isWeekly ? 'home.weeklyDeficit' : 'home.todayDeficit'))
+          : context.t(useFeature(Feature.stock, profile)
+              ? (_isWeekly ? 'home.weeklyProfit' : 'home.todayProfit')
+              : (_isWeekly ? 'home.weeklyBalance' : 'home.todayBalance')),
+      currentProfit: activeSummary.netProfit,
+      prevProfit: prevSummary.netProfit,
+      comparisonLabel: 'vs ${context.t(_isWeekly ? 'home.lastWeek' : 'home.yesterday')}',
     );
 
     return SingleChildScrollView(
@@ -324,43 +307,12 @@ class _HomeScreenState extends State<HomeScreen> {
             ],
           ),
           const SizedBox(height: 18),
-          if (isTablet)
-            Row(
-              children: [
-                Expanded(child: dailyCard),
-                const SizedBox(width: 12),
-                Expanded(child: weeklyCard),
-              ],
-            )
-          else ...[
-            SizedBox(
-              height: 190,
-              child: PageView(
-                controller: _pageController,
-                onPageChanged: (index) => setState(() => _currentPage = index),
-                children: [dailyCard, weeklyCard],
-              ),
-            ),
-            const SizedBox(height: 8),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: List.generate(2, (index) {
-                return Container(
-                  margin: const EdgeInsets.symmetric(horizontal: 4),
-                  width: 8,
-                  height: 8,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: _currentPage == index
-                        ? AppColors.positive
-                        : context.appColors.textSecondary.withValues(
-                            alpha: 0.3,
-                          ),
-                  ),
-                );
-              }),
-            ),
-          ],
+          _PeriodToggle(
+            isWeekly: _isWeekly,
+            onChanged: (v) => setState(() => _isWeekly = v),
+          ),
+          const SizedBox(height: 12),
+          profitCard,
           const SizedBox(height: 14),
           if (!useFeature(Feature.stock, profile)) _TotalBalanceCard(),
           if (!useFeature(Feature.stock, profile)) const SizedBox(height: 14),
@@ -577,6 +529,77 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
           ],
         ],
+      ),
+    );
+  }
+}
+
+// ── Period toggle ─────────────────────────────────────────────────────────────
+
+class _PeriodToggle extends StatelessWidget {
+  const _PeriodToggle({required this.isWeekly, required this.onChanged});
+
+  final bool isWeekly;
+  final ValueChanged<bool> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(3),
+      decoration: BoxDecoration(
+        color: context.appColors.cardSoft,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: context.appColors.outline),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          _PeriodTab(
+            label: 'Hari ini',
+            active: !isWeekly,
+            onTap: () => onChanged(false),
+          ),
+          _PeriodTab(
+            label: 'Minggu ini',
+            active: isWeekly,
+            onTap: () => onChanged(true),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _PeriodTab extends StatelessWidget {
+  const _PeriodTab({
+    required this.label,
+    required this.active,
+    required this.onTap,
+  });
+
+  final String label;
+  final bool active;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 180),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        decoration: BoxDecoration(
+          color: active ? AppColors.brandBlue : Colors.transparent,
+          borderRadius: BorderRadius.circular(9),
+        ),
+        child: Text(
+          label,
+          style: TextStyle(
+            fontSize: 13,
+            fontWeight: FontWeight.w700,
+            color: active ? Colors.white : context.appColors.textSecondary,
+          ),
+        ),
       ),
     );
   }
