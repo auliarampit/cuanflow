@@ -1,7 +1,7 @@
 # Entity Relationship Diagram (ERD)
 ## Cuan Flow — Database Schema
 
-**Versi:** 2.1 | **Tanggal:** April 2026
+**Versi:** 3.0 | **Tanggal:** Mei 2026
 
 > Preview diagram: buka file ini di VSCode → klik kanan → **"Open Preview"**, atau tekan `Cmd+Shift+V` (Mac) / `Ctrl+Shift+V` (Windows).  
 > Butuh ekstensi **Markdown Preview Mermaid Support** (ID: `bierner.markdown-mermaid`) jika diagram tidak tampil.
@@ -13,18 +13,20 @@
 ```mermaid
 erDiagram
     users ||--|| profiles : "has"
-    users ||--o{ transactions : "records"
-    users ||--o{ wallets : "owns"
-    users ||--o{ debts : "tracks"
-    users ||--o{ recurring_transactions : "schedules"
-    users ||--o{ inventory_items : "stocks"
-    users ||--o{ quick_sale_presets : "sets"
-    users ||--o{ user_categories : "defines"
-    users ||--o{ budgets : "budgets"
-    users ||--o{ products : "creates"
-    users ||--o{ raw_materials : "manages"
-    users ||--o{ production_batches : "produces"
-    users ||--o{ outlets : "operates"
+    users ||--o{ spaces : "owns"
+
+    spaces ||--o{ transactions : "scopes"
+    spaces ||--o{ wallets : "scopes"
+    spaces ||--o{ debts : "scopes"
+    spaces ||--o{ recurring_transactions : "scopes"
+    spaces ||--o{ inventory_items : "scopes"
+    spaces ||--o{ quick_sale_presets : "scopes"
+    spaces ||--o{ user_categories : "scopes"
+    spaces ||--o{ budgets : "scopes"
+    spaces ||--o{ products : "scopes"
+    spaces ||--o{ raw_materials : "scopes"
+    spaces ||--o{ production_batches : "scopes"
+    spaces ||--o{ outlets : "scopes"
 
     transactions }o--o| outlets : "tagged outlet_id"
     transactions }o--o| wallets : "from wallet_id"
@@ -43,21 +45,20 @@ erDiagram
         text email
     }
 
+    spaces {
+        uuid id PK
+        uuid user_id FK
+        text type
+        timestamptz created_at
+    }
+
     profiles {
         uuid id PK_FK
         text owner_name
         text business_name
         text whatsapp
-        bool feature_product
-        bool feature_outlets
-        bool feature_budget
-        bool feature_production
-        bool feature_quick_sale
-        bool feature_top_categories
-        bool feature_busiest_day
-        bool feature_stock
-        bool feature_product_analytics
-        bool feature_debt
+        bool is_business_premium
+        timestamptz business_premium_until
         bool onboarding_complete
     }
 
@@ -218,8 +219,26 @@ Dikelola sepenuhnya oleh Supabase Auth. App hanya pakai `id` sebagai foreign key
 
 ---
 
+### `spaces`
+Ruang data yang terpisah per tipe bisnis. Satu user bisa punya 1–3 spaces.
+
+| Kolom | Tipe | Keterangan |
+|---|---|---|
+| `id` | UUID (PK) | |
+| `user_id` | UUID (FK) | Referensi ke `auth.users.id` |
+| `type` | TEXT | `'personal'` / `'store'` / `'production'` |
+| `created_at` | TIMESTAMPTZ | |
+
+**Constraint:** `UNIQUE(user_id, type)` — maks 1 dari setiap tipe per user.
+
+Semua tabel domain (`transactions`, `wallets`, `budgets`, dll) punya kolom `space_id` FK ke tabel ini sehingga data terisolasi per Ruang.
+
+> Lihat [docs/MULTI_SPACE_REFACTOR.md](MULTI_SPACE_REFACTOR.md) untuk checklist implementasi lengkap.
+
+---
+
 ### `profiles`
-Ekstensi data user. Satu user = satu profil. Menyimpan semua feature flags.
+Ekstensi data user. Satu user = satu profil. Menyimpan data subscription.
 
 | Kolom | Tipe | Keterangan |
 |---|---|---|
@@ -227,17 +246,11 @@ Ekstensi data user. Satu user = satu profil. Menyimpan semua feature flags.
 | `owner_name` | TEXT | Nama pemilik |
 | `business_name` | TEXT | Nama usaha (opsional) |
 | `whatsapp` | TEXT | Nomor WA |
-| `feature_product` | BOOL | HPP Calculator & Product List |
-| `feature_outlets` | BOOL | Multi-outlet management |
-| `feature_budget` | BOOL | Budget & monthly targets |
-| `feature_production` | BOOL | Bahan Baku & Batch Produksi |
-| `feature_quick_sale` | BOOL | Jual Cepat |
-| `feature_top_categories` | BOOL | Insight: Kategori Terlaris |
-| `feature_busiest_day` | BOOL | Insight: Hari Tersibuk |
-| `feature_stock` | BOOL | Stok Barang (Inventory) |
-| `feature_product_analytics` | BOOL | Analitik Produk |
-| `feature_debt` | BOOL | Utang & Piutang |
-| `onboarding_complete` | BOOL | Sudah lewat layar pilih mode? |
+| `is_business_premium` | BOOL | Apakah sudah bayar Business Premium? |
+| `business_premium_until` | TIMESTAMPTZ | Tanggal expiry (null = tidak pernah bayar) |
+| `onboarding_complete` | BOOL | Sudah lewat layar setup Ruang? |
+
+> **Feature flags lama** (`feature_product`, `feature_outlets`, dll) masih ada di DB selama masa transisi. Akan dihapus via Migration 004b setelah Phase 5 selesai. Jangan gunakan untuk logika baru — pakai `SpaceFeatures` helper sebagai gantinya.
 
 ---
 
@@ -413,22 +426,13 @@ Cabang / outlet bisnis. Aktif jika `featureOutlets = true`.
 
 > ⚠️ Bagian ini wajib dibaca sebelum release atau saat menambah fitur monetisasi.
 
-### 1. `subscription_tier` + `subscription_expiry` — belum ada di Supabase
+### 1. `subscription_tier` + `subscription_expiry` — sudah di-sync, akan digantikan
 
-**Model Dart:** `UserProfile.subscriptionTier` (enum: free/retail/production) dan `UserProfile.subscriptionExpiry` (DateTime?)
+**Status:** Kolom sudah ada di Supabase (Migration 001). `ProfileService` sudah sync kedua field ini.
 
-**Status:** Tersimpan di **local JSON saja**. `ProfileService.updateProfile()` tidak menyertakan field ini di payload upsert ke Supabase.
+**Rencana ke depan:** Kedua kolom ini akan digantikan oleh `is_business_premium` + `business_premium_until` saat Multi-Space diimplementasi (Migration 004). Kolom lama tetap ada sampai Migration 004b dijalankan.
 
-**Supabase `profiles` table:** Kolom `subscription_tier` dan `subscription_expiry` **belum dibuat**.
-
-**Action saat billing live:**
-1. Tambah kolom ke tabel `profiles` di Supabase:
-   ```sql
-   ALTER TABLE profiles ADD COLUMN subscription_tier text DEFAULT 'free';
-   ALTER TABLE profiles ADD COLUMN subscription_expiry timestamptz;
-   ```
-2. Update `ProfileService.updateProfile()` — tambah kedua field ke payload upsert.
-3. Update `ProfileService.fetchProfile()` — pastikan `fromJson` sudah handle field ini (sudah ada di `UserProfile.fromJson`).
+**Action saat ini:** Tidak perlu apa-apa — sudah lengkap.
 
 ---
 
