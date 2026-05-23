@@ -8,6 +8,8 @@ import '../../core/localization/transalation_extansions.dart';
 import '../../core/state/app_state.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_dynamic_colors.dart';
+import '../../shared/widgets/native_ad_card.dart';
+import 'package:google_mobile_ads/google_mobile_ads.dart' show TemplateType;
 
 class ManageWalletsScreen extends StatelessWidget {
   const ManageWalletsScreen({super.key});
@@ -33,6 +35,8 @@ class ManageWalletsScreen extends StatelessWidget {
               padding: const EdgeInsets.fromLTRB(16, 12, 16, 80),
               children: [
                 _TotalBalanceCard(),
+                const SizedBox(height: 12),
+                const NativeAdCard(templateType: TemplateType.small),
                 const SizedBox(height: 12),
                 for (final wallet in wallets) ...[
                   _WalletCard(

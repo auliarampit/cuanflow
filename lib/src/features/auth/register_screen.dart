@@ -44,10 +44,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
     if (!_canSubmit) return;
 
     if (_pin != _confirmPin) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        content: Text(context.t('auth.register.pinMismatch')),
+      context.showSnackBar(
+        context.t('auth.register.pinMismatch'),
         backgroundColor: AppColors.negative,
-      ));
+      );
       return;
     }
 
@@ -85,15 +85,21 @@ class _RegisterScreenState extends State<RegisterScreen> {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
           content: Text(e.message),
           backgroundColor: AppColors.negative,
+          action: SnackBarAction(
+            label: 'OK',
+            textColor: Colors.white,
+            onPressed: () =>
+                ScaffoldMessenger.of(context).hideCurrentSnackBar(),
+          ),
         ));
       }
     } catch (_) {
       if (mounted) {
         LoadingDialog.hide(context);
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content: Text(context.t('auth.login.errorGeneric')),
+        context.showSnackBar(
+          context.t('auth.login.errorGeneric'),
           backgroundColor: AppColors.negative,
-        ));
+        );
       }
     } finally {
       if (mounted) setState(() => _isLoading = false);

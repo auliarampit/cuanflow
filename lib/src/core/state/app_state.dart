@@ -104,7 +104,11 @@ class AppState extends ChangeNotifier {
           .where((t) => t.spaceId == null || t.spaceId == _activeSpaceId)
           .toList();
   List<ProductModel> get products => _products;
-  List<OutletModel> get outlets => _outlets;
+  List<OutletModel> get outlets => _activeSpaceId == null
+      ? _outlets
+      : _outlets
+          .where((o) => o.spaceId == null || o.spaceId == _activeSpaceId)
+          .toList();
   List<UserCategory> get categories => _categories;
   List<BudgetModel> get budgets => _budgets;
   List<WalletModel> get wallets => _wallets;
@@ -378,7 +382,24 @@ class AppState extends ChangeNotifier {
       debugPrint('[Auth] signOut failed: $e');
       rethrow;
     }
-    _profile = UserProfile.empty();
+    // Reset semua state — wajib sebelum _persist() agar disk ikut bersih
+    _transactions        = [];
+    _products            = [];
+    _outlets             = [];
+    _categories          = [];
+    _budgets             = [];
+    _wallets             = [];
+    _debts               = [];
+    _recurring           = [];
+    _inventory           = [];
+    _quickSalePresets    = [];
+    _rawMaterials        = [];
+    _productionBatches   = [];
+    _spaces              = [];
+    _activeSpaceId       = null;
+    _selectedOutletId    = null;
+    _profile             = UserProfile.empty();
+    _initialized         = false; // paksa init() ulang saat login berikutnya
     await _persist();
     notifyListeners();
   }
@@ -473,9 +494,14 @@ class AppState extends ChangeNotifier {
           address: address,
           isDefault: isFirst,
           userId: user.id,
+          spaceId: _activeSpaceId,
         );
         if (outlet != null) {
-          _outlets = [..._outlets, outlet];
+          // Pastikan spaceId tersimpan di model lokal
+          final outletWithSpace = outlet.spaceId == null && _activeSpaceId != null
+              ? outlet.copyWith(spaceId: _activeSpaceId)
+              : outlet;
+          _outlets = [..._outlets, outletWithSpace];
           await _persist();
           notifyListeners();
           return;
@@ -493,6 +519,7 @@ class AppState extends ChangeNotifier {
         name: name,
         address: address,
         isDefault: isFirst,
+        spaceId: _activeSpaceId,
       ),
     ];
     await _persist();

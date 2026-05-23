@@ -54,7 +54,7 @@ class AppSettings {
       dailyNotification: true,
       notificationHour: 20,
       notificationMinute: 0,
-      themeMode: 'dark',
+      themeMode: 'system',
       pinSecurity: true,
       reminder1Enabled: true,
       reminder2Enabled: true,
@@ -126,7 +126,7 @@ class AppSettings {
     // Backward-compat: migrasi dari boolean darkTheme lama
     String resolvedThemeMode;
     if (jsonMap.containsKey('themeMode')) {
-      resolvedThemeMode = jsonMap['themeMode'] as String? ?? 'dark';
+      resolvedThemeMode = jsonMap['themeMode'] as String? ?? 'system';
     } else {
       final darkTheme = jsonMap['darkTheme'] as bool? ?? true;
       resolvedThemeMode = darkTheme ? 'dark' : 'light';

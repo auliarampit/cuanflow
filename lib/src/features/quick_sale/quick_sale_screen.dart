@@ -7,6 +7,8 @@ import '../../core/localization/transalation_extansions.dart';
 import '../../core/state/app_state.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_dynamic_colors.dart';
+import '../../shared/widgets/native_ad_card.dart';
+import 'package:google_mobile_ads/google_mobile_ads.dart' show TemplateType;
 
 class QuickSaleScreen extends StatefulWidget {
   const QuickSaleScreen({super.key});
@@ -105,6 +107,12 @@ class _QuickSaleScreenState extends State<QuickSaleScreen> {
         ),
         backgroundColor: AppColors.positive,
         duration: const Duration(seconds: 2),
+        action: SnackBarAction(
+          label: 'OK',
+          textColor: Colors.white,
+          onPressed: () =>
+              ScaffoldMessenger.of(context).hideCurrentSnackBar(),
+        ),
       ),
     );
   }
@@ -227,6 +235,13 @@ class _QuickSaleScreenState extends State<QuickSaleScreen> {
                             ),
                           ],
                         ),
+                      ),
+
+                    // ── Ad ──────────────────────────────────────────────────
+                    if (!_manageMode)
+                      const Padding(
+                        padding: EdgeInsets.fromLTRB(16, 4, 16, 0),
+                        child: NativeAdCard(templateType: TemplateType.small),
                       ),
 
                     // ── Grid ────────────────────────────────────────────────

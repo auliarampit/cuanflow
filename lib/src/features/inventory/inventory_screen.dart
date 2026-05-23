@@ -8,6 +8,8 @@ import '../../core/localization/transalation_extansions.dart';
 import '../../core/state/app_state.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_dynamic_colors.dart';
+import '../../shared/widgets/native_ad_card.dart';
+import 'package:google_mobile_ads/google_mobile_ads.dart' show TemplateType;
 
 class InventoryScreen extends StatefulWidget {
   const InventoryScreen({super.key});
@@ -102,6 +104,11 @@ class _InventoryScreenState extends State<InventoryScreen> {
               ),
             ),
 
+          const SizedBox(height: 8),
+          const Padding(
+            padding: EdgeInsets.symmetric(horizontal: 16),
+            child: NativeAdCard(templateType: TemplateType.small),
+          ),
           const SizedBox(height: 8),
 
           Expanded(

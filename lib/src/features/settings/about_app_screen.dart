@@ -135,12 +135,7 @@ class _AboutAppScreenState extends State<AboutAppScreen> {
               Clipboard.setData(
                 const ClipboardData(text: 'support@cuanflow.app'),
               );
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text(context.t('about.emailCopied')),
-                  duration: const Duration(seconds: 2),
-                ),
-              );
+              context.showSnackBar(context.t('about.emailCopied'));
             },
           ),
 

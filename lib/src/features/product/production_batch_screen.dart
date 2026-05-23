@@ -6,6 +6,8 @@ import '../../core/state/app_state.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_dynamic_colors.dart';
 import '../../core/ui/app_gradient_scaffold.dart';
+import '../../shared/widgets/native_ad_card.dart';
+import 'package:google_mobile_ads/google_mobile_ads.dart' show TemplateType;
 import 'batch_report_screen.dart';
 
 class ProductionBatchScreen extends StatelessWidget {
@@ -38,10 +40,13 @@ class ProductionBatchScreen extends StatelessWidget {
           ? _EmptyState(onRecord: () => _openForm(context))
           : ListView.separated(
               padding: const EdgeInsets.all(16),
-              itemCount: batches.length,
+              itemCount: batches.length + 1,
               separatorBuilder: (_, _) => const SizedBox(height: 10),
               itemBuilder: (context, i) {
-                final b = batches[i];
+                if (i == 0) {
+                  return const NativeAdCard(templateType: TemplateType.small);
+                }
+                final b = batches[i - 1];
                 final product = products.cast<ProductModel?>().firstWhere(
                       (p) => p?.id == b.productId,
                       orElse: () => null,

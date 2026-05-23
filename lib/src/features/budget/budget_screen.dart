@@ -11,6 +11,8 @@ import '../../core/state/app_state.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_dynamic_colors.dart';
 import '../../core/ui/app_gradient_scaffold.dart';
+import '../../shared/widgets/native_ad_card.dart';
+import 'package:google_mobile_ads/google_mobile_ads.dart' show TemplateType;
 
 class BudgetScreen extends StatefulWidget {
   const BudgetScreen({super.key});
@@ -120,6 +122,9 @@ class _BudgetScreenState extends State<BudgetScreen> {
             ],
           ),
           const SizedBox(height: 4),
+          const SizedBox(height: 8),
+          const NativeAdCard(templateType: TemplateType.small),
+          const SizedBox(height: 8),
 
           if (budgets.isEmpty) ...[
             const SizedBox(height: 48),

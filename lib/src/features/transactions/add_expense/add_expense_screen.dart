@@ -12,7 +12,9 @@ import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_dynamic_colors.dart';
 import '../../../core/ui/app_gradient_scaffold.dart';
 import '../../../shared/widgets/category_dropdown.dart';
+import '../../../shared/widgets/native_ad_card.dart';
 import '../../../shared/widgets/recent_items_bar.dart';
+import 'package:google_mobile_ads/google_mobile_ads.dart' show TemplateType;
 
 // ─── Bulk item model ────────────────────────────────────────────────────────
 class _BulkItem {
@@ -111,33 +113,27 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
     final note = _noteController.text.trim();
 
     if (note.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Isi nama barang dulu'),
-          backgroundColor: AppColors.negative,
-        ),
+      context.showSnackBar(
+        'Isi nama barang dulu',
+        backgroundColor: AppColors.negative,
       );
       _noteFocus.requestFocus();
       return;
     }
 
     if (amount <= 0) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(context.t('bulk.validation.amountRequired')),
-          backgroundColor: AppColors.negative,
-        ),
+      context.showSnackBar(
+        context.t('bulk.validation.amountRequired'),
+        backgroundColor: AppColors.negative,
       );
       _amountFocus.requestFocus();
       return;
     }
 
     if (!_categoryTouched) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Pilih kategori dulu'),
-          backgroundColor: AppColors.negative,
-        ),
+      context.showSnackBar(
+        'Pilih kategori dulu',
+        backgroundColor: AppColors.negative,
       );
       return;
     }
@@ -167,11 +163,9 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
 
   void _saveAll() {
     if (_items.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(context.t('bulk.validation.emptyList')),
-          backgroundColor: AppColors.negative,
-        ),
+      context.showSnackBar(
+        context.t('bulk.validation.emptyList'),
+        backgroundColor: AppColors.negative,
       );
       return;
     }
@@ -193,6 +187,12 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
           context.t('bulk.saveSuccess', {'count': _items.length.toString()}),
         ),
         backgroundColor: AppColors.positive,
+        action: SnackBarAction(
+          label: 'OK',
+          textColor: Colors.white,
+          onPressed: () =>
+              ScaffoldMessenger.of(context).hideCurrentSnackBar(),
+        ),
       ),
     );
 
@@ -205,20 +205,16 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
     if (amount <= 0) return;
 
     if (_selectedCategory == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(context.t('common.validation.mandatory')),
-          backgroundColor: AppColors.negative,
-        ),
+      context.showSnackBar(
+        context.t('common.validation.mandatory'),
+        backgroundColor: AppColors.negative,
       );
       return;
     }
     if (_noteController.text.trim().isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(context.t('common.validation.mandatory')),
-          backgroundColor: AppColors.negative,
-        ),
+      context.showSnackBar(
+        context.t('common.validation.mandatory'),
+        backgroundColor: AppColors.negative,
       );
       return;
     }
@@ -234,11 +230,9 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
       ),
     );
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(context.t('common.validation.success')),
-        backgroundColor: AppColors.positive,
-      ),
+    context.showSnackBar(
+      context.t('common.validation.success'),
+      backgroundColor: AppColors.positive,
     );
 
     Navigator.of(context).pop();
@@ -457,6 +451,11 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
             const SizedBox(height: 8),
             _StockInfoBanner(),
           ],
+          const SizedBox(height: 16),
+          ClipRRect(
+            borderRadius: BorderRadius.circular(12),
+            child: const NativeAdCard(templateType: TemplateType.small),
+          ),
           const SizedBox(height: 24),
           SizedBox(
             width: double.infinity,

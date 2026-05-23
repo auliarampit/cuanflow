@@ -11,6 +11,7 @@ import 'package:cari_untung/src/features/history/history_screen.dart';
 import 'package:cari_untung/src/features/home/home_screen.dart';
 import 'package:flutter/material.dart';
 
+import '../../app/routes.dart';
 import '../profile/profile_screen.dart';
 import 'report_screen.dart';
 
@@ -170,6 +171,29 @@ class _SyncBanner extends StatelessWidget {
 class _HomeShellScreenState extends State<HomeShellScreen> {
   int _index = 0;
 
+  @override
+  void initState() {
+    super.initState();
+    // Safety net: jika user masuk home tanpa ruang aktif, paksa ke setup
+    WidgetsBinding.instance.addPostFrameCallback((_) => _checkSpaces());
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // Cek ulang setiap kali state berubah (misal setelah syncSpaces selesai)
+    _checkSpaces();
+  }
+
+  void _checkSpaces() {
+    if (!mounted) return;
+    final appState = context.appState;
+    if (!appState.initialized) return; // tunggu init selesai
+    if (appState.spaces.isEmpty) {
+      Navigator.of(context).pushReplacementNamed(AppRoutes.setupSpaces);
+    }
+  }
+
   void _onTap(int index) {
     setState(() => _index = index);
   }
@@ -252,7 +276,7 @@ class _HomeShellScreenState extends State<HomeShellScreen> {
     final contentColumn = Column(
       children: [
         const SpaceSwitcherBar(),
-        if (SpaceFeatures.canUseOutlets(appState.activeSpace, appState.profile.isBusinessPremium) && appState.outlets.isNotEmpty)
+        if (SpaceFeatures.canUseOutlets(appState.activeSpace, appState.profile.isBusinessPremium) && appState.outlets.length >= 2)
           _OutletSwitcherBar(
             selectedOutlet: selectedOutlet,
             onTap: () => _showOutletPicker(context),
@@ -262,8 +286,33 @@ class _HomeShellScreenState extends State<HomeShellScreen> {
       ],
     );
 
+    final fabGroup = (_index == 0 || _index == 1)
+        ? Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              FloatingActionButton.small(
+                heroTag: 'fab_income',
+                backgroundColor: AppColors.positive,
+                onPressed: () =>
+                    Navigator.of(context).pushNamed(AppRoutes.addIncome),
+                child: const Icon(Icons.add, color: Colors.white, size: 20),
+              ),
+              const SizedBox(height: 12),
+              FloatingActionButton.small(
+                heroTag: 'fab_expense',
+                backgroundColor: AppColors.negative,
+                onPressed: () =>
+                    Navigator.of(context).pushNamed(AppRoutes.addExpense),
+                child:
+                    const Icon(Icons.remove, color: Colors.white, size: 20),
+              ),
+            ],
+          )
+        : null;
+
     if (isTablet) {
       return AppGradientScaffold(
+        floatingActionButton: fabGroup,
         body: Row(
           children: [
             NavigationRail(
@@ -303,6 +352,7 @@ class _HomeShellScreenState extends State<HomeShellScreen> {
     }
 
     return AppGradientScaffold(
+      floatingActionButton: fabGroup,
       body: contentColumn,
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _index,

@@ -4,6 +4,8 @@ import '../../core/state/app_state.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_dynamic_colors.dart';
 import '../../core/ui/app_gradient_scaffold.dart';
+import '../../shared/widgets/native_ad_card.dart';
+import 'package:google_mobile_ads/google_mobile_ads.dart' show TemplateType;
 
 class RawMaterialScreen extends StatefulWidget {
   const RawMaterialScreen({super.key});
@@ -64,17 +66,23 @@ class _RawMaterialScreenState extends State<RawMaterialScreen> {
                 ? _EmptyState(onAdd: () => _openForm(context))
                 : ListView.separated(
                     padding: const EdgeInsets.all(16),
-                    itemCount: items.length,
+                    itemCount: items.length + 1,
                     separatorBuilder: (context, i) =>
                         const SizedBox(height: 10),
-                    itemBuilder: (context, i) => _MaterialCard(
-                      item: items[i],
-                      onAdjust: (delta) => context.appState
-                          .adjustRawMaterialStock(items[i].id, delta),
-                      onEdit: () => _openForm(context, item: items[i]),
-                      onDelete: () =>
-                          context.appState.deleteRawMaterial(items[i].id),
-                    ),
+                    itemBuilder: (context, i) {
+                      if (i == 0) {
+                        return const NativeAdCard(
+                            templateType: TemplateType.small);
+                      }
+                      return _MaterialCard(
+                        item: items[i - 1],
+                        onAdjust: (delta) => context.appState
+                            .adjustRawMaterialStock(items[i - 1].id, delta),
+                        onEdit: () => _openForm(context, item: items[i - 1]),
+                        onDelete: () =>
+                            context.appState.deleteRawMaterial(items[i - 1].id),
+                      );
+                    },
                   ),
           ),
         ],

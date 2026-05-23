@@ -6,6 +6,8 @@ import '../../core/state/app_state.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_dynamic_colors.dart';
 import '../../core/ui/app_gradient_scaffold.dart';
+import '../../shared/widgets/native_ad_card.dart';
+import 'package:google_mobile_ads/google_mobile_ads.dart' show TemplateType;
 import 'hpp_calculator_screen.dart';
 import 'product_analytics_screen.dart';
 
@@ -81,10 +83,16 @@ class _ProductListScreenState extends State<ProductListScreen> {
             child: filteredProducts.isEmpty && _searchQuery.isEmpty
                 ? _buildEmptyState(context)
                 : ListView.builder(
-                    itemCount: filteredProducts.length,
+                    itemCount: filteredProducts.length + 1,
                     padding: const EdgeInsets.all(16),
                     itemBuilder: (context, index) {
-                      final product = filteredProducts[index];
+                      if (index == 0) {
+                        return const Padding(
+                          padding: EdgeInsets.only(bottom: 12),
+                          child: NativeAdCard(templateType: TemplateType.small),
+                        );
+                      }
+                      final product = filteredProducts[index - 1];
                       final liveHpp = product.liveHppPerUnit(rawMaterials);
                       final hpp = liveHpp > 0 ? liveHpp : product.hppPerUnit;
                       final margin = product.sellingPrice > 0

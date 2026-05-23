@@ -53,12 +53,17 @@ class _LoginScreenState extends State<LoginScreen> {
 
       if (!mounted) return;
       await appState.fetchProfile();
+      await appState.syncSpaces();
       await appState.syncTransactions();
 
-      if (mounted) {
-        LoadingDialog.hide(context);
-        Navigator.of(context).pushReplacementNamed(AppRoutes.home);
-      }
+      if (!mounted) return;
+      LoadingDialog.hide(context);
+
+      // Paksa ke setup jika belum punya ruang (user lama sebelum Multi-Space)
+      final destination = appState.spaces.isEmpty
+          ? AppRoutes.setupSpaces
+          : AppRoutes.home;
+      Navigator.of(context).pushReplacementNamed(destination);
     } on AuthException catch (e) {
       if (mounted) {
         LoadingDialog.hide(context);
@@ -66,17 +71,21 @@ class _LoginScreenState extends State<LoginScreen> {
           SnackBar(
             content: Text(e.message),
             backgroundColor: AppColors.negative,
+            action: SnackBarAction(
+              label: 'OK',
+              textColor: Colors.white,
+              onPressed: () =>
+                  ScaffoldMessenger.of(context).hideCurrentSnackBar(),
+            ),
           ),
         );
       }
     } catch (e) {
       if (mounted) {
         LoadingDialog.hide(context);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(context.t('auth.login.errorGeneric')),
-            backgroundColor: AppColors.negative,
-          ),
+        context.showSnackBar(
+          context.t('auth.login.errorGeneric'),
+          backgroundColor: AppColors.negative,
         );
       }
     } finally {

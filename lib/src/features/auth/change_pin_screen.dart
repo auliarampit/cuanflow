@@ -32,19 +32,19 @@ class _ChangePinScreenState extends State<ChangePinScreen> {
     if (!_canSubmit) return;
 
     if (_newPin != _confirmPin) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        content: Text(context.t('auth.changePin.mismatch')),
+      context.showSnackBar(
+        context.t('auth.changePin.mismatch'),
         backgroundColor: AppColors.negative,
-      ));
+      );
       return;
     }
 
     final email = context.appState.profile.email;
     if (email.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        content: Text(context.t('auth.changePin.error')),
+      context.showSnackBar(
+        context.t('auth.changePin.error'),
         backgroundColor: AppColors.negative,
-      ));
+      );
       return;
     }
 
@@ -62,20 +62,20 @@ class _ChangePinScreenState extends State<ChangePinScreen> {
       if (!mounted) return;
       LoadingDialog.hide(context);
       setState(() => _isLoading = false);
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        content: Text(context.t('auth.changePin.wrongPin')),
+      context.showSnackBar(
+        context.t('auth.changePin.wrongPin'),
         backgroundColor: AppColors.negative,
-      ));
+      );
       return;
     } catch (e) {
       debugPrint('[ChangePIN] signIn error (${e.runtimeType}): $e');
       if (!mounted) return;
       LoadingDialog.hide(context);
       setState(() => _isLoading = false);
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        content: Text(context.t('auth.changePin.error')),
+      context.showSnackBar(
+        context.t('auth.changePin.error'),
         backgroundColor: AppColors.negative,
-      ));
+      );
       return;
     }
 
@@ -89,10 +89,10 @@ class _ChangePinScreenState extends State<ChangePinScreen> {
       LoadingDialog.hide(context);
       setState(() => _isLoading = false);
 
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        content: Text(context.t('auth.changePin.success')),
+      context.showSnackBar(
+        context.t('auth.changePin.success'),
         backgroundColor: AppColors.positive,
-      ));
+      );
 
       Navigator.of(context).pop();
     } on AuthException catch (e) {
@@ -103,16 +103,22 @@ class _ChangePinScreenState extends State<ChangePinScreen> {
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
         content: Text(e.message),
         backgroundColor: AppColors.negative,
+        action: SnackBarAction(
+          label: 'OK',
+          textColor: Colors.white,
+          onPressed: () =>
+              ScaffoldMessenger.of(context).hideCurrentSnackBar(),
+        ),
       ));
     } catch (e) {
       debugPrint('[ChangePIN] updateUser error (${e.runtimeType}): $e');
       if (!mounted) return;
       LoadingDialog.hide(context);
       setState(() => _isLoading = false);
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        content: Text(context.t('auth.changePin.error')),
+      context.showSnackBar(
+        context.t('auth.changePin.error'),
         backgroundColor: AppColors.negative,
-      ));
+      );
     }
   }
 

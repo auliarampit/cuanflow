@@ -236,11 +236,9 @@ class _OutletFormSheetState extends State<_OutletFormSheet> {
   void _save(BuildContext context) {
     final name = _nameController.text.trim();
     if (name.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(context.t('outlet.name.empty')),
-          backgroundColor: AppColors.negative,
-        ),
+      context.showSnackBar(
+        context.t('outlet.name.empty'),
+        backgroundColor: AppColors.negative,
       );
       return;
     }

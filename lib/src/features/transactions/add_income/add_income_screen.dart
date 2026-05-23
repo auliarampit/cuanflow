@@ -13,7 +13,9 @@ import '../../../core/state/app_state.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_dynamic_colors.dart';
 import '../../../shared/widgets/category_dropdown.dart';
+import '../../../shared/widgets/native_ad_card.dart';
 import '../../../shared/widgets/recent_items_bar.dart';
+import 'package:google_mobile_ads/google_mobile_ads.dart' show TemplateType;
 
 // ─── Bulk item model ────────────────────────────────────────────────────────
 class _BulkItem {
@@ -111,20 +113,16 @@ class _AddIncomeScreenState extends State<AddIncomeScreen> {
     final amount = int.tryParse(rawAmount) ?? 0;
 
     if (amount <= 0) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(context.t('bulk.validation.amountRequired')),
-          backgroundColor: AppColors.negative,
-        ),
+      context.showSnackBar(
+        context.t('bulk.validation.amountRequired'),
+        backgroundColor: AppColors.negative,
       );
       return;
     }
     if (_selectedCategory == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(context.t('income.validation.categoryRequired')),
-          backgroundColor: AppColors.negative,
-        ),
+      context.showSnackBar(
+        context.t('income.validation.categoryRequired'),
+        backgroundColor: AppColors.negative,
       );
       return;
     }
@@ -150,11 +148,9 @@ class _AddIncomeScreenState extends State<AddIncomeScreen> {
 
   void _saveAll() {
     if (_items.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(context.t('bulk.validation.emptyList')),
-          backgroundColor: AppColors.negative,
-        ),
+      context.showSnackBar(
+        context.t('bulk.validation.emptyList'),
+        backgroundColor: AppColors.negative,
       );
       return;
     }
@@ -176,6 +172,12 @@ class _AddIncomeScreenState extends State<AddIncomeScreen> {
           context.t('bulk.saveSuccess', {'count': _items.length.toString()}),
         ),
         backgroundColor: AppColors.positive,
+        action: SnackBarAction(
+          label: 'OK',
+          textColor: Colors.white,
+          onPressed: () =>
+              ScaffoldMessenger.of(context).hideCurrentSnackBar(),
+        ),
       ),
     );
 
@@ -188,11 +190,9 @@ class _AddIncomeScreenState extends State<AddIncomeScreen> {
     if (amount <= 0) return;
 
     if (_selectedCategory == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(context.t('income.validation.categoryRequired')),
-          backgroundColor: AppColors.negative,
-        ),
+      context.showSnackBar(
+        context.t('income.validation.categoryRequired'),
+        backgroundColor: AppColors.negative,
       );
       return;
     }
@@ -210,11 +210,9 @@ class _AddIncomeScreenState extends State<AddIncomeScreen> {
       ),
     );
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(context.t('common.validation.success')),
-        backgroundColor: AppColors.positive,
-      ),
+    context.showSnackBar(
+      context.t('common.validation.success'),
+      backgroundColor: AppColors.positive,
     );
 
     Navigator.of(context).pop();
@@ -332,6 +330,11 @@ class _AddIncomeScreenState extends State<AddIncomeScreen> {
               _DatePickerTile(
                 selectedDate: _selectedDate,
                 onChanged: (d) => setState(() => _selectedDate = d),
+              ),
+              const SizedBox(height: 16),
+              ClipRRect(
+                borderRadius: BorderRadius.circular(12),
+                child: const NativeAdCard(templateType: TemplateType.small),
               ),
               const SizedBox(height: 24),
               SizedBox(

@@ -245,11 +245,9 @@ class _HistoryScreenState extends State<HistoryScreen> {
   Future<void> _exportPdf() async {
     final txs = _getFilteredTransactions();
     if (txs.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(context.t('history.exportPdfEmpty')),
-          backgroundColor: AppColors.negative,
-        ),
+      context.showSnackBar(
+        context.t('history.exportPdfEmpty'),
+        backgroundColor: AppColors.negative,
       );
       return;
     }
@@ -301,7 +299,37 @@ class _HistoryScreenState extends State<HistoryScreen> {
     // Sort groups by date descending
     final sortedDates = grouped.keys.toList()..sort((a, b) => b.compareTo(a));
 
+    final canPop = Navigator.of(context).canPop();
     return AppGradientScaffold(
+      floatingActionButton: canPop
+          ? Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                FloatingActionButton.small(
+                  heroTag: 'hist_income',
+                  backgroundColor: AppColors.positive,
+                  onPressed: () => Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (_) => const AddIncomeScreen(),
+                    ),
+                  ),
+                  child: const Icon(Icons.add, color: Colors.white, size: 20),
+                ),
+                const SizedBox(height: 12),
+                FloatingActionButton.small(
+                  heroTag: 'hist_expense',
+                  backgroundColor: AppColors.negative,
+                  onPressed: () => Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (_) => const AddExpenseScreen(),
+                    ),
+                  ),
+                  child:
+                      const Icon(Icons.remove, color: Colors.white, size: 20),
+                ),
+              ],
+            )
+          : null,
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,

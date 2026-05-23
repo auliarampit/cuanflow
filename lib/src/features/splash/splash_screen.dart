@@ -34,17 +34,33 @@ class _SplashScreenState extends State<SplashScreen> {
   }
 
   void _navigateNext() {
-    Future.delayed(const Duration(milliseconds: 1500), () {
+    Future.delayed(const Duration(milliseconds: 1500), () async {
       if (!mounted) return;
       final hasSession = Supabase.instance.client.auth.currentSession != null;
       if (!hasSession) {
         Navigator.of(context).pushReplacementNamed(AppRoutes.login);
         return;
       }
-      final onboardingDone = context.appState.profile.onboardingComplete;
-      Navigator.of(context).pushReplacementNamed(
-        onboardingDone ? AppRoutes.home : AppRoutes.setupSpaces,
-      );
+
+      // Pastikan data selesai dimuat sebelum routing
+      final appState = context.appState;
+      if (!appState.initialized) {
+        await Future.doWhile(() async {
+          await Future.delayed(const Duration(milliseconds: 100));
+          return mounted && !context.appState.initialized;
+        });
+        if (!mounted) return;
+      }
+
+      // Sync spaces agar data terbaru dari Supabase tersedia
+      await appState.syncSpaces();
+      if (!mounted) return;
+
+      // Aturan: user wajib punya minimal 1 ruang — jika tidak, paksa ke setup
+      final destination = appState.spaces.isEmpty
+          ? AppRoutes.setupSpaces
+          : AppRoutes.home;
+      Navigator.of(context).pushReplacementNamed(destination);
     });
   }
 

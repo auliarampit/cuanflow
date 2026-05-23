@@ -287,14 +287,17 @@ class _ReportScreenState extends State<ReportScreen> {
                     isBusinessMode: space?.type != null && space!.type != SpaceType.personal,
                   ),
 
-                  // ── Kesehatan bisnis ──────────────────────────────────────
-                  const SizedBox(height: 10),
-                  OutletHealthCard(
-                    summary: summary,
-                    selectedDate: _selectedDate,
-                    appState: appState,
-                    history: history,
-                  ),
+                  // ── Kesehatan bisnis (warung + produksi saja) ────────────
+                  if (SpaceFeatures.canUseOutlets(space, isPremium) ||
+                      SpaceFeatures.canUseStock(space, isPremium)) ...[
+                    const SizedBox(height: 10),
+                    OutletHealthCard(
+                      summary: summary,
+                      selectedDate: _selectedDate,
+                      appState: appState,
+                      history: history,
+                    ),
+                  ],
 
                   // ── Rincian pengeluaran: operasional vs stok ─────────────
                   if (summary.stockExpense > 0) ...[

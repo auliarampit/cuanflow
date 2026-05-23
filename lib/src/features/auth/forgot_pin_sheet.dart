@@ -49,14 +49,20 @@ class _ForgotPinSheetState extends State<ForgotPinSheet> {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
           content: Text(e.message),
           backgroundColor: AppColors.negative,
+          action: SnackBarAction(
+            label: 'OK',
+            textColor: Colors.white,
+            onPressed: () =>
+                ScaffoldMessenger.of(context).hideCurrentSnackBar(),
+          ),
         ));
       }
     } catch (_) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content: Text(context.t('auth.forgotPin.error')),
+        context.showSnackBar(
+          context.t('auth.forgotPin.error'),
           backgroundColor: AppColors.negative,
-        ));
+        );
       }
     } finally {
       if (mounted) setState(() => _isLoading = false);

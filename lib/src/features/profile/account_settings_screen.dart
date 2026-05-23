@@ -60,20 +60,16 @@ class _AccountSettingsScreenState extends State<AccountSettingsScreen> {
     try {
       await context.appState.updateProfile(updatedProfile);
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(context.t('accountSettings.saveSuccess')),
-          backgroundColor: AppColors.positive,
-        ),
+      context.showSnackBar(
+        context.t('accountSettings.saveSuccess'),
+        backgroundColor: AppColors.positive,
       );
       Navigator.of(context).pop();
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(context.t('accountSettings.saveError')),
-          backgroundColor: AppColors.negative,
-        ),
+      context.showSnackBar(
+        context.t('accountSettings.saveError'),
+        backgroundColor: AppColors.negative,
       );
     } finally {
       if (mounted) setState(() => _isSaving = false);

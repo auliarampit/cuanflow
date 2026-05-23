@@ -107,14 +107,6 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   bool _isWeekly = false;
 
-  void _goAddIncome() {
-    Navigator.of(context).pushNamed(AppRoutes.addIncome);
-  }
-
-  void _goAddExpense() {
-    Navigator.of(context).pushNamed(AppRoutes.addExpense);
-  }
-
   void _goHistory() {
     Navigator.of(context).pushNamed(AppRoutes.history);
   }
@@ -330,6 +322,11 @@ class _HomeScreenState extends State<HomeScreen> {
           const SizedBox(height: 14),
           if (!canUseStock) _TotalBalanceCard(),
           if (!canUseStock) const SizedBox(height: 14),
+          ClipRRect(
+            borderRadius: BorderRadius.circular(12),
+            child: const NativeAdCard(templateType: TemplateType.small),
+          ),
+          const SizedBox(height: 14),
           Row(
             children: [
               Expanded(
@@ -439,11 +436,6 @@ class _HomeScreenState extends State<HomeScreen> {
             const DailyTrendCard(),
             const SizedBox(height: 14),
           ],
-          ClipRRect(
-            borderRadius: BorderRadius.circular(12),
-            child: const NativeAdCard(templateType: TemplateType.small),
-          ),
-          const SizedBox(height: 14),
           // ── Low-stock alert (store only) ─────────────────────────────
           if (canUseStock) ...[
             Builder(
@@ -500,31 +492,6 @@ class _HomeScreenState extends State<HomeScreen> {
               },
             ),
           ],
-          SizedBox(
-            width: double.infinity,
-            child: ElevatedButton.icon(
-              onPressed: _goAddIncome,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.positive,
-                foregroundColor: Colors.white,
-              ),
-              icon: const Icon(Icons.add),
-              label: Text(context.t('home.addIncome')),
-            ),
-          ),
-          const SizedBox(height: 10),
-          SizedBox(
-            width: double.infinity,
-            child: ElevatedButton.icon(
-              onPressed: _goAddExpense,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.negative,
-                foregroundColor: Colors.white,
-              ),
-              icon: const Icon(Icons.remove),
-              label: Text(context.t('home.addExpense')),
-            ),
-          ),
           // ── Quick sale shortcut (feature flag) ──────────────────────
           if (isFastSaleEnabled) ...[
             const SizedBox(height: 10),

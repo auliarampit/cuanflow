@@ -164,9 +164,7 @@ class _HppCalculatorScreenState extends State<HppCalculatorScreen> {
 
   Future<void> _save() async {
     if (_nameController.text.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(context.t('product.nameRequired'))),
-      );
+      context.showSnackBar(context.t('product.nameRequired'));
       return;
     }
 

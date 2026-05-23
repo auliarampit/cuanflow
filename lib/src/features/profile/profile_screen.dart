@@ -60,6 +60,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
         SnackBar(
           content: Text(context.t('profile.logoutError')),
           backgroundColor: AppColors.negative,
+          action: SnackBarAction(
+            label: 'OK',
+            textColor: Colors.white,
+            onPressed: () => messenger.hideCurrentSnackBar(),
+          ),
         ),
       );
     }
@@ -73,258 +78,280 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final isPremium = profile.isBusinessPremium;
 
     return SafeArea(
-      child: SingleChildScrollView(
-        padding: const EdgeInsets.fromLTRB(18, 24, 18, 24),
-        child: Column(
-          children: [
-            // ── Avatar & nama ─────────────────────────────────────────────
-            CircleAvatar(
-              radius: 40,
-              backgroundColor: context.appColors.chipBg,
-              child: Text(
-                profile.fullName.isNotEmpty
-                    ? profile.fullName[0].toUpperCase()
-                    : '?',
-                style: TextStyle(
-                  fontSize: 28,
-                  fontWeight: FontWeight.w800,
-                  color: context.appColors.textPrimary,
-                ),
+      child: Column(
+        children: [
+          // ── Scrollable content ─────────────────────────────────────────
+          Expanded(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.fromLTRB(18, 24, 18, 8),
+              child: Column(
+                children: [
+                  // ── Avatar & nama ─────────────────────────────────────
+                  CircleAvatar(
+                    radius: 40,
+                    backgroundColor: context.appColors.chipBg,
+                    child: Text(
+                      profile.fullName.isNotEmpty
+                          ? profile.fullName[0].toUpperCase()
+                          : '?',
+                      style: TextStyle(
+                        fontSize: 28,
+                        fontWeight: FontWeight.w800,
+                        color: context.appColors.textPrimary,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  Text(
+                    profile.fullName.isNotEmpty
+                        ? profile.fullName
+                        : context.t('profile.ownerName'),
+                    style: const TextStyle(
+                        fontSize: 20, fontWeight: FontWeight.w800),
+                  ),
+                  if (profile.businessName.isNotEmpty) ...[
+                    const SizedBox(height: 4),
+                    Text(
+                      profile.businessName,
+                      style:
+                          TextStyle(color: context.appColors.textSecondary),
+                    ),
+                  ],
+                  const SizedBox(height: 12),
+
+                  // ── Premium badge ─────────────────────────────────────
+                  _PremiumBadge(isPremium: profile.isBusinessPremium),
+                  const SizedBox(height: 12),
+                  if (!isPremium) ...[
+                    _UpgradeCtaCard(
+                      onTap: () =>
+                          Navigator.of(context).pushNamed(AppRoutes.upgrade),
+                    ),
+                  ],
+                  const SizedBox(height: 16),
+
+                  // ── Section: Ruang Aktif ──────────────────────────────
+                  _SpacesSection(
+                    spaces: appState.spaces,
+                    activeSpaceId: appState.activeSpaceId,
+                    onSwitch: (id) => appState.switchSpace(id),
+                    onToggleActive: (id) => appState.toggleSpaceActive(id),
+                    onAdd: () =>
+                        Navigator.of(context).pushNamed(AppRoutes.setupSpaces),
+                  ),
+                  // ── Native Ad ─────────────────────────────────────────
+                  _ProfileAdCard(),
+                  const SizedBox(height: 16),
+
+                  // ── Section: Akun ─────────────────────────────────────
+                  _SectionLabel(context.t('profile.settingsSectionTitle')),
+                  const SizedBox(height: 10),
+                  _ProfileMenuItem(
+                    icon: Icons.person_outline,
+                    title: context.t('profile.menu.accountSettings'),
+                    subtitle:
+                        context.t('profile.menu.accountSettingsSubtitle'),
+                    onTap: () => _openAccountSettings(context),
+                  ),
+                  const SizedBox(height: 8),
+                  // Dompet — hanya untuk personal & store
+                  if (!SpaceFeatures.canUseOutlets(space, isPremium)) ...[
+                    _ProfileMenuItem(
+                      icon: Icons.account_balance_wallet_outlined,
+                      title: context.t('profile.menu.wallets'),
+                      subtitle: context.t('profile.menu.walletsSubtitle'),
+                      onTap: () =>
+                          Navigator.of(context).pushNamed(AppRoutes.wallets),
+                    ),
+                    const SizedBox(height: 8),
+                  ],
+
+                  // ── Section: Fitur Aktif ──────────────────────────────
+                  if (SpaceFeatures.canUseDebt(space, isPremium) ||
+                      SpaceFeatures.canUseRecurring(space, isPremium) ||
+                      SpaceFeatures.canUseBudget(space, isPremium) ||
+                      SpaceFeatures.canUseOutlets(space, isPremium) ||
+                      SpaceFeatures.canUseHpp(space, isPremium) ||
+                      SpaceFeatures.canUseProductionBatch(space, isPremium) ||
+                      SpaceFeatures.canUseStock(space, isPremium) ||
+                      SpaceFeatures.canUseQuickSale(space, isPremium)) ...[
+                    _SectionLabel('Fitur Aktif'),
+                    const SizedBox(height: 10),
+                  ],
+
+                  if (SpaceFeatures.canUseDebt(space, isPremium)) ...[
+                    _ProfileMenuItem(
+                      icon: Icons.handshake_outlined,
+                      title: context.t('profile.menu.debt'),
+                      subtitle: context.t('profile.menu.debtSubtitle'),
+                      onTap: () =>
+                          Navigator.of(context).pushNamed(AppRoutes.debt),
+                    ),
+                    const SizedBox(height: 8),
+                  ],
+                  if (SpaceFeatures.canUseRecurring(space, isPremium)) ...[
+                    _ProfileMenuItem(
+                      icon: Icons.repeat_outlined,
+                      title: context.t('profile.menu.recurring'),
+                      subtitle: context.t('profile.menu.recurringSubtitle'),
+                      onTap: () =>
+                          Navigator.of(context).pushNamed(AppRoutes.recurring),
+                    ),
+                    const SizedBox(height: 8),
+                  ],
+                  if (SpaceFeatures.canUseBudget(space, isPremium)) ...[
+                    _ProfileMenuItem(
+                      icon: Icons.savings_outlined,
+                      title: context.t('profile.menu.budget'),
+                      subtitle: context.t('profile.menu.budgetSubtitle'),
+                      onTap: () =>
+                          Navigator.of(context).pushNamed(AppRoutes.budget),
+                    ),
+                    const SizedBox(height: 8),
+                  ],
+                  if (SpaceFeatures.canUseQuickSale(space, isPremium)) ...[
+                    _ProfileMenuItem(
+                      icon: Icons.point_of_sale,
+                      title: context.t('profile.menu.quickSale'),
+                      subtitle: context.t('profile.menu.quickSaleSubtitle'),
+                      onTap: () =>
+                          Navigator.of(context).pushNamed(AppRoutes.quickSale),
+                    ),
+                    const SizedBox(height: 8),
+                  ],
+                  if (SpaceFeatures.canUseOutlets(space, isPremium)) ...[
+                    _ProfileMenuItem(
+                      icon: Icons.store_outlined,
+                      title: 'Kelola Outlet',
+                      subtitle:
+                          '${appState.outlets.length} outlet terdaftar',
+                      onTap: () => Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder: (_) => const ManageOutletsScreen(),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                  ],
+                  if (SpaceFeatures.canUseHpp(space, isPremium)) ...[
+                    _ProfileMenuItem(
+                      icon: Icons.inventory_2_outlined,
+                      title: context.t('profile.menu.product'),
+                      subtitle: context.t('profile.menu.productSubtitle'),
+                      onTap: () =>
+                          Navigator.of(context).pushNamed(AppRoutes.productList),
+                    ),
+                    const SizedBox(height: 8),
+                    _ProfileMenuItem(
+                      icon: Icons.bar_chart,
+                      title: 'Analitik Produk',
+                      subtitle: 'Margin ranking & breakeven analysis',
+                      onTap: () => Navigator.of(context)
+                          .pushNamed(AppRoutes.productAnalytics),
+                    ),
+                    const SizedBox(height: 8),
+                  ],
+                  if (SpaceFeatures.canUseProductionBatch(
+                      space, isPremium)) ...[
+                    _ProfileMenuItem(
+                      icon: Icons.science_outlined,
+                      title: 'Bahan Baku',
+                      subtitle:
+                          '${appState.rawMaterials.length} bahan terdaftar',
+                      onTap: () =>
+                          Navigator.of(context).pushNamed(AppRoutes.rawMaterials),
+                    ),
+                    const SizedBox(height: 8),
+                    _ProfileMenuItem(
+                      icon: Icons.precision_manufacturing_outlined,
+                      title: 'Batch Produksi',
+                      subtitle:
+                          '${appState.productionBatches.length} batch tercatat',
+                      onTap: () => Navigator.of(context)
+                          .pushNamed(AppRoutes.productionBatches),
+                    ),
+                    const SizedBox(height: 8),
+                  ],
+                  if (SpaceFeatures.canUseStock(space, isPremium)) ...[
+                    _ProfileMenuItem(
+                      icon: Icons.warehouse_outlined,
+                      title: context.t('profile.menu.inventory'),
+                      subtitle: context.t('profile.menu.inventorySubtitle'),
+                      onTap: () =>
+                          Navigator.of(context).pushNamed(AppRoutes.inventory),
+                    ),
+                    const SizedBox(height: 8),
+                  ],
+
+                  // ── Section: Pengaturan App ───────────────────────────
+                  _SectionLabel('Pengaturan'),
+                  const SizedBox(height: 10),
+                  _ProfileMenuItem(
+                    icon: Icons.category_outlined,
+                    title: 'Kelola Kategori',
+                    subtitle: 'Atur kategori pemasukan & pengeluaran',
+                    onTap: () => Navigator.of(context)
+                        .pushNamed(AppRoutes.manageCategories),
+                  ),
+                  const SizedBox(height: 8),
+                  _ProfileMenuItem(
+                    icon: Icons.notifications_outlined,
+                    title: context.t('profile.menu.notifications'),
+                    subtitle:
+                        context.t('profile.menu.notificationsSubtitle'),
+                    onTap: () => Navigator.of(context)
+                        .pushNamed(AppRoutes.notificationSettings),
+                  ),
+                  const SizedBox(height: 8),
+                  _ProfileMenuItem(
+                    icon: Icons.lock_outline,
+                    title: context.t('profile.menu.changePin'),
+                    subtitle: context.t('profile.menu.changePinSubtitle'),
+                    onTap: () =>
+                        Navigator.of(context).pushNamed(AppRoutes.changePin),
+                  ),
+                  const SizedBox(height: 8),
+                  _ProfileMenuItem(
+                    icon: Icons.language,
+                    title: context.t('profile.menu.language'),
+                    subtitle: context.t('profile.menu.languageValue'),
+                    onTap: () =>
+                        Navigator.of(context).pushNamed(AppRoutes.settings),
+                  ),
+                ],
               ),
             ),
-            const SizedBox(height: 12),
-            Text(
-              profile.fullName.isNotEmpty
-                  ? profile.fullName
-                  : context.t('profile.ownerName'),
-              style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w800),
-            ),
-            if (profile.businessName.isNotEmpty) ...[
-              const SizedBox(height: 4),
-              Text(
-                profile.businessName,
-                style: TextStyle(color: context.appColors.textSecondary),
-              ),
-            ],
-            const SizedBox(height: 12),
+          ),
 
-            // ── Premium badge ─────────────────────────────────────────────
-            _PremiumBadge(isPremium: profile.isBusinessPremium),
-            const SizedBox(height: 16),
-
-            // ── Section: Ruang Aktif ──────────────────────────────────────
-            _SpacesSection(
-              spaces: context.appState.spaces,
-              activeSpaceId: context.appState.activeSpaceId,
-              onSwitch: (id) => context.appState.switchSpace(id),
-              onToggleActive: (id) => context.appState.toggleSpaceActive(id),
-              onAdd: () => Navigator.of(context).pushNamed(AppRoutes.setupSpaces),
-            ),
-            const SizedBox(height: 16),
-
-            // ── Upgrade CTA (hanya untuk non-premium) ────────────────────
-            if (!profile.isBusinessPremium) ...[
-              _UpgradeCtaCard(
-                onTap: () =>
-                    Navigator.of(context).pushNamed(AppRoutes.upgrade),
-              ),
-              const SizedBox(height: 16),
-            ],
-
-            // ── Section: Akun ─────────────────────────────────────────────
-            _SectionLabel(context.t('profile.settingsSectionTitle')),
-            const SizedBox(height: 10),
-            _ProfileMenuItem(
-              icon: Icons.person_outline,
-              title: context.t('profile.menu.accountSettings'),
-              subtitle: context.t('profile.menu.accountSettingsSubtitle'),
-              onTap: () => _openAccountSettings(context),
-            ),
-            const SizedBox(height: 8),
-            // Dompet — hanya untuk personal & store (produksi pakai outlet)
-            if (!SpaceFeatures.canUseOutlets(space, isPremium)) ...[
-              _ProfileMenuItem(
-                icon: Icons.account_balance_wallet_outlined,
-                title: context.t('profile.menu.wallets'),
-                subtitle: context.t('profile.menu.walletsSubtitle'),
-                onTap: () => Navigator.of(context).pushNamed(AppRoutes.wallets),
-              ),
-              const SizedBox(height: 8),
-            ],
-
-            // ── Section: Fitur Aktif ───────────────────────────────────────
-            if (SpaceFeatures.canUseDebt(space, isPremium) ||
-                SpaceFeatures.canUseRecurring(space, isPremium) ||
-                SpaceFeatures.canUseBudget(space, isPremium) ||
-                SpaceFeatures.canUseOutlets(space, isPremium) ||
-                SpaceFeatures.canUseHpp(space, isPremium) ||
-                SpaceFeatures.canUseProductionBatch(space, isPremium) ||
-                SpaceFeatures.canUseStock(space, isPremium) ||
-                SpaceFeatures.canUseQuickSale(space, isPremium)) ...[
-              _SectionLabel('Fitur Aktif'),
-              const SizedBox(height: 10),
-            ],
-
-            if (SpaceFeatures.canUseDebt(space, isPremium)) ...[
-              _ProfileMenuItem(
-                icon: Icons.handshake_outlined,
-                title: context.t('profile.menu.debt'),
-                subtitle: context.t('profile.menu.debtSubtitle'),
-                onTap: () => Navigator.of(context).pushNamed(AppRoutes.debt),
-              ),
-              const SizedBox(height: 8),
-            ],
-            if (SpaceFeatures.canUseRecurring(space, isPremium)) ...[
-              _ProfileMenuItem(
-                icon: Icons.repeat_outlined,
-                title: context.t('profile.menu.recurring'),
-                subtitle: context.t('profile.menu.recurringSubtitle'),
-                onTap: () =>
-                    Navigator.of(context).pushNamed(AppRoutes.recurring),
-              ),
-              const SizedBox(height: 8),
-            ],
-            if (SpaceFeatures.canUseBudget(space, isPremium)) ...[
-              _ProfileMenuItem(
-                icon: Icons.savings_outlined,
-                title: context.t('profile.menu.budget'),
-                subtitle: context.t('profile.menu.budgetSubtitle'),
-                onTap: () => Navigator.of(context).pushNamed(AppRoutes.budget),
-              ),
-              const SizedBox(height: 8),
-            ],
-            if (SpaceFeatures.canUseQuickSale(space, isPremium)) ...[
-              _ProfileMenuItem(
-                icon: Icons.point_of_sale,
-                title: context.t('profile.menu.quickSale'),
-                subtitle: context.t('profile.menu.quickSaleSubtitle'),
-                onTap: () =>
-                    Navigator.of(context).pushNamed(AppRoutes.quickSale),
-              ),
-              const SizedBox(height: 8),
-            ],
-            if (SpaceFeatures.canUseOutlets(space, isPremium)) ...[
-              _ProfileMenuItem(
-                icon: Icons.store_outlined,
-                title: 'Kelola Outlet',
-                subtitle: '${context.appState.outlets.length} outlet terdaftar',
-                onTap: () => Navigator.of(context).push(
-                  MaterialPageRoute(
-                    builder: (_) => const ManageOutletsScreen(),
+          // ── Fixed footer: Logout ───────────────────────────────────────
+          Padding(
+            padding: const EdgeInsets.fromLTRB(18, 8, 18, 12),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton(
+                    onPressed: _onLogout,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.negative,
+                      foregroundColor: Colors.white,
+                    ),
+                    child: Text(context.t('profile.menu.logout')),
                   ),
                 ),
-              ),
-              const SizedBox(height: 8),
-            ],
-            if (SpaceFeatures.canUseHpp(space, isPremium)) ...[
-              _ProfileMenuItem(
-                icon: Icons.inventory_2_outlined,
-                title: context.t('profile.menu.product'),
-                subtitle: context.t('profile.menu.productSubtitle'),
-                onTap: () =>
-                    Navigator.of(context).pushNamed(AppRoutes.productList),
-              ),
-              const SizedBox(height: 8),
-              _ProfileMenuItem(
-                icon: Icons.bar_chart,
-                title: 'Analitik Produk',
-                subtitle: 'Margin ranking & breakeven analysis',
-                onTap: () =>
-                    Navigator.of(context).pushNamed(AppRoutes.productAnalytics),
-              ),
-              const SizedBox(height: 8),
-            ],
-            if (SpaceFeatures.canUseProductionBatch(space, isPremium)) ...[
-              _ProfileMenuItem(
-                icon: Icons.science_outlined,
-                title: 'Bahan Baku',
-                subtitle:
-                    '${context.appState.rawMaterials.length} bahan terdaftar',
-                onTap: () =>
-                    Navigator.of(context).pushNamed(AppRoutes.rawMaterials),
-              ),
-              const SizedBox(height: 8),
-              _ProfileMenuItem(
-                icon: Icons.precision_manufacturing_outlined,
-                title: 'Batch Produksi',
-                subtitle:
-                    '${context.appState.productionBatches.length} batch tercatat',
-                onTap: () =>
-                    Navigator.of(context).pushNamed(AppRoutes.productionBatches),
-              ),
-              const SizedBox(height: 8),
-            ],
-            if (SpaceFeatures.canUseStock(space, isPremium)) ...[
-              _ProfileMenuItem(
-                icon: Icons.warehouse_outlined,
-                title: context.t('profile.menu.inventory'),
-                subtitle: context.t('profile.menu.inventorySubtitle'),
-                onTap: () =>
-                    Navigator.of(context).pushNamed(AppRoutes.inventory),
-              ),
-              const SizedBox(height: 8),
-            ],
-
-            // ── Native Ad ─────────────────────────────────────────────────
-            _ProfileAdCard(),
-            const SizedBox(height: 8),
-
-            // ── Section: Pengaturan App ───────────────────────────────────
-            _SectionLabel('Pengaturan'),
-            const SizedBox(height: 10),
-            _ProfileMenuItem(
-              icon: Icons.category_outlined,
-              title: 'Kelola Kategori',
-              subtitle: 'Atur kategori pemasukan & pengeluaran',
-              onTap: () =>
-                  Navigator.of(context).pushNamed(AppRoutes.manageCategories),
-            ),
-            const SizedBox(height: 8),
-            _ProfileMenuItem(
-              icon: Icons.notifications_outlined,
-              title: context.t('profile.menu.notifications'),
-              subtitle: context.t('profile.menu.notificationsSubtitle'),
-              onTap: () => Navigator.of(context)
-                  .pushNamed(AppRoutes.notificationSettings),
-            ),
-            const SizedBox(height: 8),
-            _ProfileMenuItem(
-              icon: Icons.lock_outline,
-              title: context.t('profile.menu.changePin'),
-              subtitle: context.t('profile.menu.changePinSubtitle'),
-              onTap: () => Navigator.of(context).pushNamed(AppRoutes.changePin),
-            ),
-            const SizedBox(height: 8),
-            _ProfileMenuItem(
-              icon: Icons.language,
-              title: context.t('profile.menu.language'),
-              subtitle: context.t('profile.menu.languageValue'),
-              onTap: () => Navigator.of(context).pushNamed(AppRoutes.settings),
-            ),
-            const SizedBox(height: 8),
-
-            // ── Logout ────────────────────────────────────────────────────
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton(
-                onPressed: _onLogout,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.negative,
-                  foregroundColor: Colors.white,
+                const SizedBox(height: 8),
+                Text(
+                  context.t('profile.versionLabel', {'version': _version}),
+                  style: TextStyle(
+                    color: context.appColors.textSecondary,
+                    fontSize: 12,
+                  ),
                 ),
-                child: Text(context.t('profile.menu.logout')),
-              ),
+              ],
             ),
-            const SizedBox(height: 12),
-            Text(
-              context.t('profile.versionLabel', {'version': _version}),
-              style: TextStyle(
-                color: context.appColors.textSecondary,
-                fontSize: 12,
-              ),
-            ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
@@ -470,66 +497,6 @@ class _PremiumBadge extends StatelessWidget {
             ),
           ),
         ],
-      ),
-    );
-  }
-}
-
-// ── Upgrade CTA card (free tier only) ────────────────────────────────────────
-
-class _UpgradeCtaCard extends StatelessWidget {
-  const _UpgradeCtaCard({required this.onTap});
-
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            colors: [
-              AppColors.positive.withValues(alpha: 0.85),
-              AppColors.brandBlue.withValues(alpha: 0.85),
-            ],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-          ),
-          borderRadius: BorderRadius.circular(16),
-        ),
-        child: Row(
-          children: [
-            const Icon(Icons.rocket_launch_outlined,
-                color: Colors.white, size: 28),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text(
-                    'Upgrade Paket',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontWeight: FontWeight.w800,
-                      fontSize: 14,
-                    ),
-                  ),
-                  const SizedBox(height: 2),
-                  Text(
-                    'Akses fitur bisnis mulai Rp 19.000/bulan',
-                    style: TextStyle(
-                      color: Colors.white.withValues(alpha: 0.85),
-                      fontSize: 12,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            const Icon(Icons.chevron_right, color: Colors.white),
-          ],
-        ),
       ),
     );
   }
@@ -687,6 +654,67 @@ class _SpacesSection extends StatelessWidget {
           );
         }),
       ],
+    );
+  }
+}
+
+// ── Upgrade CTA card ──────────────────────────────────────────────────────────
+
+class _UpgradeCtaCard extends StatelessWidget {
+  const _UpgradeCtaCard({required this.onTap});
+
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            colors: [
+              AppColors.positive.withValues(alpha: 0.85),
+              AppColors.brandBlue.withValues(alpha: 0.85),
+            ],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+          borderRadius: BorderRadius.circular(16),
+        ),
+        child: Row(
+          children: [
+            const Icon(Icons.rocket_launch_outlined,
+                color: Colors.white, size: 28),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'Upgrade Paket',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.w800,
+                      fontSize: 14,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    'Akses fitur bisnis mulai Rp 20.000/bulan',
+                    style: TextStyle(
+                      color: Colors.white.withValues(alpha: 0.85),
+                      fontSize: 12,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const Icon(Icons.chevron_right, color: Colors.white),
+          ],
+        ),
+      ),
     );
   }
 }

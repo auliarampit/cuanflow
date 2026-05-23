@@ -6,12 +6,12 @@ import 'package:google_mobile_ads/google_mobile_ads.dart';
 import '../../core/theme/app_colors.dart';
 
 /// Native ad berbentuk card yang menyatu dengan desain aplikasi.
+/// Widget ini sengaja TIDAK menggunakan AutomaticKeepAliveClientMixin agar
+/// tiap kali screen dibuat ulang (navigasi tab), iklan fresh dimuat dari AdMob
+/// — menghasilkan impression baru.
+///
 /// Gunakan [TemplateType.small] (~90px) untuk sisipan di list.
 /// Gunakan [TemplateType.medium] (~200px) untuk card mandiri.
-///
-/// TODO: Ganti ID di bawah dengan Native ad unit dari AdMob setelah akun disetujui:
-///   Android: buat ad unit → format "Native" → salin ID
-///   iOS    : buat ad unit → format "Native" → salin ID
 class NativeAdCard extends StatefulWidget {
   const NativeAdCard({
     super.key,
@@ -24,14 +24,9 @@ class NativeAdCard extends StatefulWidget {
   State<NativeAdCard> createState() => _NativeAdCardState();
 }
 
-class _NativeAdCardState extends State<NativeAdCard>
-    with AutomaticKeepAliveClientMixin {
+class _NativeAdCardState extends State<NativeAdCard> {
   NativeAd? _ad;
   bool _adLoaded = false;
-  bool _adRequested = false;
-
-  @override
-  bool get wantKeepAlive => true;
 
   // Test IDs (development only):
   //   Android: ca-app-pub-3940256099942544/2247696110
@@ -44,8 +39,9 @@ class _NativeAdCardState extends State<NativeAdCard>
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    if (!_adRequested) {
-      _adRequested = true;
+    // Load sekali saat widget masuk tree. Tidak pakai flag supaya tiap
+    // recreate widget (ganti tab) selalu minta iklan baru ke AdMob.
+    if (_ad == null && !_adLoaded) {
       _loadAd();
     }
   }
@@ -54,9 +50,10 @@ class _NativeAdCardState extends State<NativeAdCard>
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final bgColor = isDark ? const Color(0xFF1E2235) : Colors.white;
     final textColor = isDark ? Colors.white : const Color(0xFF1A1A2E);
-    final subTextColor = isDark ? const Color(0xFF9E9E9E) : const Color(0xFF757575);
+    final subTextColor =
+        isDark ? const Color(0xFF9E9E9E) : const Color(0xFF757575);
 
-    final ad = NativeAd(
+    _ad = NativeAd(
       adUnitId: _adUnitId,
       request: const AdRequest(),
       nativeTemplateStyle: NativeTemplateStyle(
@@ -92,11 +89,10 @@ class _NativeAdCardState extends State<NativeAdCard>
         onAdFailedToLoad: (failedAd, error) {
           debugPrint('[NativeAdCard] failed: $error');
           failedAd.dispose();
-          _ad = null;
+          if (mounted) setState(() => _ad = null);
         },
       ),
     )..load();
-    _ad = ad;
   }
 
   @override
@@ -107,7 +103,6 @@ class _NativeAdCardState extends State<NativeAdCard>
 
   @override
   Widget build(BuildContext context) {
-    super.build(context);
     if (!_adLoaded || _ad == null) return const SizedBox.shrink();
 
     final height = widget.templateType == TemplateType.small ? 70.0 : 260.0;
