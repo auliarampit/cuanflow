@@ -11,6 +11,7 @@ import '../../../core/state/app_state.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_dynamic_colors.dart';
 import '../../../core/ui/app_gradient_scaffold.dart';
+import '../../../core/ui/amount_keypad.dart';
 import '../../../shared/widgets/category_dropdown.dart';
 import '../../../shared/widgets/native_ad_card.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart' show TemplateType;
@@ -106,6 +107,21 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
   List<UserCategory> _buildCategories(BuildContext context) =>
       context.appState.categoriesFor(MoneyTransactionType.expense);
 
+  // Buka keypad angka custom (pengganti keyboard OS) untuk field jumlah.
+  Future<void> _openAmountKeypad() async {
+    final current = int.tryParse(_amountController.text.replaceAll('.', '')) ?? 0;
+    final result = await showAmountKeypad(
+      context,
+      initialValue: current,
+      accentColor: AppColors.negative,
+      title: context.t('expense.add.amountLabel'),
+    );
+    if (result != null) {
+      _amountController.text =
+          result > 0 ? CurrencyInputFormatter.formatVal(result) : '';
+    }
+  }
+
   void _addToList() {
     final rawAmount = _amountController.text.replaceAll('.', '');
     final amount = int.tryParse(rawAmount) ?? 0;
@@ -180,19 +196,9 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
       );
     }
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(
-          context.t('bulk.saveSuccess', {'count': _items.length.toString()}),
-        ),
-        backgroundColor: AppColors.positive,
-        action: SnackBarAction(
-          label: 'OK',
-          textColor: Colors.white,
-          onPressed: () =>
-              ScaffoldMessenger.of(context).hideCurrentSnackBar(),
-        ),
-      ),
+    context.showSnackBar(
+      context.t('bulk.saveSuccess', {'count': _items.length.toString()}),
+      backgroundColor: AppColors.positive,
     );
 
     Navigator.of(context).pop();
@@ -267,9 +273,14 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
       bottomNavigationBar: _isEditMode
           ? null
           : _BottomBar(items: _items, onSave: _saveAll),
-      body: _isEditMode
-          ? _buildEditMode(context, categories, featureOutlets, isBusinessMode)
-          : _buildBulkMode(context, categories, featureOutlets),
+      body: GestureDetector(
+        behavior: HitTestBehavior.translucent,
+        onTap: () => FocusScope.of(context).unfocus(),
+        child: _isEditMode
+            ? _buildEditMode(
+                context, categories, featureOutlets, isBusinessMode)
+            : _buildBulkMode(context, categories, featureOutlets),
+      ),
     );
   }
 
@@ -377,6 +388,9 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
                       const SizedBox(height: 6),
                       TextField(
                         controller: _amountController,
+                        readOnly: true,
+                        showCursor: false,
+                        onTap: _openAmountKeypad,
                         keyboardType: TextInputType.number,
                         style: const TextStyle(
                           fontSize: 44,
@@ -749,9 +763,26 @@ class _CompactInputRow extends StatelessWidget {
                     child: TextField(
                       controller: amountController,
                       focusNode: amountFocus,
+                      readOnly: true,
+                      showCursor: false,
+                      onTap: () async {
+                        final current = int.tryParse(
+                              amountController.text.replaceAll('.', ''),
+                            ) ??
+                            0;
+                        final result = await showAmountKeypad(
+                          context,
+                          initialValue: current,
+                          accentColor: accentColor,
+                          title: 'Harga',
+                        );
+                        if (result != null) {
+                          amountController.text = result > 0
+                              ? CurrencyInputFormatter.formatVal(result)
+                              : '';
+                        }
+                      },
                       keyboardType: TextInputType.number,
-                      textInputAction: TextInputAction.done,
-                      onSubmitted: (_) => onAdd(),
                       style: const TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.w800,

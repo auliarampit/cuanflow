@@ -12,6 +12,7 @@ import '../../../core/models/user_category.dart';
 import '../../../core/state/app_state.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_dynamic_colors.dart';
+import '../../../core/ui/amount_keypad.dart';
 import '../../../shared/widgets/category_dropdown.dart';
 import '../../../shared/widgets/native_ad_card.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart' show TemplateType;
@@ -107,6 +108,21 @@ class _AddIncomeScreenState extends State<AddIncomeScreen> {
   List<UserCategory> _buildCategories(BuildContext context) =>
       context.appState.categoriesFor(MoneyTransactionType.income);
 
+  // Buka keypad angka custom (pengganti keyboard OS) untuk field jumlah.
+  Future<void> _openAmountKeypad() async {
+    final current = int.tryParse(_amountController.text.replaceAll('.', '')) ?? 0;
+    final result = await showAmountKeypad(
+      context,
+      initialValue: current,
+      accentColor: AppColors.positive,
+      title: context.t('income.add.amountHint'),
+    );
+    if (result != null) {
+      _amountController.text =
+          result > 0 ? CurrencyInputFormatter.formatVal(result) : '';
+    }
+  }
+
   void _addToList() {
     final rawAmount = _amountController.text.replaceAll('.', '');
     final amount = int.tryParse(rawAmount) ?? 0;
@@ -165,19 +181,9 @@ class _AddIncomeScreenState extends State<AddIncomeScreen> {
       );
     }
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(
-          context.t('bulk.saveSuccess', {'count': _items.length.toString()}),
-        ),
-        backgroundColor: AppColors.positive,
-        action: SnackBarAction(
-          label: 'OK',
-          textColor: Colors.white,
-          onPressed: () =>
-              ScaffoldMessenger.of(context).hideCurrentSnackBar(),
-        ),
-      ),
+    context.showSnackBar(
+      context.t('bulk.saveSuccess', {'count': _items.length.toString()}),
+      backgroundColor: AppColors.positive,
     );
 
     Navigator.of(context).pop();
@@ -243,7 +249,10 @@ class _AddIncomeScreenState extends State<AddIncomeScreen> {
       bottomNavigationBar: _isEditMode
           ? null
           : _BottomBar(items: _items, onSave: _saveAll),
-      body: SingleChildScrollView(
+      body: GestureDetector(
+        behavior: HitTestBehavior.translucent,
+        onTap: () => FocusScope.of(context).unfocus(),
+        child: SingleChildScrollView(
         padding: EdgeInsets.fromLTRB(
           18,
           18,
@@ -260,6 +269,9 @@ class _AddIncomeScreenState extends State<AddIncomeScreen> {
                   children: [
                     TextField(
                       controller: _amountController,
+                      readOnly: true,
+                      showCursor: false,
+                      onTap: _openAmountKeypad,
                       keyboardType: TextInputType.number,
                       textAlign: TextAlign.center,
                       style: const TextStyle(
@@ -419,6 +431,9 @@ class _AddIncomeScreenState extends State<AddIncomeScreen> {
                               child: TextField(
                                 controller: _amountController,
                                 focusNode: _amountFocus,
+                                readOnly: true,
+                                showCursor: false,
+                                onTap: _openAmountKeypad,
                                 keyboardType: TextInputType.number,
                                 style: const TextStyle(
                                   fontSize: 36,
@@ -538,6 +553,7 @@ class _AddIncomeScreenState extends State<AddIncomeScreen> {
               const SizedBox(height: 80), // space for bottom bar
             ],
           ],
+        ),
         ),
       ),
     );
